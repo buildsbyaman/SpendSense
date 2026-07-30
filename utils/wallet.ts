@@ -16,6 +16,12 @@ export const formatAccountNumber = (text: string): string => {
   return chunks ? chunks.join(' ') : cleaned;
 };
 
+export const parseBalance = (val: string): number => {
+  const cleaned = val.replace(/[^0-9.-]/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 /**
  * Safely parses and formats a wallet balance.
  * Ensures the balance is within safe bounds (-999,999,999 to 999,999,999).

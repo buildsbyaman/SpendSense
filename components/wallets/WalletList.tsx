@@ -49,7 +49,7 @@ export function WalletList({
   }
 
   return (
-    <View className="card-flat overflow-hidden mb-6">
+    <View className="mb-6">
       {accounts.map((account, index) => (
         <WalletItem
           key={account.id}

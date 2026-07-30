@@ -15,6 +15,7 @@ export {
 
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/components/ui/toast-config';
+import { AppProvider } from '@/context/AppContext';
 
 export default function RootLayout() {
   const { setColorScheme } = useColorScheme();
@@ -24,21 +25,23 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ThemeProvider value={NAV_THEME.light}>
-      <StatusBar style="dark" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="add-transaction"
-          options={{
-            presentation: 'modal',
-            headerShown: false,
-            animation: 'slide_from_bottom',
-          }}
-        />
-      </Stack>
-      <PortalHost />
-      <Toast config={toastConfig} topOffset={25} />
-    </ThemeProvider>
+    <AppProvider>
+      <ThemeProvider value={NAV_THEME.light}>
+        <StatusBar style="dark" />
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="add-transaction"
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+              animation: 'slide_from_bottom',
+            }}
+          />
+        </Stack>
+        <PortalHost />
+        <Toast config={toastConfig} topOffset={25} />
+      </ThemeProvider>
+    </AppProvider>
   );
 }

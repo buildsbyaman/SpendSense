@@ -30,6 +30,9 @@
   --danger: #ef4444;
   --warning: #f59e0b;
 
+  --expense: #f87171;   /* rose-400 — subtle red */
+  --income:  #16a34a;   /* green-600 — dark green */
+
   --border: #e8e8e8;
   --divider: #efefef;
   --input: #f6f6f6;
@@ -94,6 +97,9 @@
   --success: #22c55e;
   --danger: #ef4444;
   --warning: #f59e0b;
+
+  --expense: #fca5a5;   /* rose-300 — even softer on dark */
+  --income:  #86efac;   /* green-300 — soft on dark */
 
   --border: #2a2a2a;
   --divider: #1e1e1e;

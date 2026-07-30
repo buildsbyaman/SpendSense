@@ -28,6 +28,8 @@ module.exports = {
         success: "var(--success)",
         danger: "var(--danger)",
         warning: "var(--warning)",
+        expense: "var(--expense)",
+        income: "var(--income)",
 
         gray: {
           50: "var(--gray-50)",

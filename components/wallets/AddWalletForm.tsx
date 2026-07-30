@@ -110,17 +110,22 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
             className={`bg-gray-50 dark:bg-gray-900 rounded-full px-5 py-3.5 text-foreground text-base border-2 ${errors.balance ? 'border-red-500' : (focusedInput === 'balance' ? 'border-primary' : 'border-transparent')}`}
             placeholder="$0.00"
             placeholderTextColor="#9ca3af"
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
             value={newBalance}
             onChangeText={(text) => {
               if (errors.balance) setErrors(prev => ({ ...prev, balance: undefined }));
-              setNewBalance(text);
+              // Allow '-' only at the start, nowhere else
+              const sanitized = text
+                .replace(/(?!^)-/g, '')   // remove any '-' that is not at position 0
+                .replace(/^-{2,}/, '-');  // collapse multiple leading '-' into one
+              setNewBalance(sanitized);
             }}
             onFocus={() => setFocusedInput('balance')}
             onBlur={() => setFocusedInput(null)}
           />
+          <Text className="text-xs text-muted mt-1.5 ml-4">Tip: Start with − to enter a negative balance</Text>
           {errors.balance && (
-            <Text className="text-xs text-red-500 mt-2 ml-4">{errors.balance}</Text>
+            <Text className="text-xs text-red-500 mt-1 ml-4">{errors.balance}</Text>
           )}
         </View>
       </View>

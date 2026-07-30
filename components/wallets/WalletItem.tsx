@@ -2,7 +2,7 @@ import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ChevronDown, ChevronUp, Star, Landmark, CreditCard, Smartphone, Wallet } from 'lucide-react-native';
-import { type Account, formatAccountNumber } from '@/utils/wallet';
+import { type Account, formatAccountNumber, parseBalance } from '@/utils/wallet';
 import { useState, useEffect } from 'react';
 
 const ACCOUNT_TYPES = ['Bank', 'Card', 'Digital', 'Cash'];
@@ -71,11 +71,15 @@ export function WalletItem({
     setIsEditing(false);
   };
 
+
+  const numericBalance = parseBalance(account.balance);
+  const balanceColorClass = numericBalance >= 0 ? 'text-income' : 'text-expense';
+
   // --- Normal row view ---
   const rowView = (
-    <View className="flex-row items-center justify-between px-4 py-4">
+    <View className="flex-row items-center justify-between px-5 py-5">
       <View className="flex-row items-center gap-4 flex-1 mr-2">
-        <View className="w-12 h-12 rounded-full bg-gray-100 items-center justify-center relative">
+        <View className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-900 items-center justify-center relative">
           <Icon as={account.icon} size={22} className="text-foreground" />
           {account.isDefault && (
             <View className="absolute -top-1 -right-1 bg-primary w-5 h-5 rounded-full items-center justify-center border-2 border-white dark:border-gray-900">
@@ -91,7 +95,7 @@ export function WalletItem({
         </View>
       </View>
       <View className="flex-row items-center gap-3">
-        <Text className="text-base text-foreground font-semibold">{account.balance}</Text>
+        <Text className={`text-base font-bold ${balanceColorClass}`}>{account.balance}</Text>
         <TouchableOpacity onPress={onToggleExpand} hitSlop={{top:10,bottom:10,left:10,right:10}}>
           <Icon as={isExpanded ? ChevronUp : ChevronDown} size={20} className="text-muted" />
         </TouchableOpacity>
@@ -144,14 +148,21 @@ export function WalletItem({
         <Text className="text-sm text-muted mb-2 ml-1">Balance</Text>
         <TextInput
           value={draft.balance}
-          onChangeText={(text) => setDraft(prev => ({ ...prev, balance: text }))}
+          onChangeText={(text) => {
+            // Allow '-' only at the start, nowhere else
+            const sanitized = text
+              .replace(/(?!^)-/g, '')   // remove any '-' not at position 0
+              .replace(/^-{2,}/, '-');  // collapse multiple leading '-' into one
+            setDraft(prev => ({ ...prev, balance: sanitized }));
+          }}
           className={`bg-gray-50 dark:bg-gray-900 rounded-full px-5 py-3.5 text-foreground text-base font-semibold border-2 ${focusedInput === 'balance' ? 'border-primary' : 'border-transparent'}`}
           placeholder="$0.00"
           placeholderTextColor="#9ca3af"
-          keyboardType="numeric"
+          keyboardType="decimal-pad"
           onFocus={() => setFocusedInput('balance')}
           onBlur={() => setFocusedInput(null)}
         />
+        <Text className="text-xs text-muted mt-1.5 ml-4">Tip: Start with − to enter a negative balance</Text>
       </View>
 
       {/* Account Type */}
@@ -191,33 +202,33 @@ export function WalletItem({
   );
 
   return (
-    <View>
+    <View className="bg-surface rounded-3xl mb-4 overflow-hidden border border-gray-100 dark:border-gray-900 shadow-xs">
       {isEditing ? (
         editView
       ) : isExpanded ? (
         <>
           {rowView}
-          <View className="px-4 pb-4 pt-2 flex-row gap-2">
+          <View className="px-4 pb-4 pt-0 flex-row gap-2.5">
             <TouchableOpacity 
-              className={`flex-1 py-2.5 items-center justify-center rounded-xl ${account.isDefault ? 'bg-gray-100 dark:bg-gray-800 opacity-50' : 'bg-primary'}`}
+              className={`flex-1 py-3 items-center justify-center rounded-full ${account.isDefault ? 'bg-gray-100 dark:bg-gray-800 opacity-50' : 'bg-primary'}`}
               disabled={account.isDefault}
               onPress={onSetDefault}
             >
-              <Text className={`font-semibold text-sm ${account.isDefault ? 'text-muted' : 'text-white dark:text-black'}`}>Set Default</Text>
+              <Text className={`font-bold text-xs ${account.isDefault ? 'text-muted' : 'text-white dark:text-black'}`}>Set Default</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-1 py-2.5 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800"
+              className="flex-1 py-3 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800"
               onPress={() => { setDraft(account); setIsEditing(true); }}
             >
-              <Text className="font-semibold text-sm text-foreground">Edit</Text>
+              <Text className="font-bold text-xs text-foreground">Edit</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              className="flex-1 py-2.5 items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20"
+              className="flex-1 py-3 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/20"
               onPress={onDelete}
             >
-              <Text className="text-red-500 font-semibold text-sm">Delete</Text>
+              <Text className="text-red-500 font-bold text-xs">Delete</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -225,10 +236,6 @@ export function WalletItem({
         <TouchableOpacity activeOpacity={0.7} onPress={onToggleExpand}>
           {rowView}
         </TouchableOpacity>
-      )}
-      
-      {!isLast && !isEditing && (
-        <View className="h-[1px] bg-divider ml-[76px]" />
       )}
     </View>
   );
