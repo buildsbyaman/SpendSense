@@ -1,0 +1,293 @@
+:root {
+  /* ========= Colors ========= */
+
+  --background: #f2f2f2;
+  --foreground: #1a1c1b;
+
+  --surface: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #1a1c1b;
+
+  --popover: #ffffff;
+  --popover-foreground: #1a1c1b;
+
+  --primary: #1a1c1b;
+  --primary-foreground: #ffffff;
+
+  --secondary: #e8e8e8;
+  --secondary-foreground: #1a1c1b;
+
+  --muted: #9b9b9b;
+  --muted-foreground: #ffffff;
+
+  --accent: #f6c98a;
+  --accent-foreground: #7d5b2d;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+
+  --border: #e8e8e8;
+  --divider: #efefef;
+  --input: #f6f6f6;
+  --ring: #f6c98a;
+
+  --gray-50: #fafafa;
+  --gray-100: #f6f6f6;
+  --gray-200: #ededed;
+  --gray-300: #dedede;
+  --gray-400: #c8c8c8;
+
+  --accent-dark: #7d5b2d;
+
+  /* ========= Radius ========= */
+
+  --radius: 0.75rem;
+  --radius-xs: 12px;
+  --radius-sm: 18px;
+  --radius-md: 22px;
+  --radius-lg: 30px;
+  --radius-xl: 36px;
+  --radius-pill: 999px;
+
+  /* ========= Shadows ========= */
+
+  --shadow-xs: 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.07);
+
+  /* ========= Typography ========= */
+
+  --font-family: "Poppins", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dark\:root {
+  --background: #0a0a0a;
+  --foreground: #f2f2f2;
+
+  --surface: #161616;
+  --card: #161616;
+  --card-foreground: #f2f2f2;
+
+  --popover: #161616;
+  --popover-foreground: #f2f2f2;
+
+  --primary: #f2f2f2;
+  --primary-foreground: #0a0a0a;
+
+  --secondary: #2a2a2a;
+  --secondary-foreground: #f2f2f2;
+
+  --muted: #707070;
+  --muted-foreground: #f2f2f2;
+
+  --accent: #f6c98a;
+  --accent-foreground: #0a0a0a;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+
+  --border: #2a2a2a;
+  --divider: #1e1e1e;
+  --input: #1a1a1a;
+  --ring: #f6c98a;
+
+  --gray-50: #0e0e0e;
+  --gray-100: #1a1a1a;
+  --gray-200: #252525;
+  --gray-300: #333333;
+  --gray-400: #4a4a4a;
+
+  --accent-dark: #c4984e;
+
+  --shadow-xs: 0 2px 6px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* ===========================================
+   Reset
+   =========================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background: var(--background);
+  color: var(--foreground);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+/* ===========================================
+   Cards
+   =========================================== */
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.card-flat {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+}
+
+/* ===========================================
+   Buttons
+   =========================================== */
+
+.btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--foreground);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* ===========================================
+   Inputs
+   =========================================== */
+
+.input {
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--input);
+  color: var(--foreground);
+  outline: none;
+}
+
+.input:focus {
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(246, 201, 138, .25);
+}
+
+/* ===========================================
+   Chart
+   =========================================== */
+
+.chart-grid {
+  border-bottom: 1px dashed var(--divider);
+}
+
+.chart-bar {
+  background: var(--gray-200);
+  border-radius: 18px;
+}
+
+.chart-bar.active {
+  background: var(--primary);
+}
+
+.chart-tooltip {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border-radius: 18px;
+  padding: 8px 18px;
+  font-weight: 600;
+}
+
+/* ===========================================
+   Avatar
+   =========================================== */
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ===========================================
+   Divider
+   =========================================== */
+
+.divider {
+  height: 1px;
+  background: var(--divider);
+}
+
+/* ===========================================
+   Scrollbar
+   =========================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===========================================
+   Selection
+   =========================================== */
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
