@@ -1,19 +1,27 @@
-import { View, TouchableOpacity, TextInput, LayoutAnimation, ScrollView } from 'react-native';
+import { View, TouchableOpacity, TextInput, LayoutAnimation, ScrollView, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatWalletBalance, formatAccountNumber } from '@/utils/wallet';
+import { useApp } from '@/context/AppContext';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
+import { Icon } from '@/components/ui/icon';
+import { X, Trash2 } from 'lucide-react-native';
 
 const ACCOUNT_TYPES = ['Bank', 'Card', 'Digital', 'Cash'];
 
 interface AddWalletFormProps {
-  onSave: (wallet: { name: string; number: string; balance: string; type: string }) => void;
+  visible: boolean;
+  onSave: (wallet: { id?: string; name: string; number: string; balance: string; type: string }) => void;
   onCancel: () => void;
+  editWalletId?: string | null;
+  onDelete?: (id: string) => void;
+  onSetDefault?: (id: string) => void;
 }
 
-export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
+export function AddWalletForm({ visible, onSave, onCancel, editWalletId, onDelete, onSetDefault }: AddWalletFormProps) {
   const { colorScheme } = useColorScheme();
+  const { accounts } = useApp();
   const placeholderColor =
     colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -22,6 +30,26 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
   const [newBalance, setNewBalance] = useState('');
   const [accountType, setAccountType] = useState('Card');
   const [errors, setErrors] = useState<{ name?: string; balance?: string }>({});
+
+  useEffect(() => {
+    if (visible) {
+      if (editWalletId) {
+        const wallet = accounts.find(a => a.id === editWalletId);
+        if (wallet) {
+          setNewName(wallet.name);
+          setNewNumber(wallet.number || '');
+          setNewBalance(wallet.balance.replace('$', '').replace(/,/g, ''));
+          setAccountType(wallet.type || 'Card');
+        }
+      } else {
+        setNewName('');
+        setNewNumber('');
+        setNewBalance('');
+        setAccountType('Card');
+      }
+      setErrors({});
+    }
+  }, [visible, editWalletId, accounts]);
 
   const handleSave = () => {
     const newErrors: { name?: string; balance?: string } = {};
@@ -38,25 +66,52 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
     const formattedBalance = formatWalletBalance(newBalance);
 
     onSave({
+      id: editWalletId || undefined,
       name: formattedName,
       number: newNumber.trim(),
       balance: formattedBalance,
       type: accountType,
     });
 
-    // Reset local state
-    setNewName('');
-    setNewNumber('');
-    setNewBalance('');
-    setAccountType('Card');
-    setErrors({});
   };
 
   return (
-    <View className="mb-6 rounded-3xl bg-surface p-6">
-      <View className="flex-col gap-5">
-        <View>
-          <Text className="mb-2 ml-1 text-sm text-muted">Wallet Name</Text>
+    <Modal visible={visible} transparent animationType="slide">
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1 justify-end bg-black/50 dark:bg-black/70">
+        
+        {/* Background touch area to close */}
+        <TouchableOpacity 
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+          activeOpacity={1} 
+          onPress={onCancel} 
+        />
+
+        <View className="rounded-t-[32px] bg-background p-6 pb-12">
+          
+          <View className="mb-6 flex-row items-center justify-between">
+            <Text variant="h2">{editWalletId ? 'Edit Wallet' : 'Add Wallet'}</Text>
+            <View className="flex-row items-center gap-2">
+              {editWalletId && onDelete && !accounts.find(a => a.id === editWalletId)?.isDefault && (
+                <TouchableOpacity 
+                  onPress={() => {
+                    onCancel();
+                    onDelete(editWalletId);
+                  }} 
+                  className="rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+                  <Icon as={Trash2} size={20} className="text-red-500" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={onCancel} className="rounded-full bg-secondary p-2">
+                <Icon as={X} size={20} className="text-foreground" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View className="flex-col gap-5">
+            <View>
+              <Text className="mb-2 ml-1 text-sm text-muted">Wallet Name</Text>
           <TextInput
             className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${errors.name ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-transparent'}`}
             placeholder="e.g. PayPal"
@@ -136,19 +191,26 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
       </View>
 
       <View className="mt-8 flex-row gap-3">
+        {editWalletId && onSetDefault && !accounts.find(a => a.id === editWalletId)?.isDefault && (
+          <TouchableOpacity
+            className="flex-1 items-center justify-center rounded-full bg-secondary py-3.5"
+            onPress={() => {
+              onCancel();
+              onSetDefault(editWalletId);
+            }}
+            activeOpacity={0.7}>
+            <Text className="text-foreground text-base font-medium">Set Default</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
-          className="flex-1 items-center justify-center rounded-full bg-secondary py-3.5"
-          onPress={onCancel}
-          activeOpacity={0.7}>
-          <Text className="text-foreground text-base font-medium">Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className={`flex-1 items-center justify-center rounded-full bg-primary py-3.5 ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
+          className={`items-center justify-center rounded-full bg-primary py-3.5 ${editWalletId && onSetDefault && !accounts.find(a => a.id === editWalletId)?.isDefault ? 'flex-1' : 'flex-1'} ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
           onPress={handleSave}
           activeOpacity={0.7}>
           <Text className="text-base font-medium text-white dark:text-black">Save Wallet</Text>
         </TouchableOpacity>
       </View>
-    </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }

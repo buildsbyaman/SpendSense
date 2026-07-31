@@ -12,7 +12,7 @@ interface WalletListProps {
   onSetDefault: (id: string) => void;
   onDeleteClick: (id: string) => void;
   onAddFirstWallet: () => void;
-  onUpdate: (updated: Account) => void;
+  onEditClick: (id: string) => void;
 }
 
 export function WalletList({
@@ -22,7 +22,7 @@ export function WalletList({
   onSetDefault,
   onDeleteClick,
   onAddFirstWallet,
-  onUpdate
+  onEditClick
 }: WalletListProps) {
   if (accounts.length === 0) {
     return (
@@ -59,7 +59,7 @@ export function WalletList({
           onToggleExpand={() => onToggleExpand(account.id)}
           onSetDefault={() => onSetDefault(account.id)}
           onDelete={() => onDeleteClick(account.id)}
-          onUpdate={onUpdate}
+          onEditClick={() => onEditClick(account.id)}
         />
       ))}
     </View>

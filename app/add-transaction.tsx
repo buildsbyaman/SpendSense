@@ -119,8 +119,8 @@ export default function AddTransactionScreen() {
     <View className="flex-1 bg-transparent">
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 justify-end bg-black/50">
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
           {/* Background touch area to close */}
           <TouchableOpacity 
@@ -129,20 +129,19 @@ export default function AddTransactionScreen() {
             onPress={handleClose} 
           />
 
-          <View className="flex rounded-t-[32px] bg-background p-6" style={{ maxHeight: '85%' }}>
+          <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
             {/* Header */}
-            <View className="flex-row items-center justify-between pb-5">
-              <Text variant="h3">Add Transaction</Text>
+            <View className="mb-6 flex-row items-center justify-between">
+              <Text variant="h2">Add Transaction</Text>
               <TouchableOpacity
                 onPress={handleClose}
-                className="h-8 w-8 items-center justify-center rounded-full bg-surface">
-                <Icon as={X} size={20} className="text-muted" />
+                className="rounded-full bg-secondary p-2">
+                <Icon as={X} size={20} className="text-foreground" />
               </TouchableOpacity>
             </View>
 
-        <View className="flex-shrink pb-5">
-          
-          <View className="gap-6">
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <View className="gap-5">
             {/* Income / Expense Toggle */}
             <TransactionTypeToggle type={type} onChange={handleTypeChange} />
 
@@ -189,8 +188,8 @@ export default function AddTransactionScreen() {
           </View>
 
           {/* Wallet Selector */}
-          <View className="gap-2">
-            <Text className="ml-1 text-sm text-muted">Select Wallet</Text>
+          <View>
+            <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet</Text>
             {accounts.length === 0 ? (
               <TouchableOpacity
                 onPress={() => {
@@ -234,8 +233,8 @@ export default function AddTransactionScreen() {
           </View>
 
           {/* Category Selector */}
-          <View className="gap-2">
-            <Text className="ml-1 text-sm text-muted">Category</Text>
+          <View>
+            <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
             <View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View className="flex-row gap-2.5 py-1">
@@ -259,8 +258,8 @@ export default function AddTransactionScreen() {
           </View>
 
           {/* Quick Date Selector */}
-          <View className="gap-2">
-            <Text className="ml-1 text-sm text-muted">Date</Text>
+          <View>
+            <Text className="mb-2 ml-1 text-sm text-muted">Date</Text>
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={() => setDate(new Date())}
@@ -307,21 +306,21 @@ export default function AddTransactionScreen() {
             </View>
           </View>
 
-            {/* Submit Button */}
             <TouchableOpacity
               onPress={handleSave}
-              className="mt-4 items-center justify-center rounded-full bg-primary py-4"
-              activeOpacity={0.8}>
-              <Text className="text-base font-bold text-white dark:text-black">Save Transaction</Text>
+              disabled={!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0}
+              className={`mt-8 items-center justify-center rounded-full bg-primary py-3.5 ${(!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0) ? 'opacity-40' : 'opacity-100'}`}
+              activeOpacity={0.7}>
+              <Text className="text-base font-medium text-white dark:text-black">Save Transaction</Text>
             </TouchableOpacity>
           </View>
+          </ScrollView>
+          
+          {/* Safe area spacing for iOS */}
+          <View style={{ height: insets.bottom }} />
         </View>
-                
-                {/* Safe area spacing for iOS */}
-                <View style={{ height: insets.bottom }} />
-              </View>
-            </KeyboardAvoidingView>
-          </Modal>
+      </KeyboardAvoidingView>
+    </Modal>
 
       {/* Custom Calendar Modal */}
       <TransactionDatePickerModal

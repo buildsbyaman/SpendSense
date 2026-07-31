@@ -91,6 +91,19 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
       `);
       await db!.execAsync('PRAGMA user_version = 6');
     }
+
+    const versionAfter6 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+    const currentVersionAfter6 = versionAfter6?.user_version || 6;
+    if (currentVersionAfter6 < 7) {
+      await db!.execAsync(`
+        CREATE TABLE IF NOT EXISTS budgets (
+          id TEXT PRIMARY KEY NOT NULL,
+          category TEXT NOT NULL,
+          amount REAL NOT NULL
+        );
+      `);
+      await db!.execAsync('PRAGMA user_version = 7');
+    }
   });
   return db;
 }

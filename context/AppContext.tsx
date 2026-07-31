@@ -15,6 +15,7 @@ import {
   updateTransaction,
   deleteTransaction as repoDeleteTransaction,
   reassignTransactionsCategory,
+  reassignTransactionsWallet,
   fetchCustomCategories,
   insertCustomCategory,
   deleteCustomCategory as repoDeleteCustomCategory,
@@ -26,6 +27,12 @@ import {
   saveProfile,
   clearAll,
   seedDemoData as repoSeedDemoData,
+  type Budget,
+  fetchBudgets,
+  insertBudget,
+  updateBudget as repoUpdateBudget,
+  deleteBudget as repoDeleteBudget,
+  updateBudgetsCategory,
 } from '@/lib/repository';
 
 interface AppContextType {
@@ -33,7 +40,7 @@ interface AppContextType {
   transactions: Transaction[];
   addWallet: (wallet: Omit<Account, 'id' | 'isDefault'>) => void;
   updateWallet: (updated: Account) => void;
-  deleteWallet: (id: string) => void;
+  deleteWallet: (id: string) => { blocked: boolean; newDefaultName?: string };
   setDefaultWallet: (id: string) => void;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
@@ -50,6 +57,10 @@ interface AppContextType {
   categoryOrder: { expense: string[]; income: string[] };
   updateCategoryOrder: (type: 'expense' | 'income', order: string[]) => void;
   getSortedCategories: (type: 'expense' | 'income') => (CustomCategory | { name: string; isDefault: boolean })[];
+  budgets: Budget[];
+  addBudget: (budget: Omit<Budget, 'id'>) => void;
+  updateBudget: (budget: Budget) => void;
+  deleteBudget: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -61,6 +72,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [deletedDefaultCategories, setDeletedDefaultCategories] = useState<string[]>([]);
   const [categoryOrder, setCategoryOrder] = useState<{ expense: string[]; income: string[] }>({ expense: [], income: [] });
   const [userProfile, setUserProfile] = useState<{ name: string }>({ name: 'User' });
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -73,12 +85,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const expenseOrder = await fetchCategoryOrder('expense') || [];
       const incomeOrder = await fetchCategoryOrder('income') || [];
       const storedProfile = await fetchProfile();
+      const storedBudgets = await fetchBudgets();
       setAccounts(storedAccounts);
       setTransactions(storedTransactions);
       setCustomCategories(storedCategories);
       setDeletedDefaultCategories(storedDeletedDefaults);
       setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
       if (storedProfile) setUserProfile(storedProfile);
+      setBudgets(storedBudgets);
       setReady(true);
     })();
   }, []);
@@ -101,7 +115,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const category = customCategories.find(c => c.id === id);
     if (category) {
       await reassignTransactionsCategory(category.name, 'Others');
+      await updateBudgetsCategory(category.name, 'Others');
       setTransactions((prev) => prev.map(t => t.category === category.name ? { ...t, category: 'Others' } : t));
+      setBudgets((prev) => prev.map(b => b.category === category.name ? { ...b, category: 'Others' } : b));
     }
     await repoDeleteCustomCategory(id);
     setCustomCategories((prev) => prev.filter((c) => c.id !== id));
@@ -109,7 +125,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteDefaultCategory = useCallback(async (name: string) => {
     await reassignTransactionsCategory(name, 'Others');
+    await updateBudgetsCategory(name, 'Others');
     setTransactions((prev) => prev.map(t => t.category === name ? { ...t, category: 'Others' } : t));
+    setBudgets((prev) => prev.map(b => b.category === name ? { ...b, category: 'Others' } : b));
     await insertDeletedDefaultCategory(name);
     setDeletedDefaultCategories((prev) => [...prev, name]);
   }, []);
@@ -160,20 +178,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateAccount(updated);
   }, []);
 
-  const deleteWallet = useCallback((id: string) => {
+  const deleteWallet = useCallback((id: string): { blocked: boolean; newDefaultName?: string } => {
+    // Capture current state synchronously for decision logic
+    const current = accounts;
+    const wallet = current.find((a) => a.id === id);
+    if (!wallet) return { blocked: false };
+
+    // Sub-case: last wallet — block deletion
+    if (current.length === 1) {
+      return { blocked: true };
+    }
+
+    // Find the target wallet for reassignment
+    const others = current.filter((a) => a.id !== id);
+    const isDefault = wallet.isDefault;
+    // Promote the first other wallet to default if needed
+    let newDefaultWallet = others.find((a) => a.isDefault) ?? others[0];
+
+    // Reassign transactions in DB and in state
+    reassignTransactionsWallet(id, newDefaultWallet.id);
+    setTransactions((prev) =>
+      prev.map((tx) => (tx.walletId === id ? { ...tx, walletId: newDefaultWallet.id } : tx))
+    );
+
+    // Remove deleted wallet and optionally promote new default
     setAccounts((prev) => {
-      const filtered = prev.filter((acc) => acc.id !== id);
-      if (prev.find((acc) => acc.id === id)?.isDefault && filtered.length > 0) {
-        const newDefault = { ...filtered[0], isDefault: true };
-        filtered[0] = newDefault;
-        updateAccount(newDefault);
+      const filtered = prev.filter((a) => a.id !== id);
+      if (isDefault) {
+        const promoted = { ...filtered[0], isDefault: true };
+        filtered[0] = promoted;
+        updateAccount(promoted);
+        newDefaultWallet = promoted;
       }
       return filtered;
     });
-    setTransactions((prev) => prev.filter((tx) => tx.walletId !== id));
+
     deleteAccount(id);
-    deleteTransactionsForWallet(id);
-  }, []);
+    return { blocked: false, newDefaultName: isDefault ? newDefaultWallet.name : undefined };
+  }, [accounts]);
 
   const setDefaultWallet = useCallback((id: string) => {
     setAccounts((prev) => prev.map((acc) => ({ ...acc, isDefault: acc.id === id })));
@@ -262,6 +304,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAccounts([]);
     setTransactions([]);
     setCustomCategories([]);
+    setBudgets([]);
     setUserProfile({ name: 'User' });
     clearAll();
   }, []);
@@ -270,8 +313,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await repoSeedDemoData();
     const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
     const storedTransactions = await fetchTransactions();
+    const storedBudgets = await fetchBudgets();
     setAccounts(storedAccounts);
     setTransactions(storedTransactions);
+    setBudgets(storedBudgets);
+  }, []);
+
+  const addBudget = useCallback((budget: Omit<Budget, 'id'>) => {
+    const newBudget = { ...budget, id: Date.now().toString() };
+    setBudgets((prev) => [...prev, newBudget]);
+    insertBudget(newBudget);
+  }, []);
+
+  const updateBudget = useCallback((updatedBudget: Budget) => {
+    setBudgets((prev) => prev.map((b) => (b.id === updatedBudget.id ? updatedBudget : b)));
+    repoUpdateBudget(updatedBudget);
+  }, []);
+
+  const deleteBudget = useCallback((id: string) => {
+    setBudgets((prev) => prev.filter((b) => b.id !== id));
+    repoDeleteBudget(id);
   }, []);
 
   return (
@@ -298,6 +359,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         categoryOrder,
         updateCategoryOrder,
         getSortedCategories,
+        budgets,
+        addBudget,
+        updateBudget,
+        deleteBudget,
       }}>
       {children}
     </AppContext.Provider>

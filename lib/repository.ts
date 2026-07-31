@@ -139,6 +139,15 @@ export async function deleteTransactionsForWallet(walletId: string): Promise<voi
   await db.runAsync('DELETE FROM transactions WHERE wallet_id = ?', walletId);
 }
 
+export async function reassignTransactionsWallet(fromWalletId: string, toWalletId: string): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    'UPDATE transactions SET wallet_id = ? WHERE wallet_id = ?',
+    toWalletId,
+    fromWalletId
+  );
+}
+
 export async function reassignTransactionsCategory(oldCategory: string, newCategory: string): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
@@ -227,42 +236,62 @@ export async function saveProfile(profile: { name: string }): Promise<void> {
 
 export async function clearAll(): Promise<void> {
   const db = await getDatabase();
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM accounts');
-    await db.runAsync('DELETE FROM transactions');
-  });
+  await db.execAsync(`
+    DELETE FROM accounts;
+    DELETE FROM transactions;
+    DELETE FROM profile;
+    DELETE FROM custom_categories;
+    DELETE FROM deleted_default_categories;
+    DELETE FROM category_order;
+    DELETE FROM budgets;
+  `);
 }
 
-// ── Seed ──────────────────────────────────────────────────────────────
-
 export async function seedDemoData(): Promise<void> {
-  const { wallets, transactions } = generateSeedData();
   const db = await getDatabase();
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM transactions');
-    await db.runAsync('DELETE FROM accounts');
-    for (const w of wallets) {
-      await db.runAsync(
-        'INSERT INTO accounts (id, name, number, balance, type, is_default) VALUES (?, ?, ?, ?, ?, ?)',
-        w.id,
-        w.name,
-        w.number,
-        w.balance,
-        w.type,
-        w.isDefault ? 1 : 0
-      );
-    }
-    for (const tx of transactions) {
-      await db.runAsync(
-        'INSERT INTO transactions (id, title, amount, type, category, date, wallet_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        tx.id,
-        tx.title,
-        tx.amount,
-        tx.type,
-        tx.category,
-        tx.date,
-        tx.walletId
-      );
-    }
-  });
+  await generateSeedData(db);
+}
+
+// ── Budgets ──────────────────────────────────────────────────────────
+
+export interface Budget {
+  id: string;
+  category: string;
+  amount: number;
+}
+
+export async function fetchBudgets(): Promise<Budget[]> {
+  const db = await getDatabase();
+  return db.getAllAsync<Budget>('SELECT * FROM budgets');
+}
+
+export async function insertBudget(budget: Budget): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    'INSERT INTO budgets (id, category, amount) VALUES (?, ?, ?)',
+    budget.id,
+    budget.category,
+    budget.amount
+  );
+}
+
+export async function updateBudget(budget: Budget): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    'UPDATE budgets SET category = ?, amount = ? WHERE id = ?',
+    budget.category,
+    budget.amount,
+    budget.id
+  );
+}
+
+export async function deleteBudget(id: string): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync('DELETE FROM budgets WHERE id = ?', id);
+}
+
+// Update budgets for a specific category to a new category (e.g., 'Uncategorized')
+export async function updateBudgetsCategory(oldCategory: string, newCategory: string): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync('UPDATE budgets SET category = ? WHERE category = ?', newCategory, oldCategory);
 }

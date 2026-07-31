@@ -29,11 +29,9 @@ export default function TransactionTypeToggle({ type, onChange }: TransactionTyp
     ],
   }));
 
+  // Primary color: black in light mode, white in dark mode
   const thumbColor = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(
-      type === 'expense' ? (isDark ? '#fb7185' : '#f87171') : isDark ? '#4ade80' : '#22c55e',
-      { duration: 300 }
-    ),
+    backgroundColor: withTiming(isDark ? '#ffffff' : '#000000', { duration: 300 }),
   }));
 
   const handleTypeChange = (newType: TransactionType) => {
@@ -41,9 +39,12 @@ export default function TransactionTypeToggle({ type, onChange }: TransactionTyp
     toggleX.value = newType === 'expense' ? 0 : toggleWidth / 2;
   };
 
+  const activeTextColor = isDark ? '#000000' : '#ffffff';
+  const inactiveTextColor = isDark ? '#6b7280' : '#9ca3af';
+
   return (
     <View
-      className="rounded-2xl bg-gray-50 p-1.5 dark:bg-gray-900"
+      className="rounded-full bg-gray-100 p-1.5 dark:bg-gray-900"
       onLayout={(e) => {
         const w = e.nativeEvent.layout.width - 12;
         setToggleWidth(w);
@@ -58,7 +59,7 @@ export default function TransactionTypeToggle({ type, onChange }: TransactionTyp
                 top: 0,
                 bottom: 0,
                 width: toggleWidth / 2,
-                borderRadius: 10,
+                borderRadius: 999,
                 zIndex: 0,
               },
               thumbStyle,
@@ -74,14 +75,7 @@ export default function TransactionTypeToggle({ type, onChange }: TransactionTyp
             style={{
               fontWeight: '600',
               fontSize: 13,
-              color:
-                type === 'expense'
-                  ? isDark
-                    ? '#4c0519'
-                    : '#7f1d1d'
-                  : isDark
-                    ? '#6b7280'
-                    : '#9ca3af',
+              color: type === 'expense' ? activeTextColor : inactiveTextColor,
             }}>
             Expense
           </Text>
@@ -94,14 +88,7 @@ export default function TransactionTypeToggle({ type, onChange }: TransactionTyp
             style={{
               fontWeight: '600',
               fontSize: 13,
-              color:
-                type === 'income'
-                  ? isDark
-                    ? '#052e16'
-                    : '#14532d'
-                  : isDark
-                    ? '#6b7280'
-                    : '#9ca3af',
+              color: type === 'income' ? activeTextColor : inactiveTextColor,
             }}>
             Income
           </Text>

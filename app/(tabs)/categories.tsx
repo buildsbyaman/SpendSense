@@ -28,6 +28,7 @@ export default function CategoriesScreen() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [selectedIconName, setSelectedIconName] = useState('Tag');
   const [selectedColor, setSelectedColor] = useState(AVAILABLE_PALETTE[0]);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
   
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id?: string; name: string; isCustom: boolean } | null>(null);
@@ -129,7 +130,7 @@ export default function CategoriesScreen() {
 
             return (
               <React.Fragment key={name}>
-                <View className="flex-row items-center justify-between px-5 py-4">
+                <View className="flex-row items-center justify-between px-5 py-3.5">
                   {/* Icon + Name */}
                   <View className="flex-row items-center gap-3 flex-1">
                     <View
@@ -177,91 +178,98 @@ export default function CategoriesScreen() {
       </ScrollView>
 
       {/* Add Category Modal */}
-      <Modal visible={isModalOpen} animationType="slide" transparent={true}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 justify-end bg-black/50">
-          <View className="flex gap-5 rounded-t-[32px] bg-background p-6" style={{ maxHeight: '85%' }}>
-            <View className="flex-row items-center justify-between">
-              <Text variant="h3">New {activeTab === 'expense' ? 'Expense' : 'Income'} Category</Text>
+      <Modal visible={isModalOpen} transparent animationType="slide">
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1 justify-end bg-black/50 dark:bg-black/70">
+          
+          {/* Background touch area to close */}
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+            activeOpacity={1} 
+            onPress={() => setIsModalOpen(false)} 
+          />
+
+          <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+            <View className="mb-6 flex-row items-center justify-between">
+              <Text variant="h2">New {activeTab === 'expense' ? 'Expense' : 'Income'} Category</Text>
               <TouchableOpacity
                 onPress={() => setIsModalOpen(false)}
-                className="h-8 w-8 items-center justify-center rounded-full bg-surface">
-                <Icon as={X} size={20} className="text-muted" />
+                className="rounded-full bg-secondary p-2">
+                <Icon as={X} size={20} className="text-foreground" />
               </TouchableOpacity>
             </View>
 
-            <View>
-              <Text className="mb-2 text-sm font-medium text-muted">Category Name</Text>
-              <View className="flex-row items-center rounded-full bg-surface px-5 py-4">
-                <TextInput
-                  value={newCategoryName}
-                  onChangeText={setNewCategoryName}
-                  placeholder="e.g. Dog Food, Water Bill"
-                  placeholderTextColor="#9ca3af"
-                  className="flex-1 font-inter text-base text-foreground"
-                  autoFocus
-                />
-              </View>
-            </View>
-
-            <View>
-              <Text className="mb-2 text-sm font-medium text-muted">Category Color</Text>
-              <View className="flex-row flex-wrap justify-center gap-4">
-                {AVAILABLE_PALETTE.map((hex) => (
-                  <TouchableOpacity
-                    key={hex}
-                    onPress={() => setSelectedColor(hex)}
-                    style={{ backgroundColor: hex }}
-                    className={`h-10 w-10 items-center justify-center rounded-full border ${
-                      selectedColor === hex
-                        ? 'border-[3px] border-white shadow-md'
-                        : 'border-gray-200/50 dark:border-gray-800/50 opacity-80'
-                    }`}
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <View className="gap-5">
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Category Name</Text>
+                  <TextInput
+                    value={newCategoryName}
+                    onChangeText={setNewCategoryName}
+                    placeholder="e.g. Dog Food, Water Bill"
+                    placeholderTextColor="#9ca3af"
+                    className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${focusedInput === 'name' ? 'border-primary' : 'border-transparent'}`}
+                    onFocus={() => setFocusedInput('name')}
+                    onBlur={() => setFocusedInput(null)}
                   />
-                ))}
-              </View>
-            </View>
-
-            <View className="shrink">
-              <Text className="mb-2 text-sm font-medium text-muted">Category Icon</Text>
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                <View className="flex-row flex-wrap justify-center gap-4">
-                  {AVAILABLE_ICONS.map((iconObj) => (
-                    <TouchableOpacity
-                      key={iconObj.name}
-                      onPress={() => setSelectedIconName(iconObj.name)}
-                      style={{
-                        backgroundColor: selectedIconName === iconObj.name ? `${selectedColor}1A` : undefined,
-                      }}
-                      className={`h-12 w-12 items-center justify-center rounded-full ${
-                        selectedIconName === iconObj.name ? '' : 'bg-surface dark:bg-surface'
-                      }`}>
-                      <Icon
-                        as={iconObj.icon}
-                        size={20}
-                        color={selectedIconName === iconObj.name ? selectedColor : undefined}
-                        className={selectedIconName === iconObj.name ? undefined : 'text-foreground opacity-60'}
-                      />
-                    </TouchableOpacity>
-                  ))}
                 </View>
-              </ScrollView>
-            </View>
 
-            <TouchableOpacity
-              onPress={handleAddCategory}
-              disabled={newCategoryName.trim().length === 0}
-              className={`items-center justify-center rounded-full py-4 ${
-                newCategoryName.trim().length > 0 ? 'bg-primary' : 'bg-surface'
-              }`}>
-              <Text
-                className={`text-lg font-semibold ${
-                  newCategoryName.trim().length > 0 ? 'text-white dark:text-black' : 'text-muted'
-                }`}>
-                Create Category
-              </Text>
-            </TouchableOpacity>
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Category Color</Text>
+                  <View className="flex-row flex-wrap justify-center gap-4">
+                    {AVAILABLE_PALETTE.map((hex) => (
+                      <TouchableOpacity
+                        key={hex}
+                        onPress={() => setSelectedColor(hex)}
+                        style={{ backgroundColor: hex }}
+                        className={`h-10 w-10 items-center justify-center rounded-full border ${
+                          selectedColor === hex
+                            ? 'border-[3px] border-white shadow-md'
+                            : 'border-gray-200/50 dark:border-gray-800/50 opacity-80'
+                        }`}
+                      />
+                    ))}
+                  </View>
+                </View>
+
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Category Icon</Text>
+                  <View className="flex-row flex-wrap justify-center gap-4">
+                    {AVAILABLE_ICONS.map((iconObj) => (
+                      <TouchableOpacity
+                        key={iconObj.name}
+                        onPress={() => setSelectedIconName(iconObj.name)}
+                        style={{
+                          backgroundColor: selectedIconName === iconObj.name ? `${selectedColor}1A` : undefined,
+                        }}
+                        className={`h-12 w-12 items-center justify-center rounded-full ${
+                          selectedIconName === iconObj.name ? '' : 'bg-surface dark:bg-surface'
+                        }`}>
+                        <Icon
+                          as={iconObj.icon}
+                          size={20}
+                          color={selectedIconName === iconObj.name ? selectedColor : undefined}
+                          className={selectedIconName === iconObj.name ? undefined : 'text-foreground opacity-60'}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleAddCategory}
+                  disabled={newCategoryName.trim().length === 0}
+                  className={`mt-8 items-center justify-center rounded-full bg-primary py-3.5 ${
+                    newCategoryName.trim().length > 0 ? 'opacity-100' : 'opacity-40'
+                  }`}
+                  activeOpacity={0.7}>
+                  <Text className="text-base font-medium text-white dark:text-black">
+                    Create Category
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
 
             {/* Safe area spacing for iOS */}
             <View style={{ height: insets.bottom }} />
