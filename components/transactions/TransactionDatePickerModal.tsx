@@ -154,7 +154,7 @@ export default function TransactionDatePickerModal({
                   {isRangeStart && rangeTo && <View className="absolute w-1/2 h-8 right-0 bg-primary opacity-20" />}
                   {isRangeEnd && rangeFrom && <View className="absolute w-1/2 h-8 left-0 bg-primary opacity-20" />}
 
-                  <View className={`w-8 h-8 rounded-full items-center justify-center ${isSelected ? 'bg-primary' : isToday && !isInRange ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                  <View className={`w-8 h-8 rounded-full items-center justify-center ${isSelected ? 'bg-primary' : isToday && !isInRange ? 'bg-secondary' : ''}`}>
                     <Text className={`text-xs font-semibold ${isSelected ? 'text-white dark:text-black' : isToday && !isInRange ? 'text-primary' : 'text-foreground'}`}>
                       {day.getDate()}
                     </Text>
@@ -175,7 +175,7 @@ export default function TransactionDatePickerModal({
           <View className="flex-row gap-3 pt-2">
             <TouchableOpacity
               onPress={onClose}
-              className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-full items-center"
+              className="flex-1 py-3 bg-secondary rounded-full items-center"
             >
               <Text className="font-bold text-xs text-foreground">Cancel</Text>
             </TouchableOpacity>

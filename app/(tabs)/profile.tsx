@@ -1,10 +1,170 @@
-import { View } from 'react-native';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
+import { Icon } from '@/components/ui/icon';
+import { useState, useEffect } from 'react';
+import { useApp } from '@/context/AppContext';
+import { User, Check } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
+import { SettingsOptionsMenu } from '@/components/profile/SettingsOptionsMenu';
+import { ManageSection } from '@/components/profile/ManageSection';
+import { useColorScheme } from 'nativewind';
+import { PLACEHOLDER_COLORS } from '@/lib/theme';
+import { saveThemePreference } from '@/lib/theme-persistence';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const { userProfile, updateUserProfile } = useApp();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [name, setName] = useState(userProfile.name);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const isDark = colorScheme === 'dark';
+  const placeholderColor = isDark ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
+
+  const handleSave = () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('Name cannot be empty');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Name',
+        text2: 'Please enter a valid name',
+      });
+      return;
+    }
+
+    updateUserProfile({ name: trimmed });
+    setError(null);
+    setIsEditing(false);
+    Toast.show({
+      type: 'success',
+      text1: 'Profile Updated',
+      text2: 'Your name has been updated successfully.',
+    });
+  };
+
   return (
-    <View className="flex-1 items-center justify-center bg-background p-6">
-      <Text variant="h2">Settings</Text>
-    </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1 bg-background">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingTop: insets.top + 24,
+          paddingBottom: 120,
+          paddingHorizontal: 20,
+        }}
+        keyboardShouldPersistTaps="handled">
+        <Header title="Settings" showBack={true} onRightPress={() => setIsMenuOpen(true)} />
+
+        <View className="mt-6 gap-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+          {/* Avatar Section */}
+          <View className="flex-row items-center gap-4 py-2">
+            <View className="bg-primary/10 dark:bg-primary/20 h-14 w-14 items-center justify-center rounded-full">
+              <Icon as={User} size={24} className="text-primary" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-lg font-bold tracking-tight text-foreground">
+                {userProfile.name}
+              </Text>
+              <Text className="text-xs text-muted">Manage your account preferences</Text>
+            </View>
+          </View>
+
+          <View className="h-[1px] bg-divider" />
+
+          {!isEditing ? (
+            /* Read-Only Details Mode */
+            <View className="gap-6">
+              <View className="flex-row items-center justify-between px-1">
+                <Text className="text-sm font-medium text-muted">Name</Text>
+                <Text className="text-sm font-semibold text-foreground">{userProfile.name}</Text>
+              </View>
+
+              <View className="h-[1px] bg-divider" />
+
+              <View className="flex-row items-center justify-between px-1">
+                <Text className="text-sm font-medium text-muted">Dark Mode</Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    const next = isDark ? 'light' : 'dark';
+                    setColorScheme(next);
+                    saveThemePreference(next);
+                  }}>
+                  <View
+                    className={`h-5 w-9 justify-center rounded-full p-0.5 transition-colors duration-200 ${isDark ? 'bg-income' : 'bg-gray-200 dark:bg-gray-800'}`}>
+                    <View
+                      className={`h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 dark:bg-black ${isDark ? 'translate-x-4' : 'translate-x-0'}`}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            /* Inline Edit Form Mode */
+            <>
+              <View className="gap-2">
+                <Text className="ml-1 text-sm font-medium text-muted">Profile Name</Text>
+                <TextInput
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    if (error) setError(null);
+                  }}
+                  className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${error ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-transparent'}`}
+                  placeholder="Enter your name"
+                  placeholderTextColor={placeholderColor}
+                  onFocus={() => setFocusedInput('name')}
+                  onBlur={() => setFocusedInput(null)}
+                />
+                {error && <Text className="ml-4 mt-1 text-xs text-red-500">{error}</Text>}
+              </View>
+
+              {/* Save / Cancel Buttons */}
+              <View className="mt-2 flex-row gap-3">
+                <TouchableOpacity
+                  onPress={() => {
+                    setName(userProfile.name);
+                    setError(null);
+                    setIsEditing(false);
+                  }}
+                  className="flex-1 items-center justify-center rounded-full bg-secondary py-3"
+                  activeOpacity={0.8}>
+                  <Text className="text-sm font-semibold text-foreground">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSave}
+                  className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary py-3"
+                  activeOpacity={0.8}>
+                  <Icon as={Check} size={16} className="text-white dark:text-black" />
+                  <Text className="text-sm font-semibold text-white dark:text-black">Save</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
+
+        <ManageSection />
+      </ScrollView>
+
+      <SettingsOptionsMenu
+        visible={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onEditProfile={() => setIsEditing(true)}
+      />
+    </KeyboardAvoidingView>
   );
 }

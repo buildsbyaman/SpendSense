@@ -113,7 +113,7 @@ export default function AccountsScreen() {
       {accounts.length > 0 && (
         <View className="bg-surface rounded-[32px] p-6 mb-6 border border-gray-100 dark:border-gray-900 shadow-xs">
           <Text className="text-muted text-sm font-medium mb-1">Total Balance</Text>
-          <Text className="text-3xl font-bold text-foreground">
+          <Text className="text-3xl font-bold text-foreground ">
             ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
         </View>

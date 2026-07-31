@@ -1,4 +1,4 @@
-import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert, LayoutAnimation } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -7,27 +7,35 @@ import { useApp } from '@/context/AppContext';
 import { getCategoryIcon, getCategoryColor, type Transaction, searchTransactions, filterTransactionsByDateRange, formatDatePickerDate } from '@/utils/transaction';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, ChevronDown } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, ChevronDown, Plus, Receipt } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import TransactionFilterBar from '@/components/transactions/TransactionFilterBar';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
+import { TransactionItem } from '@/components/transactions/TransactionItem';
 
 export default function TransactionsScreen() {
   const insets = useSafeAreaInsets();
-  const { transactions, accounts, deleteTransaction } = useApp();
+  const { transactions, accounts, deleteTransaction, updateTransaction } = useApp();
   const [filter, setFilter] = useState<'all' | 'expense' | 'income'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
+
+  const toggleTransactionExpand = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedTransactionId(expandedTransactionId === id ? null : id);
+  };
 
   // Close date picker when leaving this tab
   useFocusEffect(
     useCallback(() => {
       return () => {
         setIsDatePickerOpen(false);
+        setExpandedTransactionId(null);
       };
     }, [])
   );
@@ -135,29 +143,33 @@ export default function TransactionsScreen() {
           showBack={true} 
         />
 
-        <TransactionFilterBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          dateLabel={dateLabel}
-          onDatePress={() => setIsDatePickerOpen(true)}
-          hasActiveFilter={hasActiveFilter}
-          onClearAll={handleClearAll}
-        />
+        {transactions.length > 0 && (
+          <>
+            <TransactionFilterBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              dateLabel={dateLabel}
+              onDatePress={() => setIsDatePickerOpen(true)}
+              hasActiveFilter={hasActiveFilter}
+              onClearAll={handleClearAll}
+            />
 
-        {/* Filter Pills */}
-        <View className="flex-row gap-2 mt-2 mb-4">
-          {(['all', 'expense', 'income'] as const).map((f) => (
-            <TouchableOpacity
-              key={f}
-              onPress={() => setFilter(f)}
-              className={`px-4 py-2 rounded-full border ${filter === f ? 'bg-primary border-primary' : 'bg-transparent border-gray-200 dark:border-gray-800'}`}
-            >
-              <Text className={`text-xs font-semibold capitalize ${filter === f ? 'text-white dark:text-black' : 'text-muted'}`}>
-                {f}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+            {/* Filter Pills */}
+            <View className="flex-row gap-2 mt-2 mb-4">
+              {(['all', 'expense', 'income'] as const).map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  onPress={() => setFilter(f)}
+                  className={`px-4 py-2 rounded-full border ${filter === f ? 'bg-primary border-primary' : 'bg-transparent border-gray-200 dark:border-gray-800'}`}
+                >
+                  <Text className={`text-xs font-semibold capitalize ${filter === f ? 'text-white dark:text-black' : 'text-muted'}`}>
+                    {f}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* Quick Stats Cards */}
         {filter === 'all' && transactions.length > 0 && (
@@ -184,10 +196,35 @@ export default function TransactionsScreen() {
         )}
 
         {/* Transactions List */}
-        {Object.keys(grouped).length === 0 ? (
-          <View className="flex-1 py-20 items-center justify-center">
-            <Text className="text-base text-muted font-semibold">No transactions found</Text>
-            <Text className="text-xs text-muted/60 mt-1">Tap the add button to log a transaction</Text>
+        {transactions.length === 0 ? (
+          <View className="items-center justify-center mt-20 px-6">
+            <View className="w-24 h-24 bg-gray-50 dark:bg-gray-900 rounded-full items-center justify-center mb-6">
+              <Icon as={Receipt} size={40} className="text-muted opacity-50" />
+            </View>
+            <Text variant="h3" className="text-center mb-2">No Transactions Yet</Text>
+            <Text className="text-muted text-center mb-8">
+              Add your first transaction to start tracking your expenses and incomes.
+            </Text>
+            <TouchableOpacity 
+              className="bg-primary px-6 py-3.5 rounded-full flex-row items-center gap-2"
+              onPress={() => router.push('/add-transaction')}
+              activeOpacity={0.7}
+            >
+              <Icon as={Plus} size={20} className="text-white dark:text-black" />
+              <Text className="text-white dark:text-black font-semibold text-base">
+                Add Your First Transaction
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : Object.keys(grouped).length === 0 ? (
+          <View className="items-center justify-center mt-20 px-6">
+            <View className="w-24 h-24 bg-gray-50 dark:bg-gray-900 rounded-full items-center justify-center mb-6">
+              <Icon as={Receipt} size={40} className="text-muted opacity-50" />
+            </View>
+            <Text variant="h3" className="text-center mb-2">No Results Found</Text>
+            <Text className="text-muted text-center">
+              We couldn't find any transactions matching your filters. Try clearing them or using different keywords.
+            </Text>
           </View>
         ) : (
           <View className="gap-6">
@@ -201,36 +238,24 @@ export default function TransactionsScreen() {
                     const isLast = idx === txs.length - 1;
  
                     return (
-                      <View key={tx.id}>
-                        <View className="flex-row items-center justify-between py-3.5">
-                          <View className="flex-row items-center gap-3.5 flex-1 mr-2">
-                            <View 
-                              className="w-10 h-10 rounded-full items-center justify-center"
-                              style={{ backgroundColor: `${color}15` }}
-                            >
-                              <Icon as={icon} size={18} color={color} />
-                            </View>
-                            <View className="flex-1">
-                              <Text className="text-base text-foreground font-semibold" numberOfLines={1}>
-                                {tx.title}
-                              </Text>
-                              <Text className="text-xs text-muted mt-0.5" numberOfLines={1}>
-                                {getWalletName(tx.walletId)} • {tx.category}
-                              </Text>
-                            </View>
-                          </View>
-                          
-                          <View className="flex-row items-center gap-3">
-                            <Text className={`text-base font-bold ${tx.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                              {tx.type === 'income' ? '+' : '-'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </Text>
-                            <Icon as={ChevronDown} size={18} className="text-muted" />
-                          </View>
-                        </View>
-                        {!isLast && (
-                          <View className="h-[1px] bg-divider ml-[54px]" />
-                        )}
-                      </View>
+                      <TransactionItem
+                        key={tx.id}
+                        transaction={tx}
+                        isExpanded={expandedTransactionId === tx.id}
+                        isLast={isLast}
+                        onToggleExpand={() => toggleTransactionExpand(tx.id)}
+                        onDelete={() => handleDelete(tx.id, tx.title)}
+                        onUpdate={(updated) => {
+                          updateTransaction(updated);
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Transaction Updated',
+                            text2: 'Wallet balances adjusted successfully.',
+                          });
+                        }}
+                        accounts={accounts}
+                        getWalletName={getWalletName}
+                      />
                     );
                   })}
                 </View>

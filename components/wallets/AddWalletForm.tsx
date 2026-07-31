@@ -2,6 +2,8 @@ import { View, TouchableOpacity, TextInput, LayoutAnimation, ScrollView } from '
 import { Text } from '@/components/ui/text';
 import { useState } from 'react';
 import { formatWalletBalance, formatAccountNumber } from '@/utils/wallet';
+import { useColorScheme } from 'nativewind';
+import { PLACEHOLDER_COLORS } from '@/lib/theme';
 
 const ACCOUNT_TYPES = ['Bank', 'Card', 'Digital', 'Cash'];
 
@@ -11,32 +13,35 @@ interface AddWalletFormProps {
 }
 
 export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
+  const { colorScheme } = useColorScheme();
+  const placeholderColor =
+    colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [newBalance, setNewBalance] = useState('');
   const [accountType, setAccountType] = useState('Card');
-  const [errors, setErrors] = useState<{name?: string, balance?: string}>({});
+  const [errors, setErrors] = useState<{ name?: string; balance?: string }>({});
 
   const handleSave = () => {
-    const newErrors: {name?: string, balance?: string} = {};
+    const newErrors: { name?: string; balance?: string } = {};
     if (!newName.trim()) newErrors.name = 'Wallet name is required';
     if (!newBalance.trim()) newErrors.balance = 'Current balance is required';
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       return;
     }
-    
+
     const formattedName = newName.trim();
     const formattedBalance = formatWalletBalance(newBalance);
-    
+
     onSave({
       name: formattedName,
       number: newNumber.trim(),
       balance: formattedBalance,
-      type: accountType
+      type: accountType,
     });
 
     // Reset local state
@@ -48,17 +53,17 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
   };
 
   return (
-    <View className="bg-surface rounded-3xl p-6 mb-6">            
+    <View className="mb-6 rounded-3xl bg-surface p-6">
       <View className="flex-col gap-5">
         <View>
-          <Text className="text-sm text-muted mb-2 ml-1">Wallet Name</Text>
+          <Text className="mb-2 ml-1 text-sm text-muted">Wallet Name</Text>
           <TextInput
-            className={`bg-gray-50 dark:bg-gray-900 rounded-full px-5 py-3.5 text-foreground text-base border-2 ${errors.name ? 'border-red-500' : (focusedInput === 'name' ? 'border-primary' : 'border-transparent')}`}
+            className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${errors.name ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-transparent'}`}
             placeholder="e.g. PayPal"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={placeholderColor}
             value={newName}
             onChangeText={(text) => {
-              if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
+              if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
               if (text.length > 0) {
                 setNewName(text.charAt(0).toUpperCase() + text.slice(1));
               } else {
@@ -68,21 +73,19 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
             onFocus={() => setFocusedInput('name')}
             onBlur={() => setFocusedInput(null)}
           />
-          {errors.name && (
-            <Text className="text-xs text-red-500 mt-2 ml-4">{errors.name}</Text>
-          )}
+          {errors.name && <Text className="ml-4 mt-2 text-xs text-red-500">{errors.name}</Text>}
         </View>
 
-         <View>
-          <Text className="text-sm text-muted mb-2 ml-1">Account Type</Text>
+        <View>
+          <Text className="mb-2 ml-1 text-sm text-muted">Account Type</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
             {ACCOUNT_TYPES.map((type) => (
               <TouchableOpacity
                 key={type}
-                className={`px-3 py-1.5 rounded-full mr-2 border ${accountType === type ? 'bg-primary border-primary' : 'bg-transparent border-gray-200 dark:border-gray-800'}`}
-                onPress={() => setAccountType(type)}
-              >
-                <Text className={`text-sm font-medium ${accountType === type ? 'text-white dark:text-black' : 'text-foreground'}`}>
+                className={`mr-2 rounded-full border px-3 py-1.5 ${accountType === type ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}
+                onPress={() => setAccountType(type)}>
+                <Text
+                  className={`text-sm font-medium ${accountType === type ? 'text-white dark:text-black' : 'text-foreground'}`}>
                   {type}
                 </Text>
               </TouchableOpacity>
@@ -91,11 +94,11 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
         </View>
 
         <View>
-          <Text className="text-sm text-muted mb-2 ml-1">Card / Account Number (Optional)</Text>
+          <Text className="mb-2 ml-1 text-sm text-muted">Card / Account Number (Optional)</Text>
           <TextInput
-            className={`bg-gray-50 dark:bg-gray-900 rounded-full px-5 py-3.5 text-foreground text-base border-2 ${focusedInput === 'number' ? 'border-primary' : 'border-transparent'}`}
+            className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${focusedInput === 'number' ? 'border-primary' : 'border-transparent'}`}
             placeholder="**** **** **** 1234"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={placeholderColor}
             value={newNumber}
             onChangeText={(text) => setNewNumber(formatAccountNumber(text))}
             maxLength={50}
@@ -105,45 +108,45 @@ export function AddWalletForm({ onSave, onCancel }: AddWalletFormProps) {
         </View>
 
         <View>
-          <Text className="text-sm text-muted mb-2 ml-1">Current Balance</Text>
+          <Text className="mb-2 ml-1 text-sm text-muted">Current Balance</Text>
           <TextInput
-            className={`bg-gray-50 dark:bg-gray-900 rounded-full px-5 py-3.5 text-foreground text-base border-2 ${errors.balance ? 'border-red-500' : (focusedInput === 'balance' ? 'border-primary' : 'border-transparent')}`}
+            className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${errors.balance ? 'border-red-500' : focusedInput === 'balance' ? 'border-primary' : 'border-transparent'}`}
             placeholder="$0.00"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={placeholderColor}
             keyboardType="decimal-pad"
             value={newBalance}
             onChangeText={(text) => {
-              if (errors.balance) setErrors(prev => ({ ...prev, balance: undefined }));
+              if (errors.balance) setErrors((prev) => ({ ...prev, balance: undefined }));
               // Allow '-' only at the start, nowhere else
               const sanitized = text
-                .replace(/(?!^)-/g, '')   // remove any '-' that is not at position 0
-                .replace(/^-{2,}/, '-');  // collapse multiple leading '-' into one
+                .replace(/(?!^)-/g, '') // remove any '-' that is not at position 0
+                .replace(/^-{2,}/, '-'); // collapse multiple leading '-' into one
               setNewBalance(sanitized);
             }}
             onFocus={() => setFocusedInput('balance')}
             onBlur={() => setFocusedInput(null)}
           />
-          <Text className="text-xs text-muted mt-1.5 ml-4">Tip: Start with − to enter a negative balance</Text>
+          <Text className="ml-4 mt-1.5 text-xs text-muted">
+            Tip: Start with − to enter a negative balance
+          </Text>
           {errors.balance && (
-            <Text className="text-xs text-red-500 mt-1 ml-4">{errors.balance}</Text>
+            <Text className="ml-4 mt-1 text-xs text-red-500">{errors.balance}</Text>
           )}
         </View>
       </View>
 
-      <View className="flex-row mt-8 gap-3">
-        <TouchableOpacity 
-          className="flex-1 py-3.5 items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full"
+      <View className="mt-8 flex-row gap-3">
+        <TouchableOpacity
+          className="flex-1 items-center justify-center rounded-full bg-secondary py-3.5"
           onPress={onCancel}
-          activeOpacity={0.7}
-        >
+          activeOpacity={0.7}>
           <Text className="text-foreground text-base font-medium">Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          className={`flex-1 py-3.5 items-center justify-center bg-black dark:bg-white rounded-full ${(!newName.trim() || !newBalance.trim()) ? 'opacity-40' : 'opacity-100'}`}
+        <TouchableOpacity
+          className={`flex-1 items-center justify-center rounded-full bg-primary py-3.5 ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
           onPress={handleSave}
-          activeOpacity={0.7}
-        >
-          <Text className="text-white dark:text-black text-base font-medium">Save Wallet</Text>
+          activeOpacity={0.7}>
+          <Text className="text-base font-medium text-white dark:text-black">Save Wallet</Text>
         </TouchableOpacity>
       </View>
     </View>

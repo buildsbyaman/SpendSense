@@ -1,7 +1,23 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { type Account, formatWalletBalance, parseBalance } from '@/utils/wallet';
 import { type Transaction } from '@/utils/transaction';
-import { Landmark, Wallet } from 'lucide-react-native';
+import { Landmark, Wallet, Smartphone } from 'lucide-react-native';
+import { getDatabase } from '@/lib/database';
+import {
+  fetchAccounts,
+  insertAccount,
+  updateAccount,
+  deleteAccount,
+  deleteTransactionsForWallet,
+  setDefaultWallet as repoSetDefaultWallet,
+  fetchTransactions,
+  insertTransaction,
+  updateTransaction,
+  deleteTransaction,
+  fetchProfile,
+  saveProfile,
+  clearAll,
+} from '@/lib/repository';
 
 interface AppContextType {
   accounts: Account[];
@@ -12,148 +28,196 @@ interface AppContextType {
   setDefaultWallet: (id: string) => void;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
+  updateTransaction: (updated: Transaction) => void;
+  clearAllData: () => void;
+  userProfile: { name: string };
+  updateUserProfile: (profile: { name: string }) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  // Seed initial accounts so the user has something to interact with right away
-  const [accounts, setAccounts] = useState<Account[]>([
-    {
-      id: '1',
-      name: 'HDFC Bank',
-      number: '8748 7347 8378 4344',
-      balance: '$8,745.00',
-      icon: Landmark,
-      type: 'Bank',
-      isDefault: true,
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [userProfile, setUserProfile] = useState<{ name: string }>({ name: 'User' });
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      await getDatabase();
+      const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
+      const storedTransactions = await fetchTransactions();
+      const storedProfile = await fetchProfile();
+      setAccounts(storedAccounts);
+      setTransactions(storedTransactions);
+      if (storedProfile) setUserProfile(storedProfile);
+      setReady(true);
+    })();
+  }, []);
+
+  const updateUserProfile = useCallback((profile: { name: string }) => {
+    setUserProfile(profile);
+    saveProfile(profile);
+  }, []);
+
+  const addWallet = useCallback(
+    (walletData: Omit<Account, 'id' | 'isDefault'>) => {
+      const isFirst = accounts.length === 0;
+      const newWallet: Account = {
+        ...walletData,
+        id: Date.now().toString(),
+        isDefault: isFirst,
+      };
+      setAccounts((prev) => [...prev, newWallet]);
+      insertAccount(newWallet);
     },
-    {
-      id: '2',
-      name: 'Cash',
-      number: '',
-      balance: '$350.00',
-      icon: Wallet,
-      type: 'Cash',
-      isDefault: false,
-    }
-  ]);
-  
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    {
-      id: 't1',
-      title: 'Salary Credit',
-      amount: 5000,
-      type: 'income',
-      category: 'Salary',
-      date: new Date(Date.now() - 3600000 * 24).toISOString(), // Yesterday
-      walletId: '1',
-    },
-    {
-      id: 't2',
-      title: 'Grocery Shopping',
-      amount: 45,
-      type: 'expense',
-      category: 'Food',
-      date: new Date().toISOString(), // Today
-      walletId: '2',
-    }
-  ]);
+    [accounts.length]
+  );
 
-  const addWallet = (walletData: Omit<Account, 'id' | 'isDefault'>) => {
-    const isFirst = accounts.length === 0;
-    const newWallet: Account = {
-      ...walletData,
-      id: Date.now().toString(),
-      isDefault: isFirst,
-    };
-    setAccounts(prev => [...prev, newWallet]);
-  };
+  const updateWallet = useCallback((updated: Account) => {
+    setAccounts((prev) => prev.map((acc) => (acc.id === updated.id ? updated : acc)));
+    updateAccount(updated);
+  }, []);
 
-  const updateWallet = (updated: Account) => {
-    setAccounts(prev => prev.map(acc => acc.id === updated.id ? updated : acc));
-  };
-
-  const deleteWallet = (id: string) => {
-    setAccounts(prev => {
-      const filtered = prev.filter(acc => acc.id !== id);
-      // If deleted was default, make the first remaining wallet default
-      if (prev.find(acc => acc.id === id)?.isDefault && filtered.length > 0) {
-        filtered[0] = { ...filtered[0], isDefault: true };
+  const deleteWallet = useCallback((id: string) => {
+    setAccounts((prev) => {
+      const filtered = prev.filter((acc) => acc.id !== id);
+      if (prev.find((acc) => acc.id === id)?.isDefault && filtered.length > 0) {
+        const newDefault = { ...filtered[0], isDefault: true };
+        filtered[0] = newDefault;
+        updateAccount(newDefault);
       }
       return filtered;
     });
-    // Remove transactions associated with this wallet
-    setTransactions(prev => prev.filter(tx => tx.walletId !== id));
-  };
+    setTransactions((prev) => prev.filter((tx) => tx.walletId !== id));
+    deleteAccount(id);
+    deleteTransactionsForWallet(id);
+  }, []);
 
-  const setDefaultWallet = (id: string) => {
-    setAccounts(prev => prev.map(acc => ({
-      ...acc,
-      isDefault: acc.id === id
-    })));
-  };
+  const setDefaultWallet = useCallback((id: string) => {
+    setAccounts((prev) => prev.map((acc) => ({ ...acc, isDefault: acc.id === id })));
+    repoSetDefaultWallet(id);
+  }, []);
 
-  const addTransaction = (txData: Omit<Transaction, 'id'>) => {
-    const newTx: Transaction = {
-      ...txData,
-      id: Date.now().toString(),
-    };
-    
-    // Add transaction
-    setTransactions(prev => [newTx, ...prev]);
+  const addTransaction = useCallback((txData: Omit<Transaction, 'id'>) => {
+    const newTx: Transaction = { ...txData, id: Date.now().toString() };
+    setTransactions((prev) => [newTx, ...prev]);
+    setAccounts((prev) =>
+      prev.map((acc) => {
+        if (acc.id === txData.walletId) {
+          const currentVal = parseBalance(acc.balance);
+          const diff = txData.type === 'income' ? txData.amount : -txData.amount;
+          const updated = { ...acc, balance: formatWalletBalance((currentVal + diff).toString()) };
+          updateAccount(updated);
+          return updated;
+        }
+        return acc;
+      })
+    );
+    insertTransaction(newTx);
+  }, []);
 
-    // Adjust wallet balance
-    setAccounts(prev => prev.map(acc => {
-      if (acc.id === txData.walletId) {
-        const currentVal = parseBalance(acc.balance);
-        const diff = txData.type === 'income' ? txData.amount : -txData.amount;
-        const newVal = currentVal + diff;
-        return {
-          ...acc,
-          balance: formatWalletBalance(newVal.toString())
-        };
+  const deleteTransaction = useCallback((id: string) => {
+    setTransactions((prev) => {
+      const tx = prev.find((t) => t.id === id);
+      if (tx) {
+        setAccounts((prevAcc) =>
+          prevAcc.map((acc) => {
+            if (acc.id === tx.walletId) {
+              const currentVal = parseBalance(acc.balance);
+              const diff = tx.type === 'income' ? -tx.amount : tx.amount;
+              const updated = {
+                ...acc,
+                balance: formatWalletBalance((currentVal + diff).toString()),
+              };
+              updateAccount(updated);
+              return updated;
+            }
+            return acc;
+          })
+        );
       }
-      return acc;
-    }));
-  };
+      return prev.filter((t) => t.id !== id);
+    });
+    deleteTransaction(id);
+  }, []);
 
-  const deleteTransaction = (id: string) => {
-    const tx = transactions.find(t => t.id === id);
-    if (!tx) return;
-
-    // Remove transaction
-    setTransactions(prev => prev.filter(t => t.id !== id));
-
-    // Revert wallet balance (inverse of transaction action)
-    setAccounts(prev => prev.map(acc => {
-      if (acc.id === tx.walletId) {
-        const currentVal = parseBalance(acc.balance);
-        const diff = tx.type === 'income' ? -tx.amount : tx.amount;
-        const newVal = currentVal + diff;
-        return {
-          ...acc,
-          balance: formatWalletBalance(newVal.toString())
-        };
+  const updateTransactionFn = useCallback((updatedTx: Transaction) => {
+    setTransactions((prev) => {
+      const oldTx = prev.find((t) => t.id === updatedTx.id);
+      if (oldTx) {
+        setAccounts((prevAcc) =>
+          prevAcc.map((acc) => {
+            if (acc.id === oldTx.walletId) {
+              const currentVal = parseBalance(acc.balance);
+              const diff = oldTx.type === 'income' ? -oldTx.amount : oldTx.amount;
+              const updated = {
+                ...acc,
+                balance: formatWalletBalance((currentVal + diff).toString()),
+              };
+              updateAccount(updated);
+              return updated;
+            }
+            if (acc.id === updatedTx.walletId) {
+              const currentVal = parseBalance(acc.balance);
+              const diff = updatedTx.type === 'income' ? updatedTx.amount : -updatedTx.amount;
+              const updated = {
+                ...acc,
+                balance: formatWalletBalance((currentVal + diff).toString()),
+              };
+              updateAccount(updated);
+              return updated;
+            }
+            return acc;
+          })
+        );
       }
-      return acc;
-    }));
-  };
+      return prev.map((t) => (t.id === updatedTx.id ? updatedTx : t));
+    });
+    updateTransaction(updatedTx);
+  }, []);
+
+  const clearAllData = useCallback(() => {
+    setAccounts([]);
+    setTransactions([]);
+    clearAll();
+  }, []);
 
   return (
-    <AppContext.Provider value={{
-      accounts,
-      transactions,
-      addWallet,
-      updateWallet,
-      deleteWallet,
-      setDefaultWallet,
-      addTransaction,
-      deleteTransaction
-    }}>
+    <AppContext.Provider
+      value={{
+        accounts,
+        transactions,
+        addWallet,
+        updateWallet,
+        deleteWallet,
+        setDefaultWallet,
+        addTransaction,
+        deleteTransaction,
+        updateTransaction: updateTransactionFn,
+        clearAllData,
+        userProfile,
+        updateUserProfile,
+      }}>
       {children}
     </AppContext.Provider>
   );
+}
+
+function deserializeAccount(data: {
+  id: string;
+  name: string;
+  number: string;
+  balance: string;
+  type: string;
+  isDefault?: boolean;
+}): Account {
+  const iconMap: Record<string, typeof Wallet> = {
+    Bank: Landmark,
+    Card: Wallet,
+    Digital: Smartphone,
+  };
+  return { ...data, icon: iconMap[data.type] ?? Wallet };
 }
 
 export function useApp() {

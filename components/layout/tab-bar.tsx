@@ -53,11 +53,11 @@ export function TabBar() {
         
         {/* Integrated Action Button */}
         <TouchableOpacity
-          className="h-12 w-12 mx-1 items-center justify-center rounded-full bg-black dark:bg-white shadow-md active:scale-95"
+          className="h-12 w-12 mx-1 items-center justify-center rounded-full bg-primary shadow-md active:scale-95"
           onPress={() => router.push('/add-transaction')}
           activeOpacity={0.8}
         >
-          <Icon as={Plus} className="text-white dark:text-black" size={24} />
+          <Icon as={Plus} className="text-[--primary-foreground]" size={24} />
         </TouchableOpacity>
 
         <TabItem {...tabs[2]} />

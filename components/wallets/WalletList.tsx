@@ -35,7 +35,7 @@ export function WalletList({
           Add your first wallet to start tracking your balances and transactions.
         </Text>
         <TouchableOpacity 
-          className="bg-black dark:bg-white px-6 py-3.5 rounded-full flex-row items-center gap-2"
+          className="bg-primary px-6 py-3.5 rounded-full flex-row items-center gap-2"
           onPress={onAddFirstWallet}
           activeOpacity={0.7}
         >

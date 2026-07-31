@@ -4,13 +4,21 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import { getCategoryIcon, getCategoryColor } from '@/utils/transaction';
-import { ArrowUpRight, ArrowDownLeft, ArrowRight } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { parseBalance } from '@/utils/wallet';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { accounts, transactions } = useApp();
+  const { accounts, transactions, userProfile } = useApp();
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0 || !parts[0]) return 'U';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+  const initials = getInitials(userProfile.name);
 
   // Calculate Net Worth
   const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
@@ -19,11 +27,11 @@ export default function HomeScreen() {
   const recentTransactions = transactions.slice(0, 5);
 
   const totalIncome = transactions
-    .filter(t => t.type === 'income')
+    .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
-    
+
   const totalExpense = transactions
-    .filter(t => t.type === 'expense')
+    .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
   const getWalletName = (walletId: string) => {
@@ -31,88 +39,115 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       className="flex-1 bg-background"
-      contentContainerStyle={{ 
-        paddingTop: insets.top + 24, 
-        paddingBottom: 120, 
-        paddingHorizontal: 20 
-      }}
-    >
+      contentContainerStyle={{
+        paddingTop: insets.top + 24,
+        paddingBottom: 120,
+        paddingHorizontal: 20,
+      }}>
       {/* Welcome Header */}
-      <View className="flex-row justify-between items-center mb-8">
+      <View className="mb-8 flex-row items-center justify-between">
         <View>
-          <Text className="text-2xl font-semibold text-foreground mt-0.5">SpendSense</Text>
-          <Text className="text-muted text-sm font-medium">Spend money more Sensely.</Text>
+          <Text className="mt-0.5 text-2xl font-semibold text-foreground">SpendSense</Text>
+          <Text className="text-sm font-medium text-muted">Spend money more Sensely.</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => router.push('/(tabs)/profile')}
-          className="w-11 h-11 rounded-full bg-surface items-center justify-center border border-gray-100 dark:border-gray-900 shadow-xs"
-          activeOpacity={0.7}
-        >
-          <Text className="font-semibold text-sm text-foreground">AS</Text>
+          className="h-11 w-11 items-center justify-center rounded-full border border-gray-100 bg-surface shadow-xs dark:border-gray-900"
+          activeOpacity={0.7}>
+          <Text className="text-sm font-semibold text-foreground">{initials}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Net Balance Card */}
-      <View className="bg-surface rounded-[32px] p-6 mb-6 border border-gray-100 dark:border-gray-900 shadow-xs">
-        <Text className="text-muted text-sm font-medium mb-1">Total Balance</Text>
-        <Text className="text-3xl font-bold text-foreground mb-4">
+      <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
+        <Text className="mb-4 text-3xl font-bold text-foreground">
           ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </Text>
-        
+
         {/* Divider */}
-        <View className="h-[1px] bg-divider mb-4" />
+        <View className="mb-4 h-[1px] bg-divider" />
 
         {/* Quick Income/Expense Summary */}
         <View className="flex-row">
           <View className="flex-1 flex-row items-center gap-3">
-            <View className="w-9 h-9 rounded-full bg-income/10 dark:bg-income/20 items-center justify-center">
+            <View className="bg-income/10 dark:bg-income/20 h-9 w-9 items-center justify-center rounded-full">
               <Icon as={ArrowDownLeft} size={18} className="text-income" />
             </View>
             <View>
-              <Text className="text-xs text-muted font-medium">Income</Text>
-              <Text className="text-sm font-bold text-income mt-0.5">${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+              <Text className="text-xs font-medium text-muted">Income</Text>
+              <Text className="mt-0.5 text-sm font-bold text-income">
+                ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </Text>
             </View>
           </View>
-          
-          <View className="w-[1px] bg-divider mx-4" />
+
+          <View className="mx-4 w-[1px] bg-divider" />
 
           <View className="flex-1 flex-row items-center gap-3">
-            <View className="w-9 h-9 rounded-full bg-expense/10 dark:bg-expense/20 items-center justify-center">
+            <View className="bg-expense/10 dark:bg-expense/20 h-9 w-9 items-center justify-center rounded-full">
               <Icon as={ArrowUpRight} size={18} className="text-expense" />
             </View>
             <View>
-              <Text className="text-xs text-muted font-medium">Expenses</Text>
-              <Text className="text-sm font-bold text-expense mt-0.5">${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+              <Text className="text-xs font-medium text-muted">Expenses</Text>
+              <Text className="mt-0.5 text-sm font-bold text-expense">
+                ${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </Text>
             </View>
           </View>
         </View>
+
+        {/* See Analytics Link */}
+        <View className="my-4 h-[1px] bg-divider" />
+        <TouchableOpacity
+          className="flex-row items-center justify-center gap-1"
+          activeOpacity={0.7}
+          onPress={() => router.push('/analytics')}>
+          <Text className="text-xs font-bold text-primary">See analytics</Text>
+          <Icon as={ArrowRight} size={14} className="text-primary" />
+        </TouchableOpacity>
       </View>
 
       {/* Recent Transactions Section */}
       <View className="gap-4">
-        <View className="flex-row justify-between items-center px-1">
+        <View className="flex-row items-center justify-between px-1">
           <Text className="text-lg font-semibold text-foreground">Recent Activity</Text>
           {transactions.length > 5 && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push('/(tabs)/transactions')}
-              className="flex-row items-center gap-1.5 bg-surface px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-900 shadow-xs"
-              activeOpacity={0.7}
-            >
-              <Text className="text-xs text-foreground font-semibold">View All</Text>
+              className="flex-row items-center gap-1.5 rounded-full border border-gray-100 bg-surface px-3 py-1.5 shadow-xs dark:border-gray-900"
+              activeOpacity={0.7}>
+              <Text className="text-xs font-semibold text-foreground">View All</Text>
               <Icon as={ArrowRight} size={12} className="text-foreground" />
             </TouchableOpacity>
           )}
         </View>
 
         {recentTransactions.length === 0 ? (
-          <View className="bg-surface rounded-[32px] py-10 px-6 items-center justify-center border border-gray-100 dark:border-gray-900 shadow-xs">
-            <Text className="text-sm text-muted font-semibold">No recent activity</Text>
-            <Text className="text-xs text-muted/60 mt-1">Logged transactions will appear here</Text>
+          <View className="mt-8 items-center justify-center px-6">
+            <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
+              <Icon as={Receipt} size={40} className="text-muted opacity-50" />
+            </View>
+            <Text variant="h3" className="mb-2 text-center">
+              No Activity Yet
+            </Text>
+            <Text className="mb-8 text-center text-muted">
+              You haven't logged any transactions. Add your first transaction to get started.
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-2 rounded-full bg-primary px-6 py-3.5"
+              onPress={() => router.push('/add-transaction')}
+              activeOpacity={0.7}>
+              <Icon as={Plus} size={20} className="text-white dark:text-black" />
+              <Text className="text-base font-semibold text-white dark:text-black">
+                Add Your First Transaction
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          <View className="bg-surface rounded-[32px] overflow-hidden px-4 py-2 border border-gray-100 dark:border-gray-900 shadow-xs">
+          <View className="overflow-hidden rounded-[32px] border border-gray-100 bg-surface px-4 py-2 shadow-xs dark:border-gray-900">
             {recentTransactions.map((tx, idx) => {
               const icon = getCategoryIcon(tx.category);
               const color = getCategoryColor(tx.category);
@@ -121,30 +156,29 @@ export default function HomeScreen() {
               return (
                 <View key={tx.id}>
                   <View className="flex-row items-center justify-between py-3.5">
-                    <View className="flex-row items-center gap-3.5 flex-1 mr-2">
-                      <View 
-                        className="w-10 h-10 rounded-full items-center justify-center"
-                        style={{ backgroundColor: `${color}15` }}
-                      >
+                    <View className="mr-2 flex-1 flex-row items-center gap-3.5">
+                      <View
+                        className="h-10 w-10 items-center justify-center rounded-full"
+                        style={{ backgroundColor: `${color}15` }}>
                         <Icon as={icon} size={18} color={color} />
                       </View>
                       <View className="flex-1">
-                        <Text className="text-base text-foreground font-semibold" numberOfLines={1}>
+                        <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
                           {tx.title}
                         </Text>
-                        <Text className="text-xs text-muted mt-0.5" numberOfLines={1}>
+                        <Text className="mt-0.5 text-xs text-muted" numberOfLines={1}>
                           {getWalletName(tx.walletId)} • {tx.category}
                         </Text>
                       </View>
                     </View>
-                    
-                    <Text className={`text-base font-bold ${tx.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                      {tx.type === 'income' ? '+' : '-'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+
+                    <Text
+                      className={`text-base font-bold ${tx.type === 'income' ? 'text-income' : 'text-expense'}`}>
+                      {tx.type === 'income' ? '+' : '-'}$
+                      {tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </Text>
                   </View>
-                  {!isLast && (
-                    <View className="h-[1px] bg-divider ml-[54px]" />
-                  )}
+                  {!isLast && <View className="ml-[54px] h-[1px] bg-divider" />}
                 </View>
               );
             })}

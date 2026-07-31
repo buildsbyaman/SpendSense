@@ -10,6 +10,7 @@
     "clean": "rm -rf .expo node_modules"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@rn-primitives/portal": "~1.4.0",
     "@rn-primitives/slot": "^1.5.2",
     "class-variance-authority": "^0.7.1",
@@ -17,9 +18,11 @@
     "expo": "~56.0.13",
     "expo-blur": "~56.0.4",
     "expo-constants": "~56.0.19",
+    "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.14",
     "expo-router": "~56.2.12",
     "expo-splash-screen": "~56.0.11",
+    "expo-sqlite": "~56.0.5",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
     "lucide-react-native": "^1.21.0",
@@ -27,6 +30,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-gifted-charts": "^1.4.77",
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",

@@ -19,6 +19,7 @@
 
   --muted: #9b9b9b;
   --muted-foreground: #ffffff;
+  --placeholder: #9ca3af;
 
   --accent: #f6c98a;
   --accent-foreground: #7d5b2d;
@@ -30,8 +31,8 @@
   --danger: #ef4444;
   --warning: #f59e0b;
 
-  --expense: #f87171;   /* rose-400 — subtle red */
-  --income:  #16a34a;   /* green-600 — dark green */
+  --expense: #f87171; /* rose-400 — subtle red */
+  --income: #16a34a; /* green-600 — dark green */
 
   --border: #e8e8e8;
   --divider: #efefef;
@@ -43,6 +44,11 @@
   --gray-200: #ededed;
   --gray-300: #dedede;
   --gray-400: #c8c8c8;
+  --gray-500: #a8a8a8;
+  --gray-600: #888888;
+  --gray-700: #606060;
+  --gray-800: #3c3c3c;
+  --gray-900: #242424;
 
   --accent-dark: #7d5b2d;
 
@@ -65,31 +71,32 @@
 
   /* ========= Typography ========= */
 
-  --font-family: "Poppins", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family: 'Poppins', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.dark\:root {
-  --background: #0a0a0a;
-  --foreground: #f2f2f2;
+.dark {
+  --background: #111113;
+  --foreground: #f0f0f2;
 
-  --surface: #161616;
-  --card: #161616;
-  --card-foreground: #f2f2f2;
+  --surface: #1c1c1f;
+  --card: #1c1c1f;
+  --card-foreground: #f0f0f2;
 
-  --popover: #161616;
-  --popover-foreground: #f2f2f2;
+  --popover: #1c1c1f;
+  --popover-foreground: #f0f0f2;
 
-  --primary: #f2f2f2;
-  --primary-foreground: #0a0a0a;
+  --primary: #e8e8ec;
+  --primary-foreground: #111113;
 
-  --secondary: #2a2a2a;
-  --secondary-foreground: #f2f2f2;
+  --secondary: #2a2a2e;
+  --secondary-foreground: #e8e8ec;
 
-  --muted: #707070;
-  --muted-foreground: #f2f2f2;
+  --muted: #8a8a94;
+  --muted-foreground: #e8e8ec;
+  --placeholder: #8a8a94;
 
   --accent: #f6c98a;
-  --accent-foreground: #0a0a0a;
+  --accent-foreground: #111113;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -98,26 +105,31 @@
   --danger: #ef4444;
   --warning: #f59e0b;
 
-  --expense: #fca5a5;   /* rose-300 — even softer on dark */
-  --income:  #86efac;   /* green-300 — soft on dark */
+  --expense: #fb7185; /* rose-400 */
+  --income: #4ade80; /* green-400 — brighter for dark bg */
 
-  --border: #2a2a2a;
-  --divider: #1e1e1e;
-  --input: #1a1a1a;
+  --border: #2e2e32;
+  --divider: #242428;
+  --input: #1a1a1e;
   --ring: #f6c98a;
 
-  --gray-50: #0e0e0e;
-  --gray-100: #1a1a1a;
-  --gray-200: #252525;
-  --gray-300: #333333;
-  --gray-400: #4a4a4a;
+  --gray-50: #131316;
+  --gray-100: #1c1c1f;
+  --gray-200: #27272b;
+  --gray-300: #36363b;
+  --gray-400: #52525a;
+  --gray-500: #676770;
+  --gray-600: #4a4a52;
+  --gray-700: #36363c;
+  --gray-800: #27272d;
+  --gray-900: #1a1a1e;
 
   --accent-dark: #c4984e;
 
-  --shadow-xs: 0 2px 6px rgba(0, 0, 0, 0.2);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.5);
+  --shadow-xs: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.7);
 }
 
 /* ===========================================
@@ -224,7 +236,7 @@ button {
 
 .input:focus {
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(246, 201, 138, .25);
+  box-shadow: 0 0 0 3px rgba(246, 201, 138, 0.25);
 }
 
 /* ===========================================

@@ -29,7 +29,7 @@ export function DeleteWalletModal({ visible, onCancel, onConfirm }: DeleteWallet
           
           <View className="flex-row gap-3 w-full">
             <TouchableOpacity 
-              className="flex-1 py-3.5 items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full"
+              className="flex-1 py-3.5 items-center justify-center bg-secondary rounded-full"
               onPress={onCancel}
               activeOpacity={0.7}
             >

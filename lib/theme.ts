@@ -22,26 +22,31 @@ export const THEME = {
     ring: '#f6c98a',
   },
   dark: {
-    background: '#0a0a0a',
-    foreground: '#f2f2f2',
-    surface: '#161616',
-    card: '#161616',
-    cardForeground: '#f2f2f2',
-    primary: '#f2f2f2',
-    primaryForeground: '#0a0a0a',
-    secondary: '#2a2a2a',
-    secondaryForeground: '#f2f2f2',
-    muted: '#707070',
-    mutedForeground: '#f2f2f2',
+    background: '#111113',
+    foreground: '#f0f0f2',
+    surface: '#1c1c1f',
+    card: '#1c1c1f',
+    cardForeground: '#f0f0f2',
+    primary: '#e8e8ec',
+    primaryForeground: '#111113',
+    secondary: '#2a2a2e',
+    secondaryForeground: '#e8e8ec',
+    muted: '#8a8a94',
+    mutedForeground: '#e8e8ec',
     accent: '#f6c98a',
-    accentForeground: '#0a0a0a',
+    accentForeground: '#111113',
     destructive: '#ef4444',
     destructiveForeground: '#ffffff',
-    border: '#2a2a2a',
-    input: '#1a1a1a',
+    border: '#2e2e32',
+    input: '#1a1a1e',
     ring: '#f6c98a',
   },
 };
+
+export const PLACEHOLDER_COLORS = {
+  light: '#9ca3af',
+  dark: '#8a8a94',
+} as const;
 
 export const NAV_THEME: Record<'light' | 'dark', Theme> = {
   light: {

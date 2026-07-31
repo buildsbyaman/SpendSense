@@ -40,7 +40,7 @@ export function Header({
         {LeftIconToUse && (
           <TouchableOpacity 
             onPress={handleLeftPress}
-            className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm"
+            className="w-12 h-12 bg-surface rounded-full items-center justify-center shadow-xs border border-border"
             activeOpacity={0.7}
           >
             <Icon as={LeftIconToUse} size={20} className="text-foreground" />
@@ -56,7 +56,7 @@ export function Header({
         {rightIcon && (
           <TouchableOpacity 
             onPress={onRightPress}
-            className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm"
+            className="w-12 h-12 bg-surface rounded-full items-center justify-center shadow-xs border border-border"
             activeOpacity={0.7}
           >
             <Icon as={rightIcon} size={20} className="text-foreground" />

@@ -9,27 +9,36 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { useEffect } from 'react';
 
-export {
-  ErrorBoundary,
-} from 'expo-router';
+export { ErrorBoundary } from 'expo-router';
 
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/components/ui/toast-config';
 import { AppProvider } from '@/context/AppContext';
+import { loadThemePreference } from '@/lib/theme-persistence';
 
-export default function RootLayout() {
+function ThemeInit() {
   const { setColorScheme } = useColorScheme();
 
   useEffect(() => {
-    setColorScheme('light');
-  }, []);
+    loadThemePreference().then((scheme) => {
+      if (scheme) setColorScheme(scheme);
+    });
+  }, [setColorScheme]);
+
+  return null;
+}
+
+export default function RootLayout() {
+  const { colorScheme } = useColorScheme();
 
   return (
     <AppProvider>
-      <ThemeProvider value={NAV_THEME.light}>
-        <StatusBar style="dark" />
+      <ThemeProvider value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}>
+        <ThemeInit />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(manage)" options={{ headerShown: false }} />
           <Stack.Screen
             name="add-transaction"
             options={{
