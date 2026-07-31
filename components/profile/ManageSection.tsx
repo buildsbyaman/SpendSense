@@ -3,6 +3,7 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ChevronRight, Repeat, CalendarClock, Tags, PiggyBank } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useTabNavigation } from '@/context/TabNavigationContext';
 
 interface ManageRow {
   label: string;
@@ -18,6 +19,7 @@ const rows: ManageRow[] = [
 ];
 
 export function ManageSection() {
+  const { navigate: navigateTab } = useTabNavigation();
   return (
     <View className="mt-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
       <Text className="mb-4 text-sm font-medium text-muted">Manage</Text>
@@ -26,7 +28,10 @@ export function ManageSection() {
         return (
           <View key={row.route}>
             <TouchableOpacity
-              onPress={() => router.push(row.route)}
+              onPress={() => {
+                // Strip leading slash — navigateTab uses the screen name
+                navigateTab(row.route.replace('/', ''));
+              }}
               activeOpacity={0.7}
               className="flex-row items-center gap-3 py-3">
               <View className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">

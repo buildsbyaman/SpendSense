@@ -61,6 +61,14 @@ export interface Transaction {
   walletId: string; // References Account.id
 }
 
+export interface CustomCategory {
+  id: string;
+  name: string;
+  type: TransactionType;
+  icon?: string;
+  color?: string;
+}
+
 export interface TransactionCategory {
   name: string;
   icon: LucideIcon;
@@ -126,7 +134,51 @@ const KEYWORD_ICONS: { keywords: string[]; icon: LucideIcon }[] = [
   { keywords: ['photo', 'camera', 'hobby'], icon: Camera },
 ];
 
-export const getCategoryIcon = (categoryName: string, title?: string): LucideIcon => {
+// Provide a list of icons that users can select manually in the UI
+export const AVAILABLE_ICONS: { name: string; icon: LucideIcon }[] = [
+  { name: 'Utensils', icon: Utensils },
+  { name: 'ShoppingBag', icon: ShoppingBag },
+  { name: 'Car', icon: Car },
+  { name: 'FileText', icon: FileText },
+  { name: 'Film', icon: Film },
+  { name: 'Heart', icon: Heart },
+  { name: 'Home', icon: Home },
+  { name: 'Zap', icon: Zap },
+  { name: 'Droplets', icon: Droplets },
+  { name: 'ShoppingCart', icon: ShoppingCart },
+  { name: 'Coffee', icon: Coffee },
+  { name: 'Plane', icon: Plane },
+  { name: 'MapPin', icon: MapPin },
+  { name: 'GraduationCap', icon: GraduationCap },
+  { name: 'Activity', icon: Activity },
+  { name: 'Smartphone', icon: Smartphone },
+  { name: 'Baby', icon: Baby },
+  { name: 'Dog', icon: Dog },
+  { name: 'Shield', icon: Shield },
+  { name: 'Book', icon: Book },
+];
+
+export const AVAILABLE_PALETTE = [
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#eab308', // Yellow
+  '#22c55e', // Green
+  '#14b8a6', // Teal
+  '#3b82f6', // Blue
+  '#a855f7', // Purple
+  '#ec4899', // Pink
+  '#f43f5e', // Rose
+  '#64748b', // Slate
+  '#9ca3af', // Gray
+  '#ffffff', // White
+];
+
+export const getCategoryIcon = (categoryName: string, title?: string, customIconName?: string): LucideIcon => {
+  if (customIconName) {
+    const customIcon = AVAILABLE_ICONS.find(i => i.name === customIconName);
+    if (customIcon) return customIcon.icon;
+  }
+
   const lowerName = categoryName.toLowerCase();
   
   // 1. Exact match in predefined categories
@@ -176,7 +228,9 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-export const getCategoryColor = (categoryName: string): string => {
+export const getCategoryColor = (categoryName: string, customColor?: string): string => {
+  if (customColor) return customColor;
+
   const lowerName = categoryName.toLowerCase();
   const category = COMBINED_CATEGORIES.find(
     (c) => c.name.toLowerCase() === lowerName

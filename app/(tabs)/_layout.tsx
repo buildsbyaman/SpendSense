@@ -1,28 +1,35 @@
 import { View } from 'react-native';
-import { TabSlot, useTabsWithTriggers } from 'expo-router/ui';
 import { TabBar } from '@/components/layout/tab-bar';
+import { AnimatedTabSlot } from '@/components/layout/animated-tab-slot';
+import { useState, useCallback, useEffect } from 'react';
+import { TabNavigationProvider, useTabNavigation } from '@/context/TabNavigationContext';
 
-export default function TabLayout() {
-  const { NavigationContent } = useTabsWithTriggers({
-    triggers: [
-      { name: 'index', href: '/' as const, type: 'internal' },
-      { name: 'transactions', href: '/transactions' as const, type: 'internal' },
-      { name: 'wallets', href: '/wallets' as const, type: 'internal' },
-      { name: 'profile', href: '/profile' as const, type: 'internal' },
-      { name: 'analytics', href: '/analytics' as const, type: 'internal' },
-      { name: 'budgets', href: '/budgets' as const, type: 'internal' },
-      { name: 'categories', href: '/categories' as const, type: 'internal' },
-      { name: 'recurring', href: '/recurring' as const, type: 'internal' },
-      { name: 'subscriptions', href: '/subscriptions' as const, type: 'internal' },
-    ],
-  });
+function TabLayoutInner() {
+  const [activeTab, setActiveTab] = useState('index');
+  const { addListener } = useTabNavigation();
+
+  useEffect(() => {
+    // Listen for programmatic tab switches from any screen (e.g. categories back button)
+    const remove = addListener((tabName) => setActiveTab(tabName));
+    return remove;
+  }, [addListener]);
+
+  const handleTabChange = useCallback((name: string) => {
+    setActiveTab(name);
+  }, []);
 
   return (
-    <NavigationContent>
-      <View className="flex-1">
-        <TabSlot style={{ flex: 1 }} />
-        <TabBar />
-      </View>
-    </NavigationContent>
+    <View className="flex-1">
+      <AnimatedTabSlot activeTab={activeTab} />
+      <TabBar onTabChange={handleTabChange} activeTab={activeTab} />
+    </View>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <TabNavigationProvider>
+      <TabLayoutInner />
+    </TabNavigationProvider>
   );
 }

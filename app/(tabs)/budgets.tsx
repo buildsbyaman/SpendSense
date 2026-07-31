@@ -4,14 +4,16 @@ import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { PiggyBank } from 'lucide-react-native';
+import { useTabNavigation } from '@/context/TabNavigationContext';
 
 export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
+  const { navigate: navigateTab } = useTabNavigation();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header title="Budgets" showBack={true} />
+        <Header title="Budgets" showBack={true} onLeftPress={() => navigateTab('profile')} />
       </View>
       <ScrollView
         className="flex-1"

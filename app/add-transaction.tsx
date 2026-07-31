@@ -5,13 +5,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { X, Calendar } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   EXPENSE_CATEGORIES,
@@ -26,9 +27,11 @@ import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import TransactionTypeToggle from '@/components/transactions/TransactionTypeToggle';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddTransactionScreen() {
-  const { accounts, addTransaction } = useApp();
+  const insets = useSafeAreaInsets();
+  const { accounts, addTransaction, getSortedCategories } = useApp();
   const { colorScheme } = useColorScheme();
   const placeholderColor =
     colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
@@ -47,6 +50,24 @@ export default function AddTransactionScreen() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  useEffect(() => {
+    // Mount the modal slightly after the screen renders to ensure the slide-in animation fires
+    setIsModalVisible(true);
+  }, []);
+
+  const handleClose = () => {
+    setIsModalVisible(false);
+    // Wait for the native modal slide-out animation to finish before unmounting the screen
+    setTimeout(() => {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
+    }, 300);
+  };
 
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
@@ -83,11 +104,7 @@ export default function AddTransactionScreen() {
       text2: `Successfully added ${type === 'income' ? 'income' : 'expense'}!`,
     });
 
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
+    handleClose();
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -96,36 +113,38 @@ export default function AddTransactionScreen() {
     setCalendarMonth(newMonth);
   };
 
-  const categoriesList = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const categoriesList = getSortedCategories(type);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-background">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 20 }}>
-        {/* Header */}
-        <View className="flex-row items-center justify-between pb-4 pt-8">
-          <Text variant="h2">Add Transaction</Text>
-          <TouchableOpacity
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/');
-              }
-            }}
-            className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900"
-            activeOpacity={0.7}>
-            <Icon as={X} size={20} className="text-foreground" />
-          </TouchableOpacity>
-        </View>
+    <View className="flex-1 bg-transparent">
+      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1 justify-end bg-black/50">
+          
+          {/* Background touch area to close */}
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+            activeOpacity={1} 
+            onPress={handleClose} 
+          />
 
-        {/* Form Body - Grouped in a Card container */}
-        <View className="gap-6 rounded-3xl bg-surface p-6">
-          {/* Income / Expense Toggle */}
-          <TransactionTypeToggle type={type} onChange={handleTypeChange} />
+          <View className="flex rounded-t-[32px] bg-background p-6" style={{ maxHeight: '85%' }}>
+            {/* Header */}
+            <View className="flex-row items-center justify-between pb-5">
+              <Text variant="h3">Add Transaction</Text>
+              <TouchableOpacity
+                onPress={handleClose}
+                className="h-8 w-8 items-center justify-center rounded-full bg-surface">
+                <Icon as={X} size={20} className="text-muted" />
+              </TouchableOpacity>
+            </View>
+
+        <View className="flex-shrink pb-5">
+          
+          <View className="gap-6">
+            {/* Income / Expense Toggle */}
+            <TransactionTypeToggle type={type} onChange={handleTypeChange} />
 
           {/* Amount Input */}
           <View>
@@ -217,10 +236,7 @@ export default function AddTransactionScreen() {
           {/* Category Selector */}
           <View className="gap-2">
             <Text className="ml-1 text-sm text-muted">Category</Text>
-            <Animated.View
-              key={type}
-              entering={FadeIn.duration(300)}
-              exiting={FadeOut.duration(300)}>
+            <View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View className="flex-row gap-2.5 py-1">
                   {categoriesList.map((cat) => {
@@ -239,7 +255,7 @@ export default function AddTransactionScreen() {
                   })}
                 </View>
               </ScrollView>
-            </Animated.View>
+            </View>
           </View>
 
           {/* Quick Date Selector */}
@@ -291,15 +307,21 @@ export default function AddTransactionScreen() {
             </View>
           </View>
 
-          {/* Submit Button */}
-          <TouchableOpacity
-            onPress={handleSave}
-            className="mt-4 items-center justify-center rounded-full bg-primary py-4"
-            activeOpacity={0.8}>
-            <Text className="text-base font-bold text-white dark:text-black">Save Transaction</Text>
-          </TouchableOpacity>
+            {/* Submit Button */}
+            <TouchableOpacity
+              onPress={handleSave}
+              className="mt-4 items-center justify-center rounded-full bg-primary py-4"
+              activeOpacity={0.8}>
+              <Text className="text-base font-bold text-white dark:text-black">Save Transaction</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </ScrollView>
+                
+                {/* Safe area spacing for iOS */}
+                <View style={{ height: insets.bottom }} />
+              </View>
+            </KeyboardAvoidingView>
+          </Modal>
 
       {/* Custom Calendar Modal */}
       <TransactionDatePickerModal
@@ -310,6 +332,6 @@ export default function AddTransactionScreen() {
         calendarMonth={calendarMonth}
         onNavigateMonth={navigateMonth}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }

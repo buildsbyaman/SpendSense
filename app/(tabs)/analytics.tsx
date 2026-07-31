@@ -7,6 +7,7 @@ import { useApp } from '@/context/AppContext';
 import { TrendingUp, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react';
+import { useTabNavigation } from '@/context/TabNavigationContext';
 
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
 import { TypeFilterToggle, type TypeFilter } from '@/components/analytics/TypeFilterToggle';
@@ -29,6 +30,7 @@ import {
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
+  const { navigate: navigateTab } = useTabNavigation();
   const { transactions } = useApp();
   const router = useRouter();
 
@@ -62,7 +64,7 @@ export default function AnalyticsScreen() {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header title="Analytics" showBack={true} />
+        <Header title="Analytics" showBack={true} onLeftPress={() => navigateTab('index')} />
       </View>
       <ScrollView
         className="flex-1"

@@ -15,6 +15,7 @@ import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/components/ui/toast-config';
 import { AppProvider } from '@/context/AppContext';
 import { loadThemePreference } from '@/lib/theme-persistence';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function ThemeInit() {
   const { setColorScheme } = useColorScheme();
@@ -32,24 +33,26 @@ export default function RootLayout() {
   const { colorScheme } = useColorScheme();
 
   return (
-    <AppProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}>
-        <ThemeInit />
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="add-transaction"
-            options={{
-              presentation: 'modal',
-              headerShown: false,
-              animation: 'slide_from_bottom',
-            }}
-          />
-        </Stack>
-        <PortalHost />
-        <Toast config={toastConfig} topOffset={25} />
-      </ThemeProvider>
-    </AppProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}>
+          <ThemeInit />
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="add-transaction"
+              options={{
+                presentation: 'transparentModal',
+                headerShown: false,
+                animation: 'slide_from_bottom',
+              }}
+            />
+          </Stack>
+          <PortalHost />
+          <Toast config={toastConfig} topOffset={25} />
+        </ThemeProvider>
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 }

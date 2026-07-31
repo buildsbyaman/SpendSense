@@ -7,9 +7,11 @@ import { getCategoryIcon, getCategoryColor } from '@/utils/transaction';
 import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { parseBalance } from '@/utils/wallet';
+import { useTabNavigation } from '@/context/TabNavigationContext';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { navigate: navigateTab } = useTabNavigation();
   const { accounts, transactions, userProfile } = useApp();
 
   const getInitials = (name: string) => {
@@ -106,7 +108,7 @@ export default function HomeScreen() {
         <TouchableOpacity
           className="flex-row items-center justify-center gap-1"
           activeOpacity={0.7}
-          onPress={() => router.push('/analytics')}>
+          onPress={() => navigateTab('analytics')}>
           <Text className="text-xs font-bold text-primary">See analytics</Text>
           <Icon as={ArrowRight} size={14} className="text-primary" />
         </TouchableOpacity>

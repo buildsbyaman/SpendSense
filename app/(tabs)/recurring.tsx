@@ -4,14 +4,16 @@ import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { CalendarClock } from 'lucide-react-native';
+import { useTabNavigation } from '@/context/TabNavigationContext';
 
 export default function RecurringScreen() {
   const insets = useSafeAreaInsets();
+  const { navigate: navigateTab } = useTabNavigation();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header title="Recurring Expenses" showBack={true} />
+        <Header title="Recurring Expenses" showBack={true} onLeftPress={() => navigateTab('profile')} />
       </View>
       <ScrollView
         className="flex-1"
