@@ -102,7 +102,7 @@ export function TransactionItem({
     onToggleExpand();
   };
 
-  const icon = getCategoryIcon(transaction.category);
+  const icon = getCategoryIcon(transaction.category, transaction.title);
   const color = getCategoryColor(transaction.category);
   const categoriesList = draft.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 

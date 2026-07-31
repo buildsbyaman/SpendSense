@@ -151,7 +151,7 @@ export default function HomeScreen() {
         ) : (
           <View className="overflow-hidden rounded-[32px] border border-gray-100 bg-surface px-4 py-2 shadow-xs dark:border-gray-900">
             {recentTransactions.map((tx, idx) => {
-              const icon = getCategoryIcon(tx.category);
+              const icon = getCategoryIcon(tx.category, tx.title);
               const color = getCategoryColor(tx.category);
               const isLast = idx === recentTransactions.length - 1;
 

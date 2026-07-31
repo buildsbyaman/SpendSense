@@ -74,7 +74,7 @@ export default function ProfileScreen() {
         }}
         keyboardShouldPersistTaps="handled">
 
-        <View className="mt-6 gap-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="gap-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
           {/* Avatar Section */}
           <View className="flex-row items-center gap-4 py-2">
             <View className="bg-primary/10 dark:bg-primary/20 h-14 w-14 items-center justify-center rounded-full">

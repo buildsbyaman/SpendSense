@@ -253,7 +253,7 @@ export default function TransactionsScreen() {
                 </Text>
                 <View className="overflow-hidden rounded-3xl bg-surface px-4 py-2">
                   {txs.map((tx, idx) => {
-                    const icon = getCategoryIcon(tx.category);
+                    const icon = getCategoryIcon(tx.category, tx.title);
                     const color = getCategoryColor(tx.category);
                     const isLast = idx === txs.length - 1;
 
