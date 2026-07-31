@@ -1,35 +1,33 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
-import {
-  LayoutDashboard,
-  ArrowUpDown,
-  Plus,
-  Cog,
-  Wallet,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { LayoutDashboard, ArrowUpDown, Plus, Cog, Wallet } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 
-interface TabDef {
-  name: string;
-  icon: LucideIcon;
-}
+// Snappy spring with slight bounce — feels like iOS
+const SPRING = { damping: 22, stiffness: 260, mass: 0.8 };
 
-const tabs: TabDef[] = [
-  { name: 'index', icon: LayoutDashboard },
-  { name: 'transactions', icon: ArrowUpDown },
-  { name: 'wallets', icon: Wallet },
-  { name: 'profile', icon: Cog },
-];
+// All items (tabs + add button) are the same size for even distribution
+const ITEM_SIZE = 48;
+const BAR_PADDING = 6;
+const TOTAL_ITEMS = 5; // 4 tabs + 1 add button
+
+// Maps tab name → its visual slot in the row (0–4)
+// Slot 2 is the "+" add button (not a tab)
+const TAB_SLOT: Record<string, number> = {
+  index: 0,
+  transactions: 1,
+  // slot 2 = add button
+  wallets: 3,
+  profile: 4,
+};
 
 interface TabBarProps {
   onTabChange?: (name: string) => void;
@@ -42,132 +40,160 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [layouts, setLayouts] = useState<Record<string, { x: number; y: number }>>({});
-  const indicatorX = useSharedValue(0);
-  const indicatorY = useSharedValue(0);
+  const pillX = useSharedValue(BAR_PADDING);
+  const [ready, setReady] = useState(false);
 
-  const handleLayout = useCallback((name: string, layout: any) => {
-    setLayouts((prev) => ({ ...prev, [name]: layout }));
-  }, []);
-
-  const handleTabPress = useCallback(
-    (name: string) => {
-      onTabChange?.(name);
+  // Pure math: given bar width, compute the X of a slot
+  // Subtract 2 for the 1px left and right borders on the bar!
+  const slotX = useCallback(
+    (slot: number, barWidth: number) => {
+      const contentWidth = barWidth - BAR_PADDING * 2 - 2; 
+      const totalItems = TOTAL_ITEMS * ITEM_SIZE;
+      const gap = (contentWidth - totalItems) / (TOTAL_ITEMS - 1);
+      return BAR_PADDING + slot * (ITEM_SIZE + gap);
     },
-    [onTabChange]
+    []
   );
 
-  useEffect(() => {
-    if (layouts[activeTab]) {
-      indicatorX.value = layouts[activeTab].x;
-      indicatorY.value = layouts[activeTab].y;
-    }
-  }, [activeTab, layouts]);
+  // Capture bar width on first layout, snap pill without animation
+  const barWidthRef = React.useRef(0);
+  const handleBarLayout = useCallback(
+    (e: any) => {
+      const w = e.nativeEvent.layout.width;
+      barWidthRef.current = w;
+      const slot = TAB_SLOT[activeTab] ?? 0;
+      if (!ready) {
+        // First render — teleport (no animation)
+        pillX.value = slotX(slot, w);
+        setReady(true);
+      }
+    },
+    [activeTab, ready, slotX]
+  );
 
-  const indicatorStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: withSpring(indicatorX.value, {
-          damping: 20,
-          stiffness: 250,
-          mass: 0.8,
-        }),
-      },
-      {
-        translateY: withSpring(indicatorY.value, {
-          damping: 20,
-          stiffness: 250,
-          mass: 0.8,
-        }),
-      },
-    ],
-    backgroundColor: withTiming(isDark ? '#4a4a52' : '#ffffff', { duration: 300 }),
+  // Animate pill when active tab changes
+  useEffect(() => {
+    const w = barWidthRef.current;
+    if (w === 0) return;
+    const slot = TAB_SLOT[activeTab] ?? 0;
+    pillX.value = withSpring(slotX(slot, w), SPRING);
+  }, [activeTab, slotX]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: pillX.value }],
   }));
+
+  // Colors
+  const active = isDark ? '#ffffff' : '#1a1c1b';
+  const muted = isDark ? '#555560' : '#9b9b9b';
+  const pillBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)';
+  const barBg = isDark ? 'rgba(28,28,32,0.96)' : 'rgba(255,255,255,0.96)';
+  const barBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const addBg = isDark ? '#ffffff' : '#1a1c1b';
+  const addIcon = isDark ? '#000000' : '#ffffff';
 
   return (
     <View
-      className="absolute bottom-0 left-0 right-0 w-full"
-      style={{ paddingBottom: Math.max(insets.bottom, 24) }}
+      style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 24) }]}
       pointerEvents="box-none">
-      {/* Main Tab Bar */}
-      <View className="mx-4 bg-surface rounded-full shadow-md flex-row items-center justify-between px-2 py-2 border border-black/5 dark:border-white/5 relative">
-        {/* Animated Background Indicator */}
-        {Object.keys(layouts).length > 0 && (
+      <View
+        style={[styles.bar, { backgroundColor: barBg, borderColor: barBorder }]}
+        onLayout={handleBarLayout}>
+
+        {/* ── Sliding pill ── */}
+        {ready && (
           <Animated.View
-            className="absolute top-0 left-0 h-12 w-12 rounded-full z-0"
-            style={[
-              indicatorStyle,
-              {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 4,
-                elevation: 2,
-              },
-            ]}
+            style={[styles.pill, pillStyle, { backgroundColor: pillBg }]}
+            pointerEvents="none"
           />
         )}
 
-        {/* Tab: Home */}
+        {/* ── Home ── */}
         <TouchableOpacity
-          className="items-center justify-center h-12 w-12 rounded-full z-10"
-          onPress={() => handleTabPress('index')}
-          activeOpacity={0.7}
-          onLayout={(e) => handleLayout('index', e.nativeEvent.layout)}>
-          <Icon
-            as={tabs[0].icon}
-            size={22}
-            className={activeTab === 'index' ? 'text-primary' : 'text-muted'}
-          />
+          style={styles.slot}
+          onPress={() => onTabChange?.('index')}
+          activeOpacity={0.7}>
+          <Icon as={LayoutDashboard} size={22} color={activeTab === 'index' ? active : muted} />
         </TouchableOpacity>
 
-        {/* Tab: Transactions */}
+        {/* ── Transactions ── */}
         <TouchableOpacity
-          className="items-center justify-center h-12 w-12 rounded-full z-10"
-          onPress={() => handleTabPress('transactions')}
-          activeOpacity={0.7}
-          onLayout={(e) => handleLayout('transactions', e.nativeEvent.layout)}>
-          <Icon
-            as={tabs[1].icon}
-            size={22}
-            className={activeTab === 'transactions' ? 'text-primary' : 'text-muted'}
-          />
+          style={styles.slot}
+          onPress={() => onTabChange?.('transactions')}
+          activeOpacity={0.7}>
+          <Icon as={ArrowUpDown} size={22} color={activeTab === 'transactions' ? active : muted} />
         </TouchableOpacity>
 
-        {/* Add Button */}
+        {/* ── Add ── */}
         <TouchableOpacity
-          className="h-12 w-12 mx-1 items-center justify-center rounded-full bg-primary shadow-md active:scale-95 z-10"
+          style={[styles.slot, styles.addBtn, { backgroundColor: addBg, shadowColor: addBg }]}
           onPress={() => router.push('/add-transaction')}
-          activeOpacity={0.8}>
-          <Icon as={Plus} className="text-[--primary-foreground]" size={24} />
+          activeOpacity={0.85}>
+          <Icon as={Plus} size={24} color={addIcon} />
         </TouchableOpacity>
 
-        {/* Tab: Wallets */}
+        {/* ── Wallets ── */}
         <TouchableOpacity
-          className="items-center justify-center h-12 w-12 rounded-full z-10"
-          onPress={() => handleTabPress('wallets')}
-          activeOpacity={0.7}
-          onLayout={(e) => handleLayout('wallets', e.nativeEvent.layout)}>
-          <Icon
-            as={tabs[2].icon}
-            size={22}
-            className={activeTab === 'wallets' ? 'text-primary' : 'text-muted'}
-          />
+          style={styles.slot}
+          onPress={() => onTabChange?.('wallets')}
+          activeOpacity={0.7}>
+          <Icon as={Wallet} size={22} color={activeTab === 'wallets' ? active : muted} />
         </TouchableOpacity>
 
-        {/* Tab: Profile */}
+        {/* ── Settings ── */}
         <TouchableOpacity
-          className="items-center justify-center h-12 w-12 rounded-full z-10"
-          onPress={() => handleTabPress('profile')}
-          activeOpacity={0.7}
-          onLayout={(e) => handleLayout('profile', e.nativeEvent.layout)}>
-          <Icon
-            as={tabs[3].icon}
-            size={22}
-            className={activeTab === 'profile' ? 'text-primary' : 'text-muted'}
-          />
+          style={styles.slot}
+          onPress={() => onTabChange?.('profile')}
+          activeOpacity={0.7}>
+          <Icon as={Cog} size={22} color={activeTab === 'profile' ? active : muted} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  outer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  bar: {
+    marginHorizontal: 16,
+    borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: BAR_PADDING,
+    paddingVertical: BAR_PADDING,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  pill: {
+    position: 'absolute',
+    top: BAR_PADDING,
+    left: 0, // translateX handles real position
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
+    borderRadius: 999,
+  },
+  slot: {
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    zIndex: 1,
+  },
+  addBtn: {
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+});
