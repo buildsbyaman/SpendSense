@@ -1,69 +1,91 @@
+import React, { useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react-native';
+import { MonthYearPickerModal } from './MonthYearPickerModal';
 
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 interface MonthNavigatorProps {
   year: number;
-  month: number;
-  onChange: (year: number, month: number) => void;
+  month: number | null;
+  onChange: (year: number, month: number | null) => void;
   maxYear: number;
   maxMonth: number;
 }
 
 export function MonthNavigator({ year, month, onChange, maxYear, maxMonth }: MonthNavigatorProps) {
-  const canGoNext = year < maxYear || (year === maxYear && month < maxMonth);
+  const canGoNext = month !== null 
+    ? (year < maxYear || (year === maxYear && month < maxMonth))
+    : year < maxYear;
 
   const goBack = () => {
-    if (month === 0) onChange(year - 1, 11);
-    else onChange(year, month - 1);
+    if (month !== null) {
+      if (month === 0) onChange(year - 1, 11);
+      else onChange(year, month - 1);
+    } else {
+      onChange(year - 1, null);
+    }
   };
 
   const goNext = () => {
     if (!canGoNext) return;
-    if (month === 11) onChange(year + 1, 0);
-    else onChange(year, month + 1);
+    if (month !== null) {
+      if (month === 11) onChange(year + 1, 0);
+      else onChange(year, month + 1);
+    } else {
+      onChange(year + 1, null);
+    }
   };
 
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
   return (
-    <View className="mb-4 flex-row items-center justify-between">
+    <>
+      <View className="flex-row items-center rounded-full bg-secondary p-1">
       <TouchableOpacity
         onPress={goBack}
-        className="h-10 w-10 items-center justify-center rounded-full border border-gray-100 bg-surface dark:border-gray-900"
+        className="p-2"
         activeOpacity={0.7}>
-        <Icon as={ChevronLeft} size={20} className="text-foreground" />
+        <Icon as={ChevronLeft} size={18} className="text-foreground" />
       </TouchableOpacity>
 
-      <Text className="text-lg font-semibold text-foreground">
-        {MONTHS[month]} {year}
-      </Text>
+      <TouchableOpacity 
+        className="flex-row items-center justify-center w-[84px] gap-1"
+        onPress={() => setIsModalVisible(true)}
+        activeOpacity={0.7}
+      >
+        <Text className="text-sm font-bold text-foreground">
+          {month !== null ? `${SHORT_MONTHS[month]} '${year.toString().slice(-2)}` : `${year}`}
+        </Text>
+        <Icon as={ChevronDown} size={14} className="text-foreground opacity-50" />
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={goNext}
         disabled={!canGoNext}
-        className={`h-10 w-10 items-center justify-center rounded-full border ${canGoNext ? 'border-gray-100 bg-surface dark:border-gray-900' : 'border-transparent bg-gray-50 dark:bg-gray-900'}`}
+        className="p-2"
         activeOpacity={0.7}>
         <Icon
           as={ChevronRight}
-          size={20}
+          size={18}
           className={canGoNext ? 'text-foreground' : 'text-muted opacity-40'}
         />
       </TouchableOpacity>
     </View>
+
+    <MonthYearPickerModal
+      visible={isModalVisible}
+      onClose={() => setIsModalVisible(false)}
+      currentYear={year}
+      currentMonth={month}
+      maxYear={maxYear}
+      maxMonth={maxMonth}
+      onSelect={(y, m) => {
+        onChange(y, m);
+      }}
+    />
+    </>
   );
 }

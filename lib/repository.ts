@@ -1,6 +1,7 @@
 import { type Account, parseBalance } from '@/utils/wallet';
 import { type Transaction } from '@/utils/transaction';
 import { getDatabase } from './database';
+import { generateSeedData } from './seed-data';
 
 // ── Accounts ─────────────────────────────────────────────────────────
 
@@ -166,5 +167,39 @@ export async function clearAll(): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM accounts');
     await db.runAsync('DELETE FROM transactions');
+  });
+}
+
+// ── Seed ──────────────────────────────────────────────────────────────
+
+export async function seedDemoData(): Promise<void> {
+  const { wallets, transactions } = generateSeedData();
+  const db = await getDatabase();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM transactions');
+    await db.runAsync('DELETE FROM accounts');
+    for (const w of wallets) {
+      await db.runAsync(
+        'INSERT INTO accounts (id, name, number, balance, type, is_default) VALUES (?, ?, ?, ?, ?, ?)',
+        w.id,
+        w.name,
+        w.number,
+        w.balance,
+        w.type,
+        w.isDefault ? 1 : 0
+      );
+    }
+    for (const tx of transactions) {
+      await db.runAsync(
+        'INSERT INTO transactions (id, title, amount, type, category, date, wallet_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        tx.id,
+        tx.title,
+        tx.amount,
+        tx.type,
+        tx.category,
+        tx.date,
+        tx.walletId
+      );
+    }
   });
 }

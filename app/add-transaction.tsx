@@ -131,7 +131,7 @@ export default function AddTransactionScreen() {
           <View>
             <Text className="mb-2 ml-1 text-sm text-muted">Amount</Text>
             <View className="relative justify-center">
-              <Text className="text-foreground absolute left-5 z-10 text-base font-semibold">
+              <Text className="absolute left-5 z-10 text-base font-semibold text-foreground">
                 $
               </Text>
               <TextInput
@@ -139,7 +139,7 @@ export default function AddTransactionScreen() {
                 onChangeText={(text) => {
                   setAmount(sanitizeAmountInput(text));
                 }}
-                className={`text-foreground rounded-full border-2 bg-gray-50 py-3.5 pl-10 pr-5 text-base font-semibold dark:bg-gray-900 ${focusedInput === 'amount' ? 'border-primary' : 'border-transparent'}`}
+                className={`rounded-full border-2 bg-gray-50 py-3.5 pl-10 pr-5 text-base font-semibold text-foreground dark:bg-gray-900 ${focusedInput === 'amount' ? 'border-primary' : 'border-transparent'}`}
                 placeholder="0.00"
                 keyboardType="decimal-pad"
                 placeholderTextColor={placeholderColor}
@@ -159,7 +159,7 @@ export default function AddTransactionScreen() {
             <TextInput
               value={title}
               onChangeText={setTitle}
-              className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${focusedInput === 'title' ? 'border-primary' : 'border-transparent'}`}
+              className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'title' ? 'border-primary' : 'border-transparent'}`}
               placeholder={
                 type === 'expense' ? 'e.g. Starbucks Coffee' : 'e.g. Freelance project, Bonus'
               }
@@ -175,7 +175,7 @@ export default function AddTransactionScreen() {
             {accounts.length === 0 ? (
               <TouchableOpacity
                 onPress={() => {
-                  router.back();
+                  if (router.canGoBack()) router.back();
                   router.push('/(tabs)/wallets');
                 }}
                 className="items-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">

@@ -8,8 +8,12 @@ export default function TabLayout() {
       { name: 'index', href: '/' as const, type: 'internal' },
       { name: 'transactions', href: '/transactions' as const, type: 'internal' },
       { name: 'wallets', href: '/wallets' as const, type: 'internal' },
-
       { name: 'profile', href: '/profile' as const, type: 'internal' },
+      { name: 'analytics', href: '/analytics' as const, type: 'internal' },
+      { name: 'budgets', href: '/budgets' as const, type: 'internal' },
+      { name: 'categories', href: '/categories' as const, type: 'internal' },
+      { name: 'recurring', href: '/recurring' as const, type: 'internal' },
+      { name: 'subscriptions', href: '/subscriptions' as const, type: 'internal' },
     ],
   });
 

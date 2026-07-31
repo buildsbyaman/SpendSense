@@ -12,23 +12,25 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { User, Check } from 'lucide-react-native';
+import { User, Check, Database } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { SettingsOptionsMenu } from '@/components/profile/SettingsOptionsMenu';
 import { ManageSection } from '@/components/profile/ManageSection';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import { saveThemePreference } from '@/lib/theme-persistence';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme, setColorScheme } = useColorScheme();
-  const { userProfile, updateUserProfile } = useApp();
+  const { userProfile, updateUserProfile, seedDemoData } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [name, setName] = useState(userProfile.name);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmSeed, setConfirmSeed] = useState(false);
 
   const isDark = colorScheme === 'dark';
   const placeholderColor = isDark ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
@@ -58,16 +60,19 @@ export default function ProfileScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-background">
+      className="flex-1 bg-background"
+      style={{ paddingTop: insets.top + 16 }}>
+      <View className="px-5">
+        <Header title="Settings" showBack={false} onRightPress={() => setIsMenuOpen(true)} />
+      </View>
       <ScrollView
         className="flex-1"
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: insets.top + 24,
           paddingBottom: 120,
           paddingHorizontal: 20,
         }}
         keyboardShouldPersistTaps="handled">
-        <Header title="Settings" showBack={true} onRightPress={() => setIsMenuOpen(true)} />
 
         <View className="mt-6 gap-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
           {/* Avatar Section */}
@@ -158,12 +163,44 @@ export default function ProfileScreen() {
         </View>
 
         <ManageSection />
+
+        {/* Dev-only: Load Demo Data */}
+        {__DEV__ && (
+          <View className="mt-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+            <Text className="mb-4 text-sm font-medium text-muted">Developer</Text>
+            <TouchableOpacity
+              onPress={() => setConfirmSeed(true)}
+              className="flex-row items-center gap-3 py-3">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
+                <Icon as={Database} size={18} className="text-foreground" />
+              </View>
+              <Text className="flex-1 text-base font-medium text-foreground">Load Demo Data</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       <SettingsOptionsMenu
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         onEditProfile={() => setIsEditing(true)}
+      />
+
+      <ConfirmDialog
+        visible={confirmSeed}
+        title="Load Demo Data"
+        message="This will replace all existing data with 3 wallets and ~148 transactions spanning 12 months."
+        confirmText="Load"
+        onConfirm={async () => {
+          setConfirmSeed(false);
+          await seedDemoData();
+          Toast.show({
+            type: 'success',
+            text1: 'Demo Data Loaded',
+            text2: '3 wallets, ~148 transactions seeded.',
+          });
+        }}
+        onCancel={() => setConfirmSeed(false)}
       />
     </KeyboardAvoidingView>
   );

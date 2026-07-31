@@ -60,11 +60,32 @@ export const getCategoryIcon = (categoryName: string): LucideIcon => {
   return category ? category.icon : HelpCircle;
 };
 
+// Golden ratio conjugate for generating distinct random hues
+const GOLDEN_RATIO_CONJUGATE = 0.618033988749895;
+let currentHue = Math.random();
+const customCategoryColors = new Map<string, string>();
+
 export const getCategoryColor = (categoryName: string): string => {
   const category = COMBINED_CATEGORIES.find(
     (c) => c.name.toLowerCase() === categoryName.toLowerCase()
   );
-  return category ? category.color : '#6b7280';
+  if (category) return category.color;
+
+  const lowerName = categoryName.toLowerCase();
+  if (customCategoryColors.has(lowerName)) {
+    return customCategoryColors.get(lowerName)!;
+  }
+
+  // Generate a distinct random color
+  currentHue += GOLDEN_RATIO_CONJUGATE;
+  currentHue %= 1;
+  const hueDegrees = Math.floor(currentHue * 360);
+  
+  // Use 75% saturation and 55% lightness for vibrant, visible colors in both modes
+  const color = `hsl(${hueDegrees}, 75%, 55%)`;
+  customCategoryColors.set(lowerName, color);
+  
+  return color;
 };
 
 /**

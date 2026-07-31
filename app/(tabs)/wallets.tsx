@@ -100,16 +100,19 @@ export default function AccountsScreen() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <ScrollView 
-      className="flex-1 bg-background"
-      contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: 120, paddingHorizontal: 20 }}
-    >
-      <Header 
-        title="Wallets" 
-        showBack={true} 
-        onRightPress={() => setIsMenuOpen(true)} 
-      />
-      
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
+      <View className="px-5">
+        <Header 
+          title="Wallets" 
+          showBack={false} 
+          onRightPress={() => setIsMenuOpen(true)} 
+        />
+      </View>
+      <ScrollView 
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
+      >
       {accounts.length > 0 && (
         <View className="bg-surface rounded-[32px] p-6 mb-6 border border-gray-100 dark:border-gray-900 shadow-xs">
           <Text className="text-muted text-sm font-medium mb-1">Total Balance</Text>
@@ -152,5 +155,6 @@ export default function AccountsScreen() {
         />
       </View>
     </ScrollView>
+    </View>
   );
 }

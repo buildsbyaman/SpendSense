@@ -9,15 +9,17 @@ export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{
-        paddingTop: insets.top + 24,
-        paddingBottom: 120,
-        paddingHorizontal: 20,
-      }}>
-      <Header title="Budgets" showBack={true} />
-
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
+      <View className="px-5">
+        <Header title="Budgets" showBack={true} />
+      </View>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          paddingHorizontal: 20,
+        }}>
       <View className="mt-20 items-center justify-center px-6">
         <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
           <Icon as={PiggyBank} size={40} className="text-muted opacity-50" />
@@ -32,6 +34,7 @@ export default function BudgetsScreen() {
           <Text className="text-center text-sm font-medium text-muted">Coming soon</Text>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

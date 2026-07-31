@@ -5,6 +5,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   Easing,
 } from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
@@ -17,9 +18,8 @@ interface TypeFilterToggleProps {
 }
 
 const OPTIONS: { key: TypeFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
+  { key: 'expense', label: 'Expense' },
   { key: 'income', label: 'Income' },
-  { key: 'expense', label: 'Expenses' },
 ];
 
 export function TypeFilterToggle({ value, onChange }: TypeFilterToggleProps) {
@@ -31,28 +31,32 @@ export function TypeFilterToggle({ value, onChange }: TypeFilterToggleProps) {
   const thumbStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateX: withTiming(toggleX.value, { duration: 300, easing: Easing.out(Easing.cubic) }),
+        translateX: withSpring(toggleX.value, {
+          damping: 20,
+          stiffness: 250,
+          mass: 0.8,
+        }),
       },
     ],
   }));
 
   const thumbColor = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(isDark ? '#e8e8ec' : '#1a1c1b', { duration: 300 }),
+    backgroundColor: withTiming(isDark ? '#4a4a52' : '#ffffff', { duration: 300 }),
   }));
 
   const handlePress = (filter: TypeFilter, index: number) => {
     onChange(filter);
-    if (toggleWidth > 0) toggleX.value = (toggleWidth / 3) * index;
+    if (toggleWidth > 0) toggleX.value = (toggleWidth / 2) * index;
   };
 
   return (
     <View
-      className="rounded-2xl bg-gray-100 p-1.5 dark:bg-gray-900"
+      className="rounded-full bg-secondary p-1"
       onLayout={(e) => {
-        const w = e.nativeEvent.layout.width - 12;
+        const w = e.nativeEvent.layout.width - 8;
         setToggleWidth(w);
         const idx = OPTIONS.findIndex((o) => o.key === value);
-        toggleX.value = (w / 3) * idx;
+        toggleX.value = (w / 2) * idx;
       }}>
       <View style={{ flexDirection: 'row', position: 'relative' }}>
         {toggleWidth > 0 && (
@@ -62,9 +66,14 @@ export function TypeFilterToggle({ value, onChange }: TypeFilterToggleProps) {
                 position: 'absolute',
                 top: 0,
                 bottom: 0,
-                width: toggleWidth / 3,
-                borderRadius: 10,
+                width: toggleWidth / 2,
+                borderRadius: 9999,
                 zIndex: 0,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+                elevation: 2,
               },
               thumbStyle,
               thumbColor,
@@ -75,17 +84,17 @@ export function TypeFilterToggle({ value, onChange }: TypeFilterToggleProps) {
           <TouchableOpacity
             key={opt.key}
             onPress={() => handlePress(opt.key, i)}
-            style={{ flex: 1, alignItems: 'center', paddingVertical: 12, zIndex: 1 }}
+            style={{ flex: 1, alignItems: 'center', paddingVertical: 6, zIndex: 1 }}
             activeOpacity={0.9}>
             <Text
               style={{
                 fontWeight: '600',
-                fontSize: 13,
+                fontSize: 12,
                 color:
                   value === opt.key
                     ? isDark
-                      ? '#111113'
-                      : '#ffffff'
+                      ? '#ffffff'
+                      : '#000000'
                     : isDark
                       ? '#8a8a94'
                       : '#9b9b9b',

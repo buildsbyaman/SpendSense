@@ -17,6 +17,7 @@ import {
   fetchProfile,
   saveProfile,
   clearAll,
+  seedDemoData as repoSeedDemoData,
 } from '@/lib/repository';
 
 interface AppContextType {
@@ -30,6 +31,7 @@ interface AppContextType {
   deleteTransaction: (id: string) => void;
   updateTransaction: (updated: Transaction) => void;
   clearAllData: () => void;
+  seedDemoData: () => Promise<void>;
   userProfile: { name: string };
   updateUserProfile: (profile: { name: string }) => void;
 }
@@ -183,6 +185,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     clearAll();
   }, []);
 
+  const seedDemoData = useCallback(async () => {
+    await repoSeedDemoData();
+    const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
+    const storedTransactions = await fetchTransactions();
+    setAccounts(storedAccounts);
+    setTransactions(storedTransactions);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -196,6 +206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteTransaction,
         updateTransaction: updateTransactionFn,
         clearAllData,
+        seedDemoData,
         userProfile,
         updateUserProfile,
       }}>

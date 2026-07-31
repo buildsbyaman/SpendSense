@@ -10,6 +10,8 @@ interface CategoryDonutProps {
   totalLabel: string;
 }
 
+const MAX_LEGEND = 5;
+
 export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
   const { colorScheme } = useColorScheme();
   const scheme = (colorScheme ?? 'light') as ColorScheme;
@@ -17,13 +19,7 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
 
   const total = data.reduce((sum, d) => sum + d.amount, 0);
 
-  const pieData = data.map((d) => ({
-    value: d.amount,
-    color: d.color,
-    text: '',
-  }));
-
-  if (data.length === 0) {
+  if (data.length === 0 || total === 0) {
     return (
       <View className="items-center py-8">
         <Text className="text-sm text-muted">No data for this period</Text>
@@ -31,34 +27,53 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
     );
   }
 
+  const pieData = data.map((d) => ({ value: d.amount, color: d.color, text: '' }));
+
+  const renderLegendItem = (d: any) => {
+    const pct = total > 0 ? ((d.amount / total) * 100).toFixed(0) : '0';
+    return (
+      <View key={d.name} className="mb-3 flex-row items-center w-full">
+        <View
+          className="mr-3 h-3 w-3 rounded-full"
+          style={{ backgroundColor: d.color }}
+        />
+        <View className="flex-1">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm font-medium text-foreground pr-1" numberOfLines={1}>
+              {d.name}
+            </Text>
+            <Text className="ml-1 text-sm text-muted shrink-0">{pct}%</Text>
+          </View>
+          <Text className="text-sm font-semibold text-foreground">
+            ${d.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <View className="flex-row items-center">
-      <View className="w-[180px] items-center justify-center">
+    <View className="flex-col w-full">
+      <View className="w-full items-center justify-center py-6">
         <PieChart
           donut
-          radius={80}
-          innerRadius={55}
+          radius={90}
+          innerRadius={65}
+          innerCircleColor={colors.surface}
           data={pieData}
           centerLabelComponent={() => (
             <View className="items-center">
-              <Text className="text-xs text-muted">{totalLabel}</Text>
-              <Text className="text-base font-bold text-foreground">
+              <Text className="text-md text-muted mb-1">{totalLabel}</Text>
+              <Text className="text-xl font-bold text-foreground">
                 ${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </Text>
             </View>
           )}
         />
       </View>
-      <View className="ml-2 flex-1">
-        {data.slice(0, 5).map((d) => (
-          <View key={d.name} className="mb-2 flex-row items-center">
-            <View className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: d.color }} />
-            <Text className="flex-1 text-sm text-foreground">{d.name}</Text>
-            <Text className="ml-1 text-sm font-semibold text-foreground">
-              ${d.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </Text>
-          </View>
-        ))}
+      
+      <View className="mt-2 flex-col w-full px-2">
+        {data.map(renderLegendItem)}
       </View>
     </View>
   );

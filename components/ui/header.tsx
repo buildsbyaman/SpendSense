@@ -13,20 +13,20 @@ interface HeaderProps {
   showBack?: boolean;
 }
 
-export function Header({ 
-  title, 
-  leftIcon, 
+export function Header({
+  title,
+  leftIcon,
   rightIcon = MoreVertical,
-  onLeftPress, 
+  onLeftPress,
   onRightPress,
-  showBack = false
+  showBack = false,
 }: HeaderProps) {
   const router = useRouter();
 
   const handleLeftPress = () => {
     if (onLeftPress) {
       onLeftPress();
-    } else if (showBack) {
+    } else if (showBack && router.canGoBack()) {
       router.back();
     }
   };
@@ -34,32 +34,30 @@ export function Header({
   const LeftIconToUse = leftIcon || (showBack ? ChevronLeft : null);
 
   return (
-    <View className="flex-row items-center justify-between mb-8 px-2">
+    <View className="mb-4 flex-row items-center justify-between px-2">
       {/* Left Action */}
-      <View className="w-12 items-start">
+      <View className="w-10 items-start">
         {LeftIconToUse && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleLeftPress}
-            className="w-12 h-12 bg-surface rounded-full items-center justify-center shadow-xs border border-border"
-            activeOpacity={0.7}
-          >
-            <Icon as={LeftIconToUse} size={20} className="text-foreground" />
+            className="h-10 w-10 items-center justify-center rounded-full border border-border bg-surface shadow-xs"
+            activeOpacity={0.7}>
+            <Icon as={LeftIconToUse} size={18} className="text-foreground" />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Title */}
-      <Text className="text-xl font-semibold text-foreground">{title}</Text>
+      <Text className="text-lg font-semibold text-foreground">{title}</Text>
 
       {/* Right Action */}
-      <View className="w-12 items-end">
+      <View className="w-10 items-end">
         {rightIcon && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={onRightPress}
-            className="w-12 h-12 bg-surface rounded-full items-center justify-center shadow-xs border border-border"
-            activeOpacity={0.7}
-          >
-            <Icon as={rightIcon} size={20} className="text-foreground" />
+            className="h-10 w-10 items-center justify-center rounded-full border border-border bg-surface shadow-xs"
+            activeOpacity={0.7}>
+            <Icon as={rightIcon} size={18} className="text-foreground" />
           </TouchableOpacity>
         )}
       </View>

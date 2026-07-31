@@ -39,15 +39,9 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{
-        paddingTop: insets.top + 24,
-        paddingBottom: 120,
-        paddingHorizontal: 20,
-      }}>
-      {/* Welcome Header */}
-      <View className="mb-8 flex-row items-center justify-between">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
+      {/* Sticky Welcome Header */}
+      <View className="mb-4 flex-row items-center justify-between px-5">
         <View>
           <Text className="mt-0.5 text-2xl font-semibold text-foreground">SpendSense</Text>
           <Text className="text-sm font-medium text-muted">Spend money more Sensely.</Text>
@@ -59,6 +53,14 @@ export default function HomeScreen() {
           <Text className="text-sm font-semibold text-foreground">{initials}</Text>
         </TouchableOpacity>
       </View>
+
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          paddingHorizontal: 20,
+        }}>
 
       {/* Net Balance Card */}
       <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
@@ -185,6 +187,7 @@ export default function HomeScreen() {
           </View>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

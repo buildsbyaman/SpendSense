@@ -4,6 +4,7 @@ import { BarChart } from 'react-native-gifted-charts';
 import { CHART_COLORS, type ColorScheme } from '@/lib/chart-theme';
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
+import { niceCeil, formatCompactCurrency } from '@/utils/analytics';
 
 interface MonthlyBarChartProps {
   data: { label: string; income: number; expense: number }[];
@@ -14,52 +15,56 @@ export function MonthlyBarChart({ data }: MonthlyBarChartProps) {
   const scheme = (colorScheme ?? 'light') as ColorScheme;
   const colors = CHART_COLORS[scheme];
 
-  const maxVal = Math.max(...data.map((d) => Math.max(d.income, d.expense)), 1);
+  const barData = data.map((d) => ({
+    value: d.expense,
+    frontColor: colors.expense,
+    label: d.label,
+    barWidth: 16,
+    barBorderRadius: 6,
+  }));
 
-  const barData = data.flatMap((d) => [
-    {
-      value: d.income,
-      frontColor: colors.income,
-      label: d.label,
-      barWidth: 10,
-      spacing: 2,
-      barBorderRadius: 4,
-    },
-    {
-      value: d.expense,
-      frontColor: colors.expense,
-      barWidth: 10,
-      spacing: 14,
-      barBorderRadius: 4,
-    },
-  ]);
+  const netData = data.map((d) => ({
+    value: d.income - d.expense,
+    color: colors.income,
+  }));
+
+  const maxVal = niceCeil(Math.max(...data.map((d) => d.expense), 1));
 
   return (
     <View>
       <BarChart
         data={barData}
-        barWidth={10}
-        spacing={(320 - 60) / (data.length * 2)}
+        barWidth={16}
+        spacing={(280 - 40) / data.length}
         noOfSections={4}
         xAxisColor={colors.grid}
         yAxisColor={colors.grid}
-        xAxisLabelTextStyle={{ color: colors.axisLabel, fontSize: 10 }}
-        yAxisTextStyle={{ color: colors.axisLabel, fontSize: 10 }}
-        yAxisLabelPrefix="$"
-        maxValue={maxVal * 1.15}
+        xAxisLabelTextStyle={{ color: colors.axisLabel, fontSize: 9 }}
+        yAxisTextStyle={{ color: colors.axisLabel, fontSize: 9 }}
+        formatYLabel={(v: string) => formatCompactCurrency(Number(v))}
+        maxValue={maxVal}
         hideRules
         scrollAnimation={false}
         roundedTop
         noOfSectionsBelowXAxis={0}
+        lineData={netData}
+        lineConfig={{
+          color: colors.income,
+          thickness: 2,
+          curvature: 0.3,
+          dataPointsColor: colors.income,
+          dataPointsRadius: 3,
+          hideDataPoints: false,
+        }}
       />
-      <View className="mt-3 flex-row justify-center gap-4">
-        <View className="flex-row items-center gap-1.5">
-          <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors.income }} />
-          <Text className="text-xs text-muted">Income</Text>
-        </View>
+      <View className="mt-3 flex-row justify-center gap-5">
         <View className="flex-row items-center gap-1.5">
           <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors.expense }} />
           <Text className="text-xs text-muted">Expenses</Text>
+        </View>
+        <View className="flex-row items-center gap-1.5">
+          <View className="h-0.5 w-4 rounded-full" style={{ backgroundColor: colors.income }} />
+          <Text className="text-xs text-muted">Net Savings</Text>
         </View>
       </View>
     </View>

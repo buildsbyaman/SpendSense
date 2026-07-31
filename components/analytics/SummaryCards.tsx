@@ -1,46 +1,116 @@
 import { View } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { ArrowDownLeft, ArrowUpRight, TrendingUp } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+import { savingsRate } from '@/utils/analytics';
 
 interface SummaryCardsProps {
   income: number;
   expense: number;
+  incomeDelta: number | null;
+  expenseDelta: number | null;
+  count: number;
 }
 
-export function SummaryCards({ income, expense }: SummaryCardsProps) {
-  const net = income - expense;
+function DeltaBadge({ delta, type }: { delta: number | null, type: 'income' | 'expense' }) {
+  if (delta === null) {
+    return <Text className="text-xs text-muted">—</Text>;
+  }
+  const positive = delta > 0;
+  
+  // Income increase is good (green), Expense increase is bad (red)
+  const isGood = type === 'income' ? positive : !positive;
+  
+  const color = delta === 0 
+    ? 'text-muted' 
+    : isGood 
+      ? 'text-income' 
+      : 'text-expense';
 
   return (
-    <View className="mb-4 flex-row gap-3">
-      <View className="flex-1 rounded-[24px] border border-gray-100 bg-surface p-4 shadow-xs dark:border-gray-900">
-        <View className="bg-income/10 dark:bg-income/20 mb-2 h-8 w-8 items-center justify-center rounded-full">
-          <Icon as={ArrowDownLeft} size={16} className="text-income" />
+    <View className="flex-row items-center gap-0.5">
+      {positive ? (
+        <Icon as={TrendingUp} size={11} className={color} />
+      ) : delta < 0 ? (
+        <Icon as={TrendingDown} size={11} className={color} />
+      ) : (
+        <Icon as={Minus} size={11} className="text-muted" />
+      )}
+      <Text className={`text-xs ${color}`}>
+        {positive ? '+' : ''}
+        {delta.toFixed(1)}%
+      </Text>
+    </View>
+  );
+}
+
+export function SummaryCards({
+  income,
+  expense,
+  incomeDelta,
+  expenseDelta,
+  count,
+}: SummaryCardsProps) {
+  const net = income - expense;
+  const rate = savingsRate(income, expense);
+
+  return (
+    <View className="mb-4 rounded-[32px] border border-gray-100 bg-surface p-5 shadow-xs dark:border-gray-900">
+      {/* Income row */}
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center gap-2.5">
+          <View className="bg-income/10 dark:bg-income/20 h-7 w-7 items-center justify-center rounded-full">
+            <Icon as={ArrowDownLeft} size={14} className="text-income" />
+          </View>
+          <Text className="text-sm font-medium text-muted">Income</Text>
         </View>
-        <Text className="text-xs font-medium text-muted">Income</Text>
-        <Text className="mt-0.5 text-base font-bold text-income">
-          ${income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <DeltaBadge delta={incomeDelta} type="income" />
+          <Text className="text-sm font-semibold text-foreground">
+            ${income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </Text>
+        </View>
       </View>
 
-      <View className="flex-1 rounded-[24px] border border-gray-100 bg-surface p-4 shadow-xs dark:border-gray-900">
-        <View className="bg-expense/10 dark:bg-expense/20 mb-2 h-8 w-8 items-center justify-center rounded-full">
-          <Icon as={ArrowUpRight} size={16} className="text-expense" />
+      {/* Expense row */}
+      <View className="mt-3 flex-row items-center justify-between">
+        <View className="flex-row items-center gap-2.5">
+          <View className="bg-expense/10 dark:bg-expense/20 h-7 w-7 items-center justify-center rounded-full">
+            <Icon as={ArrowUpRight} size={14} className="text-expense" />
+          </View>
+          <Text className="text-sm font-medium text-muted">Expenses</Text>
         </View>
-        <Text className="text-xs font-medium text-muted">Expenses</Text>
-        <Text className="mt-0.5 text-base font-bold text-expense">
-          ${expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <DeltaBadge delta={expenseDelta} type="expense" />
+          <Text className="text-sm font-semibold text-foreground">
+            ${expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </Text>
+        </View>
       </View>
 
-      <View className="flex-1 rounded-[24px] border border-gray-100 bg-surface p-4 shadow-xs dark:border-gray-900">
-        <View className="bg-accent/10 dark:bg-accent/20 mb-2 h-8 w-8 items-center justify-center rounded-full">
-          <Icon as={TrendingUp} size={16} className="text-accent-foreground" />
-        </View>
-        <Text className="text-xs font-medium text-muted">Net</Text>
-        <Text className={`mt-0.5 text-base font-bold ${net >= 0 ? 'text-income' : 'text-expense'}`}>
+      {/* Divider */}
+      <View className="my-4 h-[1px] bg-divider" />
+
+      {/* Net */}
+      <View className="flex-row items-center justify-between">
+        <Text className="text-sm font-semibold text-foreground">Net</Text>
+        <Text className={`text-lg font-bold ${net >= 0 ? 'text-income' : 'text-expense'}`}>
           {net >= 0 ? '+' : ''}${net.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </Text>
+      </View>
+
+      {/* Savings info */}
+      <View className="mt-2 flex-row items-center gap-1.5">
+        {rate !== null && (
+          <Text className="text-xs text-muted">
+            Saved {rate}% of income · {count} transaction{count !== 1 ? 's' : ''}
+          </Text>
+        )}
+        {rate === null && (
+          <Text className="text-xs text-muted">
+            {count} transaction{count !== 1 ? 's' : ''}
+          </Text>
+        )}
       </View>
     </View>
   );
