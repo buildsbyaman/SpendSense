@@ -83,6 +83,12 @@ export default function TransactionDatePickerModal({
     daysArray.push(new Date(currentYear, currentMonth, i));
   }
 
+  const isWholeMonth = rangeFrom?.getTime() === new Date(currentYear, currentMonth, 1).getTime() && 
+                       rangeTo?.getTime() === new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999).getTime();
+                       
+  const isWholeYear = rangeFrom?.getTime() === new Date(currentYear, 0, 1).getTime() && 
+                      rangeTo?.getTime() === new Date(currentYear, 11, 31, 23, 59, 59, 999).getTime();
+
   return (
     <Modal
       visible={visible}
@@ -167,9 +173,30 @@ export default function TransactionDatePickerModal({
           {/* Modal Actions */}
           {mode === 'range' && (
             <View className="items-center pt-2 pb-1">
-              <Text className="text-xs text-muted">
+              <Text className="text-xs text-muted mb-3">
                 Select two dates to act as a range
               </Text>
+              <View className="flex-row items-center justify-center gap-4">
+                <TouchableOpacity
+                  onPress={() => {
+                    setRangeFrom(new Date(currentYear, currentMonth, 1));
+                    setRangeTo(new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
+                  }}
+                  className={`py-1 px-3 rounded-full ${isWholeMonth ? 'bg-primary/20' : ''}`}
+                >
+                  <Text className={`text-xs ${isWholeMonth ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Month</Text>
+                </TouchableOpacity>
+                <View className="w-[1px] h-3 bg-border" />
+                <TouchableOpacity
+                  onPress={() => {
+                    setRangeFrom(new Date(currentYear, 0, 1));
+                    setRangeTo(new Date(currentYear, 11, 31, 23, 59, 59, 999));
+                  }}
+                  className={`py-1 px-3 rounded-full ${isWholeYear ? 'bg-primary/20' : ''}`}
+                >
+                  <Text className={`text-xs ${isWholeYear ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Year</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
           <View className="flex-row gap-3 pt-2">

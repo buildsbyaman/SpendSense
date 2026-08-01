@@ -6,7 +6,7 @@ import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import { TrendingUp, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
@@ -30,8 +30,17 @@ import {
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
-  const { navigate: navigateTab } = useTabNavigation();
+  const { navigate: navigateTab, addListener } = useTabNavigation();
   const { transactions } = useApp();
+  const scrollRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'analytics') {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+    });
+  }, [addListener]);
   const router = useRouter();
 
   const now = new Date();
@@ -67,6 +76,7 @@ export default function AnalyticsScreen() {
         <Header title="Analytics" showBack={true} onLeftPress={() => navigateTab('index')} />
       </View>
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

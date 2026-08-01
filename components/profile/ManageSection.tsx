@@ -1,19 +1,18 @@
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { ChevronRight, Repeat, CalendarClock, Tags, PiggyBank } from 'lucide-react-native';
+import { ChevronRight, Repeat, Tags, PiggyBank } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 
 interface ManageRow {
   label: string;
   icon: any;
-  route: '/subscriptions' | '/recurring' | '/categories' | '/budgets';
+  route: '/subscriptions' | '/categories' | '/budgets';
 }
 
 const rows: ManageRow[] = [
   { label: 'Subscriptions', icon: Repeat, route: '/subscriptions' },
-  { label: 'Recurring Expenses', icon: CalendarClock, route: '/recurring' },
   { label: 'Categories', icon: Tags, route: '/categories' },
   { label: 'Budgets', icon: PiggyBank, route: '/budgets' },
 ];

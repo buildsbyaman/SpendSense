@@ -8,7 +8,7 @@ import {
   Modal,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { X, Calendar } from 'lucide-react-native';
@@ -31,7 +31,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddTransactionScreen() {
   const insets = useSafeAreaInsets();
-  const { accounts, addTransaction, getSortedCategories } = useApp();
+  const { accounts, addTransaction, updateTransaction, getSortedCategories, budgets, transactions } = useApp();
+  const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { colorScheme } = useColorScheme();
   const placeholderColor =
     colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
@@ -53,9 +54,21 @@ export default function AddTransactionScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
+    if (editId) {
+      const tx = transactions.find((t) => t.id === editId);
+      if (tx) {
+        setType(tx.type);
+        setAmount(tx.amount.toString());
+        setTitle(tx.title === tx.category ? '' : tx.title);
+        setCategory(tx.category);
+        setSelectedWalletId(tx.walletId);
+        setDate(new Date(tx.date));
+        setCalendarMonth(new Date(tx.date));
+      }
+    }
     // Mount the modal slightly after the screen renders to ensure the slide-in animation fires
     setIsModalVisible(true);
-  }, []);
+  }, [editId, transactions]);
 
   const handleClose = () => {
     setIsModalVisible(false);
@@ -89,20 +102,70 @@ export default function AddTransactionScreen() {
       return;
     }
 
-    addTransaction({
-      title: title.trim() || category,
-      amount: parsedAmount!,
-      type,
-      category,
-      date: date.toISOString(),
-      walletId: selectedWalletId,
-    });
+    if (editId) {
+      const tx = transactions.find((t) => t.id === editId);
+      if (tx) {
+        updateTransaction({
+          ...tx,
+          title: title.trim() || category,
+          amount: parsedAmount!,
+          type,
+          category,
+          date: date.toISOString(),
+          walletId: selectedWalletId,
+        });
+      }
+    } else {
+      addTransaction({
+        title: title.trim() || category,
+        amount: parsedAmount!,
+        type,
+        category,
+        date: date.toISOString(),
+        walletId: selectedWalletId,
+      });
+    }
 
-    Toast.show({
-      type: 'success',
-      text1: 'Transaction Added',
-      text2: `Successfully added ${type === 'income' ? 'income' : 'expense'}!`,
-    });
+    // Check if the transaction exceeds the category budget
+    const budget = budgets.find((b) => b.category === category);
+    let isOverBudget = false;
+    let totalSpent = 0;
+
+    if (type === 'expense' && budget) {
+      const txDate = new Date(date);
+      const txYear = txDate.getFullYear();
+      const txMonth = txDate.getMonth();
+      
+      const currentMonthTxs = transactions.filter((t) => {
+        const d = new Date(t.date);
+        return d.getFullYear() === txYear && d.getMonth() === txMonth;
+      });
+
+      const spent = currentMonthTxs
+        .filter((t) => t.type === 'expense' && t.category === category && t.id !== editId)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      totalSpent = spent + parsedAmount!;
+      if (totalSpent > budget.amount) {
+        isOverBudget = true;
+      }
+    }
+
+    if (isOverBudget && budget) {
+      Toast.show({
+        type: 'error',
+        text1: 'Budget Exceeded Warning',
+        text2: `Transaction ${editId ? 'updated' : 'added'}, but "${category}" is over budget! ($${totalSpent.toFixed(2)} / $${budget.amount} spent)`,
+      });
+    } else {
+      Toast.show({
+        type: 'success',
+        text1: editId ? 'Transaction Updated' : 'Transaction Added',
+        text2: editId 
+          ? 'Transaction details saved successfully.'
+          : `Successfully added ${type === 'income' ? 'income' : 'expense'}!`,
+      });
+    }
 
     handleClose();
   };
@@ -132,7 +195,7 @@ export default function AddTransactionScreen() {
           <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
             {/* Header */}
             <View className="mb-6 flex-row items-center justify-between">
-              <Text variant="h2">Add Transaction</Text>
+              <Text variant="h2">{editId ? 'Edit Transaction' : 'Add Transaction'}</Text>
               <TouchableOpacity
                 onPress={handleClose}
                 className="rounded-full bg-secondary p-2">
@@ -311,7 +374,9 @@ export default function AddTransactionScreen() {
               disabled={!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0}
               className={`mt-8 items-center justify-center rounded-full bg-primary py-3.5 ${(!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0) ? 'opacity-40' : 'opacity-100'}`}
               activeOpacity={0.7}>
-              <Text className="text-base font-medium text-white dark:text-black">Save Transaction</Text>
+              <Text className="text-base font-medium text-white dark:text-black">
+                {editId ? 'Save Changes' : 'Save Transaction'}
+              </Text>
             </TouchableOpacity>
           </View>
           </ScrollView>

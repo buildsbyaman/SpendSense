@@ -9,10 +9,22 @@ import { router } from 'expo-router';
 import { parseBalance } from '@/utils/wallet';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 
+import { useState, useRef, useEffect } from 'react';
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { navigate: navigateTab } = useTabNavigation();
+  const { navigate: navigateTab, addListener } = useTabNavigation();
   const { accounts, transactions, userProfile } = useApp();
+  
+  const scrollRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'index') {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+    });
+  }, [addListener]);
 
   const getInitials = (name: string) => {
     const parts = name.trim().split(/\s+/);
@@ -57,6 +69,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

@@ -104,6 +104,35 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
       `);
       await db!.execAsync('PRAGMA user_version = 7');
     }
+
+    const versionAfter7 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+    const currentVersionAfter7 = versionAfter7?.user_version || 7;
+    if (currentVersionAfter7 < 8) {
+      await db!.execAsync(`
+        CREATE TABLE IF NOT EXISTS subscriptions (
+          id TEXT PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          amount REAL NOT NULL,
+          cycle TEXT NOT NULL,
+          category TEXT NOT NULL,
+          wallet_id TEXT NOT NULL,
+          next_billing_date TEXT NOT NULL,
+          is_active INTEGER NOT NULL DEFAULT 1
+        );
+      `);
+      await db!.execAsync('PRAGMA user_version = 8');
+    }
+
+    const { user_version: currentVersionAfter8 } = await db!.getFirstAsync<{ user_version: number }>(
+      'PRAGMA user_version'
+    ) ?? { user_version: 0 };
+
+    if (currentVersionAfter8 < 9) {
+      await db!.execAsync(`
+        ALTER TABLE subscriptions ADD COLUMN end_date TEXT;
+      `);
+      await db!.execAsync('PRAGMA user_version = 9');
+    }
   });
   return db;
 }

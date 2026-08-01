@@ -12,6 +12,7 @@ interface MonthYearPickerModalProps {
   maxYear: number;
   maxMonth: number;
   onSelect: (year: number, month: number | null) => void;
+  allowAllYear?: boolean;
 }
 
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -24,6 +25,7 @@ export function MonthYearPickerModal({
   maxYear,
   maxMonth,
   onSelect,
+  allowAllYear = true,
 }: MonthYearPickerModalProps) {
   const [viewYear, setViewYear] = useState(currentYear);
 
@@ -113,25 +115,27 @@ export function MonthYearPickerModal({
               </View>
 
               {/* Entire Year Option */}
-              <TouchableOpacity
-                onPress={() => handleMonthSelect(null)}
-                className={`mt-4 items-center justify-center rounded-full py-4 ${
-                  viewYear === currentYear && currentMonth === null
-                    ? 'bg-primary'
-                    : 'bg-gray-50 dark:bg-gray-900'
-                }`}
-                activeOpacity={0.7}
-              >
-                <Text
-                  className={`text-sm font-semibold ${
+              {allowAllYear && (
+                <TouchableOpacity
+                  onPress={() => handleMonthSelect(null)}
+                  className={`mt-4 items-center justify-center rounded-full py-4 ${
                     viewYear === currentYear && currentMonth === null
-                      ? 'text-[--primary-foreground]'
-                      : 'text-foreground'
+                      ? 'bg-primary'
+                      : 'bg-gray-50 dark:bg-gray-900'
                   }`}
+                  activeOpacity={0.7}
                 >
-                  Entire Year {viewYear}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    className={`text-sm font-semibold ${
+                      viewYear === currentYear && currentMonth === null
+                        ? 'text-[--primary-foreground]'
+                        : 'text-foreground'
+                    }`}
+                  >
+                    Entire Year {viewYear}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </TouchableWithoutFeedback>
         </View>

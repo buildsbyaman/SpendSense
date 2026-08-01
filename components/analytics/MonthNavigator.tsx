@@ -13,9 +13,10 @@ interface MonthNavigatorProps {
   onChange: (year: number, month: number | null) => void;
   maxYear: number;
   maxMonth: number;
+  allowAllYear?: boolean;
 }
 
-export function MonthNavigator({ year, month, onChange, maxYear, maxMonth }: MonthNavigatorProps) {
+export function MonthNavigator({ year, month, onChange, maxYear, maxMonth, allowAllYear = true }: MonthNavigatorProps) {
   const canGoNext = month !== null 
     ? (year < maxYear || (year === maxYear && month < maxMonth))
     : year < maxYear;
@@ -25,7 +26,7 @@ export function MonthNavigator({ year, month, onChange, maxYear, maxMonth }: Mon
       if (month === 0) onChange(year - 1, 11);
       else onChange(year, month - 1);
     } else {
-      onChange(year - 1, null);
+      if (allowAllYear) onChange(year - 1, null);
     }
   };
 
@@ -35,7 +36,7 @@ export function MonthNavigator({ year, month, onChange, maxYear, maxMonth }: Mon
       if (month === 11) onChange(year + 1, 0);
       else onChange(year, month + 1);
     } else {
-      onChange(year + 1, null);
+      if (allowAllYear) onChange(year + 1, null);
     }
   };
 
@@ -82,6 +83,7 @@ export function MonthNavigator({ year, month, onChange, maxYear, maxMonth }: Mon
       currentMonth={month}
       maxYear={maxYear}
       maxMonth={maxMonth}
+      allowAllYear={allowAllYear}
       onSelect={(y, m) => {
         onChange(y, m);
       }}

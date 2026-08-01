@@ -6,7 +6,6 @@ A personal finance tracker that stores everything on your device. No accounts, n
 
 - **Local-first storage** -- all transactions, categories, budgets, and settings are saved on-device. No backend, no sign-up, no data sent anywhere.
 - **Transaction management** -- add, edit, delete, and categorize every transaction. Tag expenses and income. Mark transactions as recurring.
-- **Recurring transactions** -- set up automatic recurring entries for rent, subscriptions, salaries. They appear on schedule without manual input.
 - **Budget limits** -- set monthly or weekly spending limits per category. Get alerts when you approach or exceed a budget.
 - **Spending alerts** -- configurable notifications when a transaction pushes you over a budget or when unusual spending is detected.
 - **Custom categories** -- create, edit, rename, and color-code your own spending and income categories. Reorder them to match your habits.
@@ -31,7 +30,7 @@ Exports can be filtered by date range, category, transaction type, or tags befor
 
 Every transaction, budget, category, and setting is stored locally on your device using SQLite. There is no server, no API key, no cloud dependency. Your financial data stays with you.
 
-Recurring transactions are calculated and inserted automatically based on their schedule. Budget alerts are triggered locally when spending thresholds are crossed. Exchange rates can be fetched when online or set manually.
+Budget alerts are triggered locally when spending thresholds are crossed. Exchange rates can be fetched when online or set manually.
 
 ## Tech Stack
 
@@ -83,7 +82,6 @@ app/
   edit-transaction.tsx         Modal for editing a transaction
   budgets.tsx                  Budget limits per category
   categories.tsx               Custom category management
-  recurring.tsx                Recurring transaction setup
   export.tsx                   Export screen (format picker + filters)
   currency.tsx                 Multi-currency settings
   alert-settings.tsx           Spending alert configuration
@@ -108,9 +106,8 @@ storage/
   transactions.ts              Transaction CRUD operations
   categories.ts                Category management
   budgets.ts                   Budget tracking and alerts
-  recurring.ts                 Recurring transaction scheduler
+  subscriptions.ts             Subscription tracking
   export.ts                    CSV, JSON, PDF generation
-  currency.ts                  Exchange rate handling
   backup.ts                    Encrypted backup and restore
   settings.ts                  User preferences and config
 ```

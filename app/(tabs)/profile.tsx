@@ -20,6 +20,8 @@ import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import { saveThemePreference } from '@/lib/theme-persistence';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useTabNavigation } from '@/context/TabNavigationContext';
+import { useRef } from 'react';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -31,6 +33,16 @@ export default function ProfileScreen() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmSeed, setConfirmSeed] = useState(false);
+  const { addListener } = useTabNavigation();
+  const scrollRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'profile') {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+    });
+  }, [addListener]);
 
   const isDark = colorScheme === 'dark';
   const placeholderColor = isDark ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
@@ -66,6 +78,7 @@ export default function ProfileScreen() {
         <Header title="Settings" showBack={false} onRightPress={() => setIsMenuOpen(true)} />
       </View>
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

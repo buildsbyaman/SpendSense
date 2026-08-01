@@ -14,10 +14,22 @@ import { WalletList } from '@/components/wallets/WalletList';
 import { DeleteWalletModal } from '@/components/wallets/DeleteWalletModal';
 
 import { useApp } from '@/context/AppContext';
+import { useTabNavigation } from '@/context/TabNavigationContext';
+import { useRef, useEffect } from 'react';
 
 export default function AccountsScreen() {
   const insets = useSafeAreaInsets();
+  const { navigate: navigateTab, addListener } = useTabNavigation();
   const { accounts, transactions, addWallet, updateWallet, deleteWallet, setDefaultWallet } = useApp();
+  const scrollRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'wallets') {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+    });
+  }, [addListener]);
   const [isAdding, setIsAdding] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [expandedWalletId, setExpandedWalletId] = useState<string | null>(null);
@@ -143,7 +155,8 @@ export default function AccountsScreen() {
           onRightPress={() => toggleAdding(true)} 
         />
       </View>
-      <ScrollView 
+      <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}

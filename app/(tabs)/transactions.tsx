@@ -4,6 +4,7 @@ import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
+import AnimatedSegment from '@/components/ui/animated-segment';
 import {
   getCategoryIcon,
   getCategoryColor,
@@ -12,10 +13,10 @@ import {
   filterTransactionsByDateRange,
   formatDatePickerDate,
 } from '@/utils/transaction';
-import { useState, useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useFocusEffect, router } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, ChevronDown, Plus, Receipt } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { useTabNavigation } from '@/context/TabNavigationContext';
 import Toast from 'react-native-toast-message';
 import TransactionFilterBar from '@/components/transactions/TransactionFilterBar';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
@@ -24,7 +25,17 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function TransactionsScreen() {
   const insets = useSafeAreaInsets();
+  const { navigate: navigateTab, addListener } = useTabNavigation();
   const { transactions, accounts, deleteTransaction, updateTransaction } = useApp();
+  const scrollRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'transactions') {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+    });
+  }, [addListener]);
   const [filter, setFilter] = useState<'all' | 'expense' | 'income'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState<Date | null>(() => {
@@ -143,6 +154,7 @@ export default function TransactionsScreen() {
         <Header title="History" showBack={false} />
       </View>
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -160,19 +172,16 @@ export default function TransactionsScreen() {
               onClearAll={handleClearAll}
             />
 
-            {/* Filter Pills */}
-            <View className="mb-4 mt-2 flex-row gap-2">
-              {(['all', 'expense', 'income'] as const).map((f) => (
-                <TouchableOpacity
-                  key={f}
-                  onPress={() => setFilter(f)}
-                  className={`rounded-full border px-4 py-2 ${filter === f ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
-                  <Text
-                    className={`text-xs font-semibold capitalize ${filter === f ? 'text-white dark:text-black' : 'text-muted'}`}>
-                    {f}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View className="mb-4 mt-2">
+              <AnimatedSegment<'all' | 'expense' | 'income'>
+                options={[
+                  { label: 'All', value: 'all' },
+                  { label: 'Expense', value: 'expense' },
+                  { label: 'Income', value: 'income' },
+                ]}
+                selectedValue={filter}
+                onChange={setFilter}
+              />
             </View>
           </>
         )}
@@ -251,7 +260,7 @@ export default function TransactionsScreen() {
                 <Text className="ml-1 text-xs font-bold uppercase tracking-widest text-muted">
                   {date}
                 </Text>
-                <View className="overflow-hidden rounded-3xl bg-surface px-4 py-2">
+                <View>
                   {txs.map((tx, idx) => {
                     const icon = getCategoryIcon(tx.category, tx.title);
                     const color = getCategoryColor(tx.category);

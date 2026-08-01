@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, Modal, TextInput, Platform, KeyboardAvoidingView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
@@ -14,7 +14,16 @@ import { useTabNavigation } from '@/context/TabNavigationContext';
 
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
-  const { navigate: navigateTab } = useTabNavigation();
+  const { navigate: navigateTab, addListener } = useTabNavigation();
+  const scrollRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'categories') {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+    });
+  }, [addListener]);
   const {
     addCustomCategory,
     deleteCustomCategory,
@@ -103,6 +112,7 @@ export default function CategoriesScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}>

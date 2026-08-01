@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { X, Trash2 } from 'lucide-react-native';
+import { X, Trash2, Info } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
 import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
 import Toast from 'react-native-toast-message';
@@ -112,6 +112,13 @@ export function AddBudgetModal({ visible, onClose, editBudgetId }: AddBudgetModa
 
           <View className="flex-col gap-6">
             
+            <View className="flex-row items-center gap-3 rounded-2xl bg-primary/10 p-4">
+              <Icon as={Info} size={20} className="text-primary" />
+              <Text className="flex-1 text-sm text-primary dark:text-primary">
+                Budgets apply globally and reset automatically on the 1st of every month.
+              </Text>
+            </View>
+
             <View>
               <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
               <ScrollView 
@@ -151,7 +158,7 @@ export function AddBudgetModal({ visible, onClose, editBudgetId }: AddBudgetModa
             <View>
               <Text className="mb-2 ml-1 text-sm text-muted">Monthly Limit</Text>
               <TextInput
-                className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-4 text-xl font-semibold dark:bg-gray-900 ${error ? 'border-red-500' : 'border-transparent'}`}
+                className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-4 text-base font-semibold dark:bg-gray-900 ${error ? 'border-red-500' : 'border-transparent'}`}
                 placeholder="$0.00"
                 placeholderTextColor="#9ca3af"
                 keyboardType="decimal-pad"

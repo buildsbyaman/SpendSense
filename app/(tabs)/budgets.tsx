@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
@@ -10,20 +10,33 @@ import { useApp } from '@/context/AppContext';
 import { filterByMonth } from '@/utils/analytics';
 import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
 import { AddBudgetModal } from '@/components/budgets/AddBudgetModal';
+import { MonthNavigator } from '@/components/analytics/MonthNavigator';
 
 export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
-  const { navigate: navigateTab } = useTabNavigation();
+  const { navigate: navigateTab, addListener } = useTabNavigation();
   const { budgets, transactions, getSortedCategories } = useApp();
+  const scrollRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'budgets') {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+    });
+  }, [addListener]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
 
-  // Compute current month expenses
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState<number>(now.getMonth());
+
+  // Compute selected month expenses
   const currentMonthTxs = useMemo(() => {
-    const now = new Date();
-    return filterByMonth(transactions, now.getFullYear(), now.getMonth());
-  }, [transactions]);
+    return filterByMonth(transactions, year, month);
+  }, [transactions, year, month]);
 
   const budgetProgress = useMemo(() => {
     return budgets.map((budget) => {
@@ -68,6 +81,7 @@ export default function BudgetsScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -89,27 +103,42 @@ export default function BudgetsScreen() {
             <TouchableOpacity
               onPress={() => setIsModalOpen(true)}
               activeOpacity={0.7}
-              className="rounded-full bg-primary px-8 py-3.5">
-              <Text className="text-base font-medium text-primary-foreground">Create Budget</Text>
+              className="rounded-full bg-primary px-8 py-3.5 flex-row items-center gap-2">
+              <Icon as={Plus} size={20} className="text-white dark:text-black" />
+              <Text className="text-base font-semibold text-white dark:text-black">Create Budget</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View className="mt-2">
-            <Text className="mb-4 ml-1 text-sm font-medium text-muted uppercase tracking-wider">
-              Current Month
-            </Text>
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="ml-1 text-sm font-medium text-muted">
+                {year === now.getFullYear() && month === now.getMonth() 
+                  ? 'Current Month' 
+                  : `${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year}`}
+              </Text>
+              <MonthNavigator
+                year={year}
+                month={month}
+                onChange={(y, m) => {
+                  setYear(y);
+                  if (m !== null) setMonth(m);
+                }}
+                maxYear={now.getFullYear()}
+                maxMonth={now.getMonth()}
+                allowAllYear={false}
+              />
+            </View>
             {budgetProgress.map((bp) => {
               const { icon: CatIcon, color } = getCatDetails(bp.category);
-              let progressColor = 'bg-green-500';
-              if (bp.percentage >= 90) progressColor = 'bg-red-500';
-              else if (bp.percentage >= 75) progressColor = 'bg-orange-500';
+              const isOverBudget = bp.percentage >= 100;
+              const progressColor = isOverBudget ? 'bg-red-500' : 'bg-primary';
 
               return (
                 <TouchableOpacity
                   key={bp.id}
                   activeOpacity={0.7}
                   onPress={() => handleEdit(bp.id)}
-                  className="mb-4 rounded-3xl bg-surface p-5 border border-gray-100 dark:border-gray-900 shadow-sm">
+                  className="mb-4 rounded-3xl bg-surface p-5 border border-border shadow-xs">
                   
                   <View className="mb-4 flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3">
@@ -121,7 +150,7 @@ export default function BudgetsScreen() {
                       <View>
                         <Text className="text-base font-semibold">{bp.category}</Text>
                         <Text className="text-xs text-muted">
-                          ${bp.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })} spent
+                          ${bp.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })} spent ({Math.round((bp.spent / bp.amount) * 100)}%)
                         </Text>
                       </View>
                     </View>
@@ -132,15 +161,15 @@ export default function BudgetsScreen() {
                       <Text className="text-xs text-muted">Limit</Text>
                     </View>
                   </View>
-
-                  <View className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+ 
+                  <View className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                     <View
                       className={`h-full rounded-full ${progressColor}`}
                       style={{ width: `${bp.percentage}%` }}
                     />
                   </View>
                   
-                  {bp.percentage >= 100 && (
+                  {isOverBudget && (
                     <Text className="mt-3 text-xs font-medium text-red-500 text-center">
                       Over budget by ${(bp.spent - bp.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </Text>

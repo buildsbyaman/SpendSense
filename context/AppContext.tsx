@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { type Account, formatWalletBalance, parseBalance } from '@/utils/wallet';
 import { type Transaction, type CustomCategory, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/utils/transaction';
+import { type Subscription, getNextBillingDate } from '@/utils/subscription';
 import { Landmark, Wallet, Smartphone } from 'lucide-react-native';
 import { getDatabase } from '@/lib/database';
 import {
@@ -33,6 +34,10 @@ import {
   updateBudget as repoUpdateBudget,
   deleteBudget as repoDeleteBudget,
   updateBudgetsCategory,
+  fetchSubscriptions,
+  insertSubscription,
+  updateSubscription as repoUpdateSubscription,
+  deleteSubscription as repoDeleteSubscription,
 } from '@/lib/repository';
 
 interface AppContextType {
@@ -61,6 +66,10 @@ interface AppContextType {
   addBudget: (budget: Omit<Budget, 'id'>) => void;
   updateBudget: (budget: Budget) => void;
   deleteBudget: (id: string) => void;
+  subscriptions: Subscription[];
+  addSubscription: (sub: Omit<Subscription, 'id'>) => Promise<void>;
+  updateSubscription: (sub: Subscription) => Promise<void>;
+  deleteSubscription: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -73,6 +82,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [categoryOrder, setCategoryOrder] = useState<{ expense: string[]; income: string[] }>({ expense: [], income: [] });
   const [userProfile, setUserProfile] = useState<{ name: string }>({ name: 'User' });
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -86,6 +96,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const incomeOrder = await fetchCategoryOrder('income') || [];
       const storedProfile = await fetchProfile();
       const storedBudgets = await fetchBudgets();
+      const storedSubscriptions = await fetchSubscriptions();
+      
+      // Handle auto-billing for active subscriptions
+      const now = new Date();
+      for (const sub of storedSubscriptions) {
+        if (sub.is_active === 1) {
+          let nextDate = new Date(sub.next_billing_date);
+          let changed = false;
+          while (nextDate <= now) {
+            if (sub.end_date && nextDate > new Date(sub.end_date)) break;
+
+            // Auto-create transaction
+            const tx: Transaction = {
+              id: Date.now().toString() + Math.random().toString(),
+              title: sub.name,
+              amount: sub.amount,
+              type: 'expense',
+              category: sub.category,
+              date: nextDate.toISOString(),
+              walletId: sub.wallet_id
+            };
+            await insertTransaction(tx);
+            storedTransactions.push(tx);
+            
+            // Deduct wallet balance
+            const acc = storedAccounts.find(a => a.id === sub.wallet_id);
+            if (acc) {
+               const numBal = parseBalance(acc.balance);
+               acc.balance = formatWalletBalance((numBal - sub.amount).toString());
+               await updateAccount(acc);
+            }
+
+            // Increment date
+            nextDate = getNextBillingDate(nextDate, sub.cycle);
+            sub.next_billing_date = nextDate.toISOString();
+            changed = true;
+          }
+          if (changed) {
+            await repoUpdateSubscription(sub);
+          }
+        }
+      }
+
       setAccounts(storedAccounts);
       setTransactions(storedTransactions);
       setCustomCategories(storedCategories);
@@ -93,6 +146,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
       if (storedProfile) setUserProfile(storedProfile);
       setBudgets(storedBudgets);
+      setSubscriptions(storedSubscriptions);
       setReady(true);
     })();
   }, []);
@@ -335,6 +389,65 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     repoDeleteBudget(id);
   }, []);
 
+  const addSubscription = useCallback(async (subData: Omit<Subscription, 'id'>) => {
+    const newSub: Subscription = {
+      ...subData,
+      id: Date.now().toString(),
+    };
+    
+    if (newSub.is_active === 1) {
+      const now = new Date();
+      let nextDate = new Date(newSub.next_billing_date);
+      while (nextDate <= now) {
+        if (newSub.end_date && nextDate > new Date(newSub.end_date)) break;
+        
+        addTransaction({
+          title: newSub.name,
+          amount: newSub.amount,
+          type: 'expense',
+          category: newSub.category,
+          date: nextDate.toISOString(),
+          walletId: newSub.wallet_id
+        });
+        nextDate = getNextBillingDate(nextDate, newSub.cycle);
+      }
+      newSub.next_billing_date = nextDate.toISOString();
+    }
+
+    setSubscriptions(prev => [...prev, newSub]);
+    await insertSubscription(newSub);
+  }, [addTransaction]);
+
+  const updateSubscription = useCallback(async (updated: Subscription) => {
+    const subToSave = { ...updated };
+    if (subToSave.is_active === 1) {
+      const now = new Date();
+      let nextDate = new Date(subToSave.next_billing_date);
+      while (nextDate <= now) {
+        if (subToSave.end_date && nextDate > new Date(subToSave.end_date)) break;
+        
+        addTransaction({
+          title: subToSave.name,
+          amount: subToSave.amount,
+          type: 'expense',
+          category: subToSave.category,
+          date: nextDate.toISOString(),
+          walletId: subToSave.wallet_id
+        });
+        nextDate = getNextBillingDate(nextDate, subToSave.cycle);
+      }
+      subToSave.next_billing_date = nextDate.toISOString();
+    }
+
+    setSubscriptions(prev => prev.map(s => s.id === subToSave.id ? subToSave : s));
+    await repoUpdateSubscription(subToSave);
+  }, [addTransaction]);
+
+  const deleteSubscription = useCallback((id: string) => {
+    setSubscriptions(prev => prev.filter(s => s.id !== id));
+    repoDeleteSubscription(id);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -363,6 +476,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addBudget,
         updateBudget,
         deleteBudget,
+        subscriptions,
+        addSubscription,
+        updateSubscription,
+        deleteSubscription,
       }}>
       {children}
     </AppContext.Provider>

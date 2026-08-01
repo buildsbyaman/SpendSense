@@ -14,7 +14,6 @@ import ProfileScreen from '@/app/(tabs)/profile';
 // Sub-screens shown as overlays (not in the tab bar row)
 import AnalyticsScreen from '@/app/(tabs)/analytics';
 import BudgetsScreen from '@/app/(tabs)/budgets';
-import RecurringScreen from '@/app/(tabs)/recurring';
 import SubscriptionsScreen from '@/app/(tabs)/subscriptions';
 import CategoriesScreen from '@/app/(tabs)/categories';
 
@@ -34,7 +33,6 @@ const MAIN_SCREENS: Record<string, React.ComponentType> = {
 const SUB_SCREENS: Record<string, React.ComponentType> = {
   analytics: AnalyticsScreen,
   budgets: BudgetsScreen,
-  recurring: RecurringScreen,
   subscriptions: SubscriptionsScreen,
   categories: CategoriesScreen,
 };
