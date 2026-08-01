@@ -12,6 +12,7 @@ import { useTabNavigation } from '@/context/TabNavigationContext';
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
 import { TypeFilterToggle, type TypeFilter } from '@/components/analytics/TypeFilterToggle';
 import { SummaryCards } from '@/components/analytics/SummaryCards';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { TrendChart } from '@/components/analytics/TrendChart';
 import { MonthlyBarChart } from '@/components/analytics/MonthlyBarChart';
 import { CategoryDonut } from '@/components/analytics/CategoryDonut';
@@ -102,26 +103,13 @@ export default function AnalyticsScreen() {
       </View>
 
       {!hasData ? (
-        <View className="mt-20 items-center justify-center px-6">
-          <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-secondary">
-            <Icon as={TrendingUp} size={40} className="text-muted opacity-50" />
-          </View>
-          <Text variant="h3" className="mb-2 text-center">
-            No Transactions
-          </Text>
-          <Text className="mb-8 text-center text-muted">
-            Add some transactions to see your monthly analytics here.
-          </Text>
-          <TouchableOpacity
-            className="flex-row items-center gap-2 rounded-full bg-primary px-6 py-3.5"
-            onPress={() => router.push('/add-transaction')}
-            activeOpacity={0.7}>
-            <Icon as={Plus} size={20} className="text-[--primary-foreground]" />
-            <Text className="text-base font-semibold text-[--primary-foreground]">
-              Add Transaction
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          icon={TrendingUp}
+          title="No Transactions"
+          description="Add some transactions to see your monthly analytics here."
+          buttonText="Add Transaction"
+          onButtonPress={() => router.push('/add-transaction')}
+        />
       ) : (
         <>
           {/* 1. Month Overview */}

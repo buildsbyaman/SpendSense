@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import { User, Check, Database } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
@@ -22,6 +22,8 @@ import { saveThemePreference } from '@/lib/theme-persistence';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { useRef } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Avatar } from '@/components/ui/avatar';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -35,7 +37,7 @@ export default function ProfileScreen() {
   const [confirmSeed, setConfirmSeed] = useState(false);
   const { addListener } = useTabNavigation();
   const scrollRef = useRef<ScrollView>(null);
-  
+
   useEffect(() => {
     return addListener((tabName) => {
       if (tabName === 'profile') {
@@ -46,6 +48,34 @@ export default function ProfileScreen() {
 
   const isDark = colorScheme === 'dark';
   const placeholderColor = isDark ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
+
+  const handlePickImage = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      let avatarUri: string | null = null;
+      if (asset.base64) {
+        avatarUri = `data:image/jpeg;base64,${asset.base64}`;
+      } else if (asset.uri) {
+        avatarUri = asset.uri;
+      }
+      if (avatarUri) {
+        updateUserProfile({ ...userProfile, avatar: avatarUri });
+        Toast.show({
+          type: 'success',
+          text1: 'Photo Updated',
+          text2: 'Your profile photo has been updated.',
+        });
+      }
+    }
+  }, [userProfile, updateUserProfile]);
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -86,18 +116,17 @@ export default function ProfileScreen() {
           paddingHorizontal: 20,
         }}
         keyboardShouldPersistTaps="handled">
-
         <View className="gap-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
           {/* Avatar Section */}
           <View className="flex-row items-center gap-4 py-2">
-            <View className="bg-primary/10 dark:bg-primary/20 h-14 w-14 items-center justify-center rounded-full">
-              <Icon as={User} size={24} className="text-primary" />
-            </View>
+            <TouchableOpacity activeOpacity={0.7} onPress={handlePickImage}>
+              <Avatar name={userProfile.name} avatar={userProfile.avatar} size={56} />
+            </TouchableOpacity>
             <View className="flex-1">
               <Text className="text-lg font-bold tracking-tight text-foreground">
                 {userProfile.name}
               </Text>
-              <Text className="text-xs text-muted">Manage your account preferences</Text>
+              <Text className="text-xs text-muted">Tap photo to change</Text>
             </View>
           </View>
 

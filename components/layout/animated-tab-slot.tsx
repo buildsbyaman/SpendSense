@@ -17,6 +17,7 @@ import BudgetsScreen from '@/app/(tabs)/budgets';
 import SubscriptionsScreen from '@/app/(tabs)/subscriptions';
 import CategoriesScreen from '@/app/(tabs)/categories';
 import CurrencyScreen from '@/app/currency';
+import ExportScreen from '@/app/(tabs)/export';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -37,6 +38,7 @@ const SUB_SCREENS: Record<string, React.ComponentType> = {
   subscriptions: SubscriptionsScreen,
   categories: CategoriesScreen,
   currency: CurrencyScreen,
+  export: ExportScreen,
 };
 
 const SPRING_CONFIG = {

@@ -140,7 +140,10 @@ export async function deleteTransactionsForWallet(walletId: string): Promise<voi
   await db.runAsync('DELETE FROM transactions WHERE wallet_id = ?', walletId);
 }
 
-export async function reassignTransactionsWallet(fromWalletId: string, toWalletId: string): Promise<void> {
+export async function reassignTransactionsWallet(
+  fromWalletId: string,
+  toWalletId: string
+): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
     'UPDATE transactions SET wallet_id = ? WHERE wallet_id = ?',
@@ -149,7 +152,10 @@ export async function reassignTransactionsWallet(fromWalletId: string, toWalletI
   );
 }
 
-export async function reassignTransactionsCategory(oldCategory: string, newCategory: string): Promise<void> {
+export async function reassignTransactionsCategory(
+  oldCategory: string,
+  newCategory: string
+): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
     'UPDATE transactions SET category = ? WHERE category = ?',
@@ -185,8 +191,10 @@ export async function deleteCustomCategory(id: string): Promise<void> {
 
 export async function fetchDeletedDefaultCategories(): Promise<string[]> {
   const db = await getDatabase();
-  const rows = await db.getAllAsync<{ name: string }>('SELECT name FROM deleted_default_categories');
-  return rows.map(r => r.name);
+  const rows = await db.getAllAsync<{ name: string }>(
+    'SELECT name FROM deleted_default_categories'
+  );
+  return rows.map((r) => r.name);
 }
 
 export async function insertDeletedDefaultCategory(name: string): Promise<void> {
@@ -196,7 +204,10 @@ export async function insertDeletedDefaultCategory(name: string): Promise<void> 
 
 export async function fetchCategoryOrder(type: string): Promise<string[] | null> {
   const db = await getDatabase();
-  const row = await db.getFirstAsync<{ sort_order: string }>('SELECT sort_order FROM category_order WHERE type = ?', type);
+  const row = await db.getFirstAsync<{ sort_order: string }>(
+    'SELECT sort_order FROM category_order WHERE type = ?',
+    type
+  );
   if (row && row.sort_order) {
     try {
       return JSON.parse(row.sort_order);
@@ -209,7 +220,11 @@ export async function fetchCategoryOrder(type: string): Promise<string[] | null>
 
 export async function saveCategoryOrder(type: string, sortOrder: string[]): Promise<void> {
   const db = await getDatabase();
-  await db.runAsync('INSERT OR REPLACE INTO category_order (type, sort_order) VALUES (?, ?)', type, JSON.stringify(sortOrder));
+  await db.runAsync(
+    'INSERT OR REPLACE INTO category_order (type, sort_order) VALUES (?, ?)',
+    type,
+    JSON.stringify(sortOrder)
+  );
 }
 
 // ── Profile ──────────────────────────────────────────────────────────
@@ -219,37 +234,47 @@ interface ProfileRow {
   name: string;
   currency_symbol?: string;
   currency_code?: string;
+  avatar?: string | null;
+  has_onboarded?: number;
 }
 
 export interface UserProfile {
   name: string;
   currencySymbol: string;
   currencyCode: string;
+  avatar: string | null;
+  hasOnboarded: boolean;
 }
 
 export async function fetchProfile(): Promise<UserProfile | null> {
   const db = await getDatabase();
   const row = await db.getFirstAsync<ProfileRow>("SELECT * FROM profile WHERE id = 'default'");
-  return row ? { 
-    name: row.name, 
-    currencySymbol: row.currency_symbol || '$',
-    currencyCode: row.currency_code || 'USD' 
-  } : null;
+  return row
+    ? {
+        name: row.name,
+        currencySymbol: row.currency_symbol || '$',
+        currencyCode: row.currency_code || 'USD',
+        avatar: row.avatar || null,
+        hasOnboarded: row.has_onboarded === 1,
+      }
+    : null;
 }
 
 export async function saveProfile(profile: UserProfile): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    "INSERT OR REPLACE INTO profile (id, name, currency_symbol, currency_code) VALUES ('default', ?, ?, ?)",
+    "INSERT OR REPLACE INTO profile (id, name, currency_symbol, currency_code, avatar, has_onboarded) VALUES ('default', ?, ?, ?, ?, ?)",
     profile.name,
     profile.currencySymbol,
-    profile.currencyCode
+    profile.currencyCode,
+    profile.avatar || null,
+    profile.hasOnboarded ? 1 : 0
   );
 }
 
 export async function convertCurrencyInDB(rate: number): Promise<void> {
   const db = await getDatabase();
-  
+
   await db.withTransactionAsync(async () => {
     // Convert transactions
     await db.execAsync(`UPDATE transactions SET amount = amount * ${rate}`);
@@ -257,18 +282,23 @@ export async function convertCurrencyInDB(rate: number): Promise<void> {
     await db.execAsync(`UPDATE budgets SET amount = amount * ${rate}`);
     // Convert subscriptions
     await db.execAsync(`UPDATE subscriptions SET amount = amount * ${rate}`);
-    
+
     // Accounts need to parse string balances, multiply, and save.
-    const accounts = await db.getAllAsync<{ id: string, balance: string }>('SELECT id, balance FROM accounts');
+    const accounts = await db.getAllAsync<{ id: string; balance: string }>(
+      'SELECT id, balance FROM accounts'
+    );
     for (const acc of accounts) {
       const cleaned = acc.balance.replace(/[^0-9.-]/g, '');
       let parsed = parseFloat(cleaned);
       if (isNaN(parsed)) parsed = 0;
-      
+
       const newBalance = parsed * rate;
-      const formattedNumber = Math.abs(newBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formattedNumber = Math.abs(newBalance).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
       const newBalanceStr = newBalance < 0 ? `-${formattedNumber}` : `${formattedNumber}`;
-      
+
       await db.runAsync('UPDATE accounts SET balance = ? WHERE id = ?', newBalanceStr, acc.id);
     }
   });
@@ -338,7 +368,10 @@ export async function deleteBudget(id: string): Promise<void> {
 }
 
 // Update budgets for a specific category to a new category (e.g., 'Uncategorized')
-export async function updateBudgetsCategory(oldCategory: string, newCategory: string): Promise<void> {
+export async function updateBudgetsCategory(
+  oldCategory: string,
+  newCategory: string
+): Promise<void> {
   const db = await getDatabase();
   await db.runAsync('UPDATE budgets SET category = ? WHERE category = ?', newCategory, oldCategory);
 }

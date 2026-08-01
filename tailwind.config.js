@@ -76,7 +76,7 @@ module.exports = {
       },
 
       fontFamily: {
-        sans: ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
 
       boxShadow: {

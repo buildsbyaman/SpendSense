@@ -40,7 +40,7 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
       await db!.execAsync(SCHEMA);
       await db!.execAsync('PRAGMA user_version = 1');
     }
-    
+
     const currentVersion = version?.user_version || (version === undefined ? 1 : 0);
     if (currentVersion < 2) {
       await db!.execAsync(`
@@ -125,9 +125,9 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
       await db!.execAsync('PRAGMA user_version = 8');
     }
 
-    const { user_version: currentVersionAfter8 } = await db!.getFirstAsync<{ user_version: number }>(
-      'PRAGMA user_version'
-    ) ?? { user_version: 0 };
+    const { user_version: currentVersionAfter8 } = (await db!.getFirstAsync<{
+      user_version: number;
+    }>('PRAGMA user_version')) ?? { user_version: 0 };
 
     if (currentVersionAfter8 < 9) {
       await db!.execAsync(`
@@ -136,9 +136,9 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
       await db!.execAsync('PRAGMA user_version = 9');
     }
 
-    const { user_version: currentVersionAfter9 } = await db!.getFirstAsync<{ user_version: number }>(
-      'PRAGMA user_version'
-    ) ?? { user_version: 0 };
+    const { user_version: currentVersionAfter9 } = (await db!.getFirstAsync<{
+      user_version: number;
+    }>('PRAGMA user_version')) ?? { user_version: 0 };
 
     if (currentVersionAfter9 < 10) {
       await db!.execAsync(`
@@ -146,6 +146,18 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
         ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'USD';
       `);
       await db!.execAsync('PRAGMA user_version = 10');
+    }
+
+    const { user_version: currentVersionAfter10 } = (await db!.getFirstAsync<{
+      user_version: number;
+    }>('PRAGMA user_version')) ?? { user_version: 0 };
+
+    if (currentVersionAfter10 < 11) {
+      await db!.execAsync(`
+        ALTER TABLE profile ADD COLUMN avatar TEXT;
+        ALTER TABLE profile ADD COLUMN has_onboarded INTEGER NOT NULL DEFAULT 0;
+      `);
+      await db!.execAsync('PRAGMA user_version = 11');
     }
   });
   return db;

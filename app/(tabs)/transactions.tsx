@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import AnimatedSegment from '@/components/ui/animated-segment';
+import { EmptyState } from '@/components/ui/EmptyState';
 import {
   getCategoryIcon,
   getCategoryColor,
@@ -220,39 +221,19 @@ export default function TransactionsScreen() {
 
         {/* Transactions List */}
         {transactions.length === 0 ? (
-          <View className="mt-20 items-center justify-center px-6">
-            <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
-              <Icon as={Receipt} size={40} className="text-muted opacity-50" />
-            </View>
-            <Text variant="h3" className="mb-2 text-center">
-              No Transactions Yet
-            </Text>
-            <Text className="mb-8 text-center text-muted">
-              Add your first transaction to start tracking your expenses and incomes.
-            </Text>
-            <TouchableOpacity
-              className="flex-row items-center gap-2 rounded-full bg-primary px-6 py-3.5"
-              onPress={() => router.push('/add-transaction')}
-              activeOpacity={0.7}>
-              <Icon as={Plus} size={20} className="text-white dark:text-black" />
-              <Text className="text-base font-semibold text-white dark:text-black">
-                Add Your First Transaction
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon={Receipt}
+            title="No Transactions Yet"
+            description="Add your first transaction to start tracking your expenses and incomes."
+            buttonText="Add Your First Transaction"
+            onButtonPress={() => router.push('/add-transaction')}
+          />
         ) : Object.keys(grouped).length === 0 ? (
-          <View className="mt-20 items-center justify-center px-6">
-            <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
-              <Icon as={Receipt} size={40} className="text-muted opacity-50" />
-            </View>
-            <Text variant="h3" className="mb-2 text-center">
-              No Results Found
-            </Text>
-            <Text className="text-center text-muted">
-              We couldn't find any transactions matching your filters. Try clearing them or using
-              different keywords.
-            </Text>
-          </View>
+          <EmptyState
+            icon={Receipt}
+            title="No Results Found"
+            description="We couldn't find any transactions matching your filters. Try clearing them or using different keywords."
+          />
         ) : (
           <View className="gap-6">
             {Object.entries(grouped).map(([date, txs]) => (

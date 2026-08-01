@@ -10,6 +10,8 @@ import { useApp } from '@/context/AppContext';
 import { SubscriptionItem } from '@/components/subscriptions/SubscriptionItem';
 import { router } from 'expo-router';
 import AnimatedSegment from '@/components/ui/animated-segment';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function SubscriptionsScreen() {
   const insets = useSafeAreaInsets();
@@ -26,6 +28,7 @@ export default function SubscriptionsScreen() {
   }, [addListener]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'current' | 'expired'>('current');
+  const [subscriptionToDelete, setSubscriptionToDelete] = useState<string | null>(null);
 
   const handleTabChange = (tab: 'current' | 'expired') => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -42,6 +45,14 @@ export default function SubscriptionsScreen() {
     const isExpired = sub.end_date ? new Date() > new Date(sub.end_date) : false;
     return activeTab === 'current' ? !isExpired : isExpired;
   });
+
+  const confirmDelete = () => {
+    if (subscriptionToDelete) {
+      deleteSubscription(subscriptionToDelete);
+      setSubscriptionToDelete(null);
+      setExpandedId(null);
+    }
+  };
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
@@ -75,19 +86,17 @@ export default function SubscriptionsScreen() {
           paddingTop: 16,
         }}>
         {filteredSubscriptions.length === 0 ? (
-          <View className="mt-20 items-center justify-center px-6">
-            <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
-              <Icon as={Repeat} size={40} className="text-muted opacity-50" />
-            </View>
-            <Text variant="h3" className="mb-2 text-center">
-              No {activeTab === 'expired' ? 'Expired' : 'Current'} Subscriptions
-            </Text>
-            <Text className="mb-8 text-center text-muted">
-              {activeTab === 'expired' 
-                ? "You don't have any past subscriptions." 
-                : "Track and manage your recurring subscriptions like Netflix, Spotify, and more."}
-            </Text>
-          </View>
+          <EmptyState
+            icon={Repeat}
+            title={`No ${activeTab === 'expired' ? 'Expired' : 'Current'} Subscriptions`}
+            description={
+              activeTab === 'expired'
+                ? "You don't have any past subscriptions."
+                : "Track and manage your recurring subscriptions like Netflix, Spotify, and more."
+            }
+            buttonText={activeTab === 'current' ? 'Add Subscription' : undefined}
+            onButtonPress={activeTab === 'current' ? () => router.push('/add-subscription') : undefined}
+          />
         ) : (
           <View>
             {[...filteredSubscriptions]
@@ -98,13 +107,23 @@ export default function SubscriptionsScreen() {
                     subscription={sub}
                     isExpanded={expandedId === sub.id}
                     onToggleExpand={() => toggleExpand(sub.id)}
-                    onDelete={() => deleteSubscription(sub.id)}
+                    onDelete={() => setSubscriptionToDelete(sub.id)}
                   />
                 </View>
               ))}
           </View>
         )}
       </ScrollView>
+
+      <ConfirmDialog
+        visible={subscriptionToDelete !== null}
+        title="Delete Subscription"
+        message="Are you sure you want to delete this subscription? This action cannot be undone."
+        destructive={true}
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setSubscriptionToDelete(null)}
+      />
     </View>
   );
 }

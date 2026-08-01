@@ -41,6 +41,13 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
+              name="onboarding"
+              options={{
+                headerShown: false,
+                animation: 'fade',
+              }}
+            />
+            <Stack.Screen
               name="add-transaction"
               options={{
                 presentation: 'transparentModal',
@@ -74,7 +81,7 @@ export default function RootLayout() {
             />
           </Stack>
           <PortalHost />
-          <Toast config={toastConfig} topOffset={25} />
+          <Toast config={toastConfig} topOffset={12} />
         </ThemeProvider>
       </AppProvider>
     </GestureHandlerRootView>

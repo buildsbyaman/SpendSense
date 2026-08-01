@@ -172,12 +172,14 @@ export default function CategoriesScreen() {
                     </TouchableOpacity>
 
                     {/* Delete button */}
-                    <TouchableOpacity
-                      onPress={() => isCustom && id ? handleDeleteCustom(id, name) : handleDeleteDefault(name)}
-                      activeOpacity={0.6}
-                      className="h-8 w-8 items-center justify-center rounded-full bg-red-500/15">
-                      <Icon as={Trash2} size={16} color="#ef4444" />
-                    </TouchableOpacity>
+                    {(isCustom || (name.toLowerCase() !== 'others' && name.toLowerCase() !== 'other')) && (
+                      <TouchableOpacity
+                        onPress={() => isCustom && id ? handleDeleteCustom(id, name) : handleDeleteDefault(name)}
+                        activeOpacity={0.6}
+                        className="h-8 w-8 items-center justify-center rounded-full bg-red-500/15">
+                        <Icon as={Trash2} size={16} color="#ef4444" />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
                 {!isLast && <View className="h-[1px] bg-divider" />}

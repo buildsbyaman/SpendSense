@@ -1,4 +1,4 @@
-import { View, ScrollView, LayoutAnimation } from 'react-native';
+import { View, ScrollView, LayoutAnimation, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -16,6 +16,7 @@ import { DeleteWalletModal } from '@/components/wallets/DeleteWalletModal';
 import { useApp } from '@/context/AppContext';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { useRef, useEffect } from 'react';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function AccountsScreen() {
   const insets = useSafeAreaInsets();
@@ -126,7 +127,7 @@ export default function AccountsScreen() {
 
       <View className="mb-8">
         
-        {accounts.length > 0 && (
+        {accounts.length > 0 ? (
           <WalletList 
             accounts={accounts}
             expandedWalletId={expandedWalletId}
@@ -135,6 +136,14 @@ export default function AccountsScreen() {
             onDeleteClick={(id) => setWalletToDelete(id)}
             onAddFirstWallet={() => router.push("/add-wallet")}
             onEditClick={handleEditClick}
+          />
+        ) : (
+          <EmptyState
+            icon={Wallet}
+            title="No Wallets Yet"
+            description="Add your first wallet or bank account to start tracking your balances and transactions."
+            buttonText="Add Wallet"
+            onButtonPress={() => router.push("/add-wallet")}
           />
         )}
 

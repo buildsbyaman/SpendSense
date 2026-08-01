@@ -6,6 +6,7 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { PiggyBank, Plus, Edit2 } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useApp } from '@/context/AppContext';
 import { filterByMonth } from '@/utils/analytics';
 import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
@@ -81,24 +82,13 @@ export default function BudgetsScreen() {
         }}>
         
         {budgets.length === 0 ? (
-          <View className="mt-20 items-center justify-center px-6">
-            <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
-              <Icon as={PiggyBank} size={40} className="text-muted opacity-50" />
-            </View>
-            <Text variant="h3" className="mb-2 text-center">
-              Monthly Budgets
-            </Text>
-            <Text className="mb-8 text-center text-muted">
-              Set spending limits per category and track your progress throughout the month.
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.push("/add-budget")}
-              activeOpacity={0.7}
-              className="rounded-full bg-primary px-8 py-3.5 flex-row items-center gap-2">
-              <Icon as={Plus} size={20} className="text-white dark:text-black" />
-              <Text className="text-base font-semibold text-white dark:text-black">Create Budget</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon={PiggyBank}
+            title="Monthly Budgets"
+            description="Set spending limits per category and track your progress throughout the month."
+            buttonText="Create Budget"
+            onButtonPress={() => router.push("/add-budget")}
+          />
         ) : (
           <View className="mt-2">
             <View className="mb-4 flex-row items-center justify-between">
