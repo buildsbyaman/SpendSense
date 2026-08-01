@@ -5,7 +5,9 @@ import { Plus, Trash2, Edit2 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { useApp } from '@/context/AppContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Animated from 'react-native-reanimated';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface SettingsOptionsMenuProps {
   visible: boolean;
@@ -22,15 +24,21 @@ export function SettingsOptionsMenu({ visible, onClose, onEditProfile }: Setting
     setConfirmVisible(true);
   };
 
+  const { isRendered, animatedStyle } = useModalAnimation({
+    visible,
+    type: 'scale-origin',
+  });
+
   return (
     <>
-      <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
+      <Modal visible={isRendered} transparent={true} animationType="none" onRequestClose={onClose}>
         <TouchableOpacity
-          className="flex-1 items-end justify-start bg-black/50 px-6 pt-20"
+          className="flex-1 items-end justify-start bg-transparent px-6 pt-20"
           activeOpacity={1}
           onPress={onClose}>
-          <View className="w-64 gap-1 overflow-hidden rounded-2xl bg-surface p-2 shadow-2xl">
-            <TouchableOpacity
+          <Animated.View style={animatedStyle}>
+            <View className="w-64 gap-1 overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+              <TouchableOpacity
               className="flex-row items-center rounded-xl p-3 active:bg-gray-50 dark:active:bg-gray-800"
               onPress={() => {
                 onClose();
@@ -48,7 +56,8 @@ export function SettingsOptionsMenu({ visible, onClose, onEditProfile }: Setting
               <Icon as={Trash2} size={20} className="mr-3 text-red-500" />
               <Text className="text-base font-medium text-red-500">Delete All Data</Text>
             </TouchableOpacity>
-          </View>
+            </View>
+          </Animated.View>
         </TouchableOpacity>
       </Modal>
 

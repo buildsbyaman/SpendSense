@@ -1,9 +1,11 @@
 import { View, TouchableOpacity, Modal } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Wallet } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
 import { useState, useEffect } from 'react';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface DeleteWalletModalProps {
   visible: boolean;
@@ -79,14 +81,21 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
 
   const { title, subtitle, isLastWallet } = content;
 
+  const { isRendered, animatedStyle, backdropStyle } = useModalAnimation({
+    visible,
+    type: 'scale',
+  });
+
   return (
     <Modal
-      visible={visible}
+      visible={isRendered}
       transparent={true}
-      animationType="fade"
+      animationType="none"
       onRequestClose={onCancel}>
-      <View className="flex-1 bg-black/50 justify-center items-center px-6">
-        <View className="bg-surface w-full rounded-3xl p-6 items-center shadow-2xl">
+      <View style={{ zIndex: 9999, elevation: 99 }} className="flex-1 justify-center items-center px-6">
+        <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
+        <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
+          <View className="bg-surface w-full rounded-3xl p-6 items-center shadow-2xl">
           <View className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 items-center justify-center mb-5">
             <Icon as={Wallet} size={28} className="text-red-500" />
           </View>
@@ -112,7 +121,8 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
               </TouchableOpacity>
             )}
           </View>
-        </View>
+          </View>
+        </Animated.View>
       </View>
     </Modal>
   );

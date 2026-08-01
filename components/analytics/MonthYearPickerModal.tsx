@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Modal, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface MonthYearPickerModalProps {
   visible: boolean;
@@ -43,12 +45,19 @@ export function MonthYearPickerModal({
     onClose();
   };
 
+  const { isRendered, animatedStyle, backdropStyle } = useModalAnimation({
+    visible,
+    type: 'scale',
+  });
+
   return (
-    <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
+    <Modal visible={isRendered} transparent={true} animationType="none" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 justify-center bg-black/50 px-6">
-          <TouchableWithoutFeedback>
-            <View className="rounded-[32px] bg-surface p-6 shadow-sm border border-gray-100 dark:border-gray-900">
+        <View style={{ zIndex: 9999, elevation: 99 }} className="flex-1 justify-center px-6">
+          <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
+          <Animated.View style={animatedStyle}>
+            <TouchableWithoutFeedback>
+              <View className="rounded-[32px] bg-surface p-6 shadow-sm border border-gray-100 dark:border-gray-900">
               {/* Header */}
               <View className="mb-6 flex-row items-center justify-between">
                 <Text className="text-xl font-bold text-foreground">Select Month</Text>
@@ -136,8 +145,9 @@ export function MonthYearPickerModal({
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
-          </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Animated.View>
         </View>
       </TouchableWithoutFeedback>
     </Modal>

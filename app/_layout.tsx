@@ -56,6 +56,22 @@ export default function RootLayout() {
                 animation: 'slide_from_bottom',
               }}
             />
+            <Stack.Screen
+              name="add-wallet"
+              options={{
+                presentation: 'transparentModal',
+                headerShown: false,
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
+              name="add-budget"
+              options={{
+                presentation: 'transparentModal',
+                headerShown: false,
+                animation: 'slide_from_bottom',
+              }}
+            />
           </Stack>
           <PortalHost />
           <Toast config={toastConfig} topOffset={25} />

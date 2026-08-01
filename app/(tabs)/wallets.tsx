@@ -4,12 +4,12 @@ import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useState, useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { Wallet, Landmark, CreditCard, Smartphone, Plus } from 'lucide-react-native';
 import { type Account, parseBalance } from '@/utils/wallet';
 
-import { AddWalletForm } from '@/components/wallets/AddWalletForm';
+
 import { WalletList } from '@/components/wallets/WalletList';
 import { DeleteWalletModal } from '@/components/wallets/DeleteWalletModal';
 
@@ -30,7 +30,7 @@ export default function AccountsScreen() {
       }
     });
   }, [addListener]);
-  const [isAdding, setIsAdding] = useState(false);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [expandedWalletId, setExpandedWalletId] = useState<string | null>(null);
   const [walletToDelete, setWalletToDelete] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export default function AccountsScreen() {
     useCallback(() => {
       return () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setIsAdding(false);
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setIsMenuOpen(false);
         setExpandedWalletId(null);
         setWalletToDelete(null);
@@ -50,13 +50,6 @@ export default function AccountsScreen() {
     }, [])
   );
 
-  const toggleAdding = (show: boolean) => {
-    setIsAdding(show);
-    if (!show) {
-      setEditWalletId(null);
-      setExpandedWalletId(null); // collapse accordion when dialog closes
-    }
-  };
 
   const toggleWalletExpand = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -92,48 +85,9 @@ export default function AccountsScreen() {
   };
 
   const handleEditClick = (id: string) => {
-    setEditWalletId(id);
-    setIsAdding(true);
+    router.push(`/add-wallet?editId=${id}`);
   };
 
-  const handleSaveWallet = (walletData: { id?: string; name: string; number: string; balance: string; type: string }) => {
-    let icon = Wallet;
-    if (walletData.type === 'Bank') icon = Landmark;
-    if (walletData.type === 'Card') icon = CreditCard;
-    if (walletData.type === 'Digital') icon = Smartphone;
-
-    if (walletData.id) {
-      updateWallet({
-        id: walletData.id,
-        name: walletData.name,
-        number: walletData.number,
-        balance: walletData.balance,
-        icon,
-        type: walletData.type,
-        isDefault: accounts.find(a => a.id === walletData.id)?.isDefault || false,
-      });
-      Toast.show({
-        type: 'success',
-        text1: 'Wallet Updated',
-        text2: 'Your wallet has been updated successfully',
-      });
-    } else {
-      addWallet({
-        name: walletData.name,
-        number: walletData.number,
-        balance: walletData.balance,
-        icon,
-        type: walletData.type,
-      });
-      Toast.show({
-        type: 'success',
-        text1: 'Wallet Added',
-        text2: 'Your new wallet has been added successfully',
-      });
-    }
-    
-    toggleAdding(false);
-  };
 
   const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
 
@@ -152,7 +106,7 @@ export default function AccountsScreen() {
           title="Wallets" 
           showBack={false} 
           rightIcon={Plus}
-          onRightPress={() => toggleAdding(true)} 
+          onRightPress={() => router.push("/add-wallet")} 
         />
       </View>
       <ScrollView
@@ -171,14 +125,6 @@ export default function AccountsScreen() {
       )}
 
       <View className="mb-8">
-        <AddWalletForm 
-          visible={isAdding}
-          editWalletId={editWalletId}
-          onSave={handleSaveWallet} 
-          onCancel={() => toggleAdding(false)} 
-          onDelete={(id) => setWalletToDelete(id)}
-          onSetDefault={setAsDefault}
-        />
         
         {accounts.length > 0 && (
           <WalletList 
@@ -187,7 +133,7 @@ export default function AccountsScreen() {
             onToggleExpand={toggleWalletExpand}
             onSetDefault={setAsDefault}
             onDeleteClick={(id) => setWalletToDelete(id)}
-            onAddFirstWallet={() => toggleAdding(true)}
+            onAddFirstWallet={() => router.push("/add-wallet")}
             onEditClick={handleEditClick}
           />
         )}

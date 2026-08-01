@@ -40,11 +40,17 @@ export default function HomeScreen() {
   // Recent 5 transactions
   const recentTransactions = transactions.slice(0, 5);
 
-  const totalIncome = transactions
+  const now = new Date();
+  const currentMonthTransactions = transactions.filter(t => {
+    const d = new Date(t.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const totalIncome = currentMonthTransactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpense = transactions
+  const totalExpense = currentMonthTransactions
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
@@ -57,8 +63,8 @@ export default function HomeScreen() {
       {/* Sticky Welcome Header */}
       <View className="mb-4 flex-row items-center justify-between px-5">
         <View>
-          <Text className="mt-0.5 text-2xl font-semibold text-foreground">SpendSense</Text>
-          <Text className="text-sm font-medium text-muted">Spend money more Sensely.</Text>
+          <Text className="mt-0.5 text-2xl font-semibold text-foreground">Hey,</Text>
+          <Text className="text-sm font-medium text-muted">{userProfile.name}</Text>
         </View>
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/profile')}
@@ -122,7 +128,7 @@ export default function HomeScreen() {
           className="flex-row items-center justify-center gap-1"
           activeOpacity={0.7}
           onPress={() => navigateTab('analytics')}>
-          <Text className="text-xs font-bold text-primary">See analytics</Text>
+          <Text className="text-md font-bold text-primary">See analytics</Text>
           <Icon as={ArrowRight} size={14} className="text-primary" />
         </TouchableOpacity>
       </View>

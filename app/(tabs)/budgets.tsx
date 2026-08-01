@@ -9,8 +9,8 @@ import { useTabNavigation } from '@/context/TabNavigationContext';
 import { useApp } from '@/context/AppContext';
 import { filterByMonth } from '@/utils/analytics';
 import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
-import { AddBudgetModal } from '@/components/budgets/AddBudgetModal';
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
+import { router } from 'expo-router';
 
 export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
@@ -26,9 +26,6 @@ export default function BudgetsScreen() {
     });
   }, [addListener]);
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingBudget, setEditingBudget] = useState<string | null>(null);
-
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState<number>(now.getMonth());
@@ -59,13 +56,7 @@ export default function BudgetsScreen() {
   };
 
   const handleEdit = (id: string) => {
-    setEditingBudget(id);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setTimeout(() => setEditingBudget(null), 300); // clear after animation
+    router.push(`/add-budget?editId=${id}`);
   };
 
   return (
@@ -76,7 +67,7 @@ export default function BudgetsScreen() {
           showBack={true} 
           onLeftPress={() => navigateTab('profile')} 
           rightIcon={Plus}
-          onRightPress={() => setIsModalOpen(true)}
+          onRightPress={() => router.push("/add-budget")}
         />
       </View>
 
@@ -101,7 +92,7 @@ export default function BudgetsScreen() {
               Set spending limits per category and track your progress throughout the month.
             </Text>
             <TouchableOpacity
-              onPress={() => setIsModalOpen(true)}
+              onPress={() => router.push("/add-budget")}
               activeOpacity={0.7}
               className="rounded-full bg-primary px-8 py-3.5 flex-row items-center gap-2">
               <Icon as={Plus} size={20} className="text-white dark:text-black" />
@@ -180,12 +171,6 @@ export default function BudgetsScreen() {
           </View>
         )}
       </ScrollView>
-
-      <AddBudgetModal 
-        visible={isModalOpen} 
-        onClose={handleCloseModal} 
-        editBudgetId={editingBudget} 
-      />
     </View>
   );
 }

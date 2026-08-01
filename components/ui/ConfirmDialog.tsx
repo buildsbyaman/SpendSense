@@ -1,5 +1,7 @@
 import { View, TouchableOpacity, Modal } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -22,15 +24,23 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { isRendered, animatedStyle, backdropStyle } = useModalAnimation({
+    visible,
+    type: 'scale',
+  });
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={isRendered} transparent animationType="none" onRequestClose={onCancel}>
       <TouchableOpacity
-        className="flex-1 items-center justify-center bg-black/50 px-6"
+        style={{ zIndex: 9999, elevation: 99 }}
+        className="flex-1 items-center justify-center px-6"
         activeOpacity={1}
         onPress={onCancel}>
-        <View
-          className="w-full max-w-sm gap-5 rounded-3xl bg-surface p-6 shadow-2xl"
-          onStartShouldSetResponder={() => true}>
+        <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
+        <Animated.View style={animatedStyle}>
+          <View
+            className="w-full max-w-sm gap-5 rounded-3xl bg-surface p-6 shadow-2xl"
+            onStartShouldSetResponder={() => true}>
           <View className="gap-2">
             <Text className="text-lg font-bold text-foreground">{title}</Text>
             <Text className="text-sm leading-5 text-muted">{message}</Text>
@@ -52,7 +62,8 @@ export function ConfirmDialog({
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+          </View>
+        </Animated.View>
       </TouchableOpacity>
     </Modal>
   );

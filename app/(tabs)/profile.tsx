@@ -59,7 +59,7 @@ export default function ProfileScreen() {
       return;
     }
 
-    updateUserProfile({ name: trimmed });
+    updateUserProfile({ ...userProfile, name: trimmed });
     setError(null);
     setIsEditing(false);
     Toast.show({

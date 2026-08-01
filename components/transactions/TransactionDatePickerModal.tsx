@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Modal } from 'react-native';
+import { View, Modal, TouchableOpacity } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface TransactionDatePickerModalProps {
   visible: boolean;
@@ -89,15 +91,22 @@ export default function TransactionDatePickerModal({
   const isWholeYear = rangeFrom?.getTime() === new Date(currentYear, 0, 1).getTime() && 
                       rangeTo?.getTime() === new Date(currentYear, 11, 31, 23, 59, 59, 999).getTime();
 
+  const { isRendered, animatedStyle, backdropStyle } = useModalAnimation({
+    visible,
+    type: 'scale',
+  });
+
   return (
     <Modal
-      visible={visible}
+      visible={isRendered}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-center items-center bg-black/50 px-6">
-        <View className="bg-surface rounded-3xl w-full p-6 gap-4 max-w-[340px]">
+      <View style={{ zIndex: 9999, elevation: 99 }} className="flex-1 justify-center items-center px-6">
+        <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
+        <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
+          <View className="bg-surface rounded-3xl w-full p-6 gap-4 max-w-[340px]">
           {/* Calendar Header */}
           <View className="flex-row justify-between items-center pb-2">
             <TouchableOpacity onPress={() => onNavigateMonth('prev')} className="p-2">
@@ -213,7 +222,8 @@ export default function TransactionDatePickerModal({
               <Text className="font-bold text-xs text-white dark:text-black">Confirm</Text>
             </TouchableOpacity>
           </View>
-        </View>
+          </View>
+        </Animated.View>
       </View>
     </Modal>
   );
