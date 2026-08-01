@@ -12,7 +12,7 @@ import { Avatar } from '@/components/ui/avatar';
 
 import { useState, useRef, useEffect } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
-export default function HomeScreen() {
+export default function HomeScreen(_props: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
   const { accounts, transactions, userProfile } = useApp();

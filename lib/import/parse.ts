@@ -27,7 +27,7 @@ export function parseJson(text: string): ParsedFile {
 
 export async function parseXlsx(bytes: Uint8Array): Promise<ParsedFile> {
   const XLSX = await import('xlsx');
-  const wb = XLSX.read(bytes, { type: 'array' });
+  const wb = XLSX.read(bytes, { type: 'array', cellDates: true });
   const tables: ExportedTable[] = [];
   let meta: { app?: string; currency?: string; user?: string } = { app: 'SpendSense' };
 
@@ -59,7 +59,13 @@ export async function parseXlsx(bytes: Uint8Array): Promise<ParsedFile> {
       const obj: Record<string, string | number> = {};
       for (let c = 0; c < columns.length; c++) {
         const val = row[c];
-        obj[columns[c]] = val == null ? '' : (val as string | number);
+        if (val == null) {
+          obj[columns[c]] = '';
+        } else if (val instanceof Date) {
+          obj[columns[c]] = val.toISOString();
+        } else {
+          obj[columns[c]] = val as string | number;
+        }
       }
       rows.push(obj);
     }

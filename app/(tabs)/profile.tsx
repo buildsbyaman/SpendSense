@@ -25,7 +25,7 @@ import { useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/avatar';
 
-export default function ProfileScreen() {
+export default function ProfileScreen(_props: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { colorScheme, setColorScheme } = useColorScheme();
   const { userProfile, updateUserProfile, seedDemoData } = useApp();

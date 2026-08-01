@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS profile (
 export async function getDatabase(): Promise<SQLiteDatabase> {
   if (db) return db;
   db = await openDatabaseAsync('spendsense.db');
+  await db.execAsync('PRAGMA journal_mode = WAL');
   await db.withTransactionAsync(async () => {
-    await db!.execAsync('PRAGMA journal_mode = WAL');
     const version = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
     if (!version || version.user_version === 0) {
       await db!.execAsync(SCHEMA);

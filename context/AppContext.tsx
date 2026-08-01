@@ -10,6 +10,7 @@ import {
 import { type Subscription, getNextBillingDate } from '@/utils/subscription';
 import { Landmark, Wallet, Smartphone } from 'lucide-react-native';
 import { getDatabase } from '@/lib/database';
+import { newId } from '@/lib/id';
 import {
   fetchAccounts,
   insertAccount,
@@ -22,6 +23,7 @@ import {
   deleteTransaction as repoDeleteTransaction,
   reassignTransactionsCategory,
   reassignTransactionsWallet,
+  reassignSubscriptionsWallet,
   fetchCustomCategories,
   insertCustomCategory,
   deleteCustomCategory as repoDeleteCustomCategory,
@@ -155,7 +157,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               if (sub.end_date && nextDate > new Date(sub.end_date)) break;
 
               const tx: Transaction = {
-                id: Date.now().toString() + Math.random().toString(),
+                id: newId(),
                 title: sub.name,
                 amount: sub.amount,
                 type: 'expense',
@@ -168,7 +170,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
               const acc = storedAccounts.find((a) => a.id === sub.wallet_id);
               if (acc) {
-                const updated = adjustAccountBalance(acc, -sub.amount);
+                const updated = adjustAccountBalance(
+                  acc,
+                  -sub.amount,
+                  storedProfile.currencySymbol
+                );
                 Object.assign(acc, updated);
                 await updateAccount(acc);
               }
@@ -228,7 +234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     shouldConvert: boolean
   ) => {
     if (shouldConvert) {
-      await convertCurrencyInDB(rate);
+      await convertCurrencyInDB(rate, symbol);
     }
 
     // Always update the profile to the new currency
@@ -275,7 +281,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addCustomCategory = useCallback((catData: Omit<CustomCategory, 'id'>) => {
     const newCategory: CustomCategory = {
       ...catData,
-      id: Date.now().toString(),
+      id: newId(),
     };
     setCustomCategories((prev) => [...prev, newCategory]);
     insertCustomCategory(newCategory);
@@ -346,7 +352,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const isFirst = accounts.length === 0;
       const newWallet: Account = {
         ...walletData,
-        id: Date.now().toString(),
+        id: newId(),
         isDefault: isFirst,
       };
       setAccounts((prev) => [...prev, newWallet]);
@@ -362,31 +368,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteWallet = useCallback(
     (id: string): { blocked: boolean; newDefaultName?: string } => {
-      // Capture current state synchronously for decision logic
       const current = accounts;
       const wallet = current.find((a) => a.id === id);
       if (!wallet) return { blocked: false };
 
-      // Sub-case: last wallet — block deletion
       if (current.length === 1) {
         return { blocked: true };
       }
 
-      // Find the target wallet for reassignment
       const others = current.filter((a) => a.id !== id);
       const isDefault = wallet.isDefault;
-      // Promote the first other wallet to default if needed
       let newDefaultWallet = others.find((a) => a.isDefault) ?? others[0];
 
-      // Reassign transactions in DB and in state
+      // Reassign transactions + subscriptions in DB and in state
       reassignTransactionsWallet(id, newDefaultWallet.id);
+      reassignSubscriptionsWallet(id, newDefaultWallet.id);
       setTransactions((prev) =>
         prev.map((tx) => (tx.walletId === id ? { ...tx, walletId: newDefaultWallet.id } : tx))
       );
+      setSubscriptions((prev) =>
+        prev.map((sub) => (sub.wallet_id === id ? { ...sub, wallet_id: newDefaultWallet.id } : sub))
+      );
 
-      // Remove deleted wallet and optionally promote new default
+      // Net-transfer the balance effect of moved transactions to the target wallet
       setAccounts((prev) => {
         const filtered = prev.filter((a) => a.id !== id);
+        const target = filtered.find((a) => a.id === newDefaultWallet.id);
+        if (target) {
+          const netDelta = transactions
+            .filter((tx) => tx.walletId === id)
+            .reduce((sum, tx) => sum + computeTransactionDelta(tx.type, tx.amount, 'apply'), 0);
+          if (netDelta !== 0) {
+            const updated = adjustAccountBalance(target, netDelta, userProfile.currencySymbol);
+            updateAccount(updated);
+            return filtered.map((a) => (a.id === target.id ? updated : a));
+          }
+        }
         if (isDefault) {
           const promoted = { ...filtered[0], isDefault: true };
           filtered[0] = promoted;
@@ -399,7 +416,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deleteAccount(id);
       return { blocked: false, newDefaultName: isDefault ? newDefaultWallet.name : undefined };
     },
-    [accounts]
+    [accounts, transactions, userProfile.currencySymbol]
   );
 
   const setDefaultWallet = useCallback((id: string) => {
@@ -407,68 +424,77 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     repoSetDefaultWallet(id);
   }, []);
 
-  const addTransaction = useCallback((txData: Omit<Transaction, 'id'>) => {
-    const newTx: Transaction = { ...txData, id: Date.now().toString() };
-    setTransactions((prev) => [newTx, ...prev]);
-    setAccounts((prev) =>
-      prev.map((acc) => {
-        if (acc.id === txData.walletId) {
-          const delta = computeTransactionDelta(txData.type, txData.amount, 'apply');
-          const updated = adjustAccountBalance(acc, delta);
-          updateAccount(updated);
-          return updated;
-        }
-        return acc;
-      })
-    );
-    insertTransaction(newTx);
-  }, []);
-
-  const deleteTransaction = useCallback((id: string) => {
-    setTransactions((prev) => {
-      const tx = prev.find((t) => t.id === id);
-      if (tx) {
-        setAccounts((prevAcc) =>
-          prevAcc.map((acc) => {
-            if (acc.id === tx.walletId) {
-              const delta = computeTransactionDelta(tx.type, tx.amount, 'reverse');
-              const updated = adjustAccountBalance(acc, delta);
-              updateAccount(updated);
-              return updated;
-            }
-            return acc;
-          })
-        );
-      }
-      return prev.filter((t) => t.id !== id);
-    });
-    repoDeleteTransaction(id);
-  }, []);
-
-  const updateTransactionFn = useCallback((updatedTx: Transaction) => {
-    setTransactions((prev) => {
-      const oldTx = prev.find((t) => t.id === updatedTx.id);
-      if (oldTx) {
-        setAccounts((prevAcc) =>
-          prevAcc.map((acc) => {
-            let delta = 0;
-            if (acc.id === oldTx.walletId) {
-              delta += computeTransactionDelta(oldTx.type, oldTx.amount, 'reverse');
-            }
-            if (acc.id === updatedTx.walletId) {
-              delta += computeTransactionDelta(updatedTx.type, updatedTx.amount, 'apply');
-            }
-            if (delta === 0) return acc;
-            const updated = adjustAccountBalance(acc, delta);
+  const addTransaction = useCallback(
+    (txData: Omit<Transaction, 'id'>) => {
+      const newTx: Transaction = { ...txData, id: newId() };
+      setTransactions((prev) => [newTx, ...prev]);
+      setAccounts((prev) =>
+        prev.map((acc) => {
+          if (acc.id === txData.walletId) {
+            const delta = computeTransactionDelta(txData.type, txData.amount, 'apply');
+            const updated = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
             updateAccount(updated);
             return updated;
-          })
-        );
-      }
-      return prev.map((t) => (t.id === updatedTx.id ? updatedTx : t));
-    });
-    updateTransaction(updatedTx);
-  }, []);
+          }
+          return acc;
+        })
+      );
+      insertTransaction(newTx);
+    },
+    [userProfile.currencySymbol]
+  );
+
+  const deleteTransaction = useCallback(
+    (id: string) => {
+      setTransactions((prev) => {
+        const tx = prev.find((t) => t.id === id);
+        if (tx) {
+          setAccounts((prevAcc) =>
+            prevAcc.map((acc) => {
+              if (acc.id === tx.walletId) {
+                const delta = computeTransactionDelta(tx.type, tx.amount, 'reverse');
+                const updated = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
+                updateAccount(updated);
+                return updated;
+              }
+              return acc;
+            })
+          );
+        }
+        return prev.filter((t) => t.id !== id);
+      });
+      repoDeleteTransaction(id);
+    },
+    [userProfile.currencySymbol]
+  );
+
+  const updateTransactionFn = useCallback(
+    (updatedTx: Transaction) => {
+      setTransactions((prev) => {
+        const oldTx = prev.find((t) => t.id === updatedTx.id);
+        if (oldTx) {
+          setAccounts((prevAcc) =>
+            prevAcc.map((acc) => {
+              let delta = 0;
+              if (acc.id === oldTx.walletId) {
+                delta += computeTransactionDelta(oldTx.type, oldTx.amount, 'reverse');
+              }
+              if (acc.id === updatedTx.walletId) {
+                delta += computeTransactionDelta(updatedTx.type, updatedTx.amount, 'apply');
+              }
+              if (delta === 0) return acc;
+              const updated = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
+              updateAccount(updated);
+              return updated;
+            })
+          );
+        }
+        return prev.map((t) => (t.id === updatedTx.id ? updatedTx : t));
+      });
+      updateTransaction(updatedTx);
+    },
+    [userProfile.currencySymbol]
+  );
 
   const clearAllData = useCallback(() => {
     setAccounts([]);
@@ -490,20 +516,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const seedDemoData = useCallback(async () => {
     try {
-      await repoSeedDemoData();
+      await repoSeedDemoData(userProfile.currencySymbol);
       const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
       const storedTransactions = await fetchTransactions();
       const storedBudgets = await fetchBudgets();
+      const storedSubscriptions = await fetchSubscriptions();
+      const storedCategories = await fetchCustomCategories();
+      const storedDeletedDefaults = await fetchDeletedDefaultCategories();
+      const storedExpenseOrder = (await fetchCategoryOrder('expense')) || [];
+      const storedIncomeOrder = (await fetchCategoryOrder('income')) || [];
       setAccounts(storedAccounts);
       setTransactions(storedTransactions);
       setBudgets(storedBudgets);
+      setSubscriptions(storedSubscriptions);
+      setCustomCategories(storedCategories);
+      setDeletedDefaultCategories(storedDeletedDefaults);
+      setCategoryOrder({ expense: storedExpenseOrder, income: storedIncomeOrder });
     } catch (err) {
       console.error('Seed demo data failed:', err);
     }
-  }, []);
+  }, [userProfile.currencySymbol]);
 
   const addBudget = useCallback((budget: Omit<Budget, 'id'>) => {
-    const newBudget = { ...budget, id: Date.now().toString() };
+    const newBudget = { ...budget, id: newId() };
     setBudgets((prev) => [...prev, newBudget]);
     insertBudget(newBudget);
   }, []);
@@ -522,7 +557,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (subData: Omit<Subscription, 'id'>) => {
       const newSub: Subscription = {
         ...subData,
-        id: Date.now().toString(),
+        id: newId(),
       };
 
       if (newSub.is_active === 1) {

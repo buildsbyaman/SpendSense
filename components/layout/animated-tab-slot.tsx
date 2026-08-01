@@ -21,7 +21,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Only the 4 tab bar tabs — determines horizontal slide order
 const MAIN_TABS = ['index', 'transactions', 'wallets', 'profile'];
 
-const MAIN_SCREENS: Record<string, React.ComponentType> = {
+const MAIN_SCREENS: Record<string, React.ComponentType<{ isActive?: boolean }>> = {
   index: IndexScreen,
   transactions: TransactionsScreen,
   wallets: WalletsScreen,
@@ -104,7 +104,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
           const Screen = MAIN_SCREENS[tabName];
           return (
             <View key={tabName} style={styles.screen}>
-              <Screen />
+              <Screen isActive={activeTab === tabName} />
             </View>
           );
         })}

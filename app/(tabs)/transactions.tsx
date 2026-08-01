@@ -15,7 +15,7 @@ import {
   formatDatePickerDate,
 } from '@/utils/transaction';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useFocusEffect, router } from 'expo-router';
+import { router } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, ChevronDown, Plus, Receipt } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import Toast from 'react-native-toast-message';
@@ -24,12 +24,12 @@ import TransactionDatePickerModal from '@/components/transactions/TransactionDat
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
-export default function TransactionsScreen() {
+export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
   const { transactions, accounts, deleteTransaction, updateTransaction, userProfile } = useApp();
   const scrollRef = useRef<ScrollView>(null);
-  
+
   useEffect(() => {
     return addListener((tabName) => {
       if (tabName === 'transactions') {
@@ -58,14 +58,12 @@ export default function TransactionsScreen() {
   };
 
   // Close date picker when leaving this tab
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        setIsDatePickerOpen(false);
-        setExpandedTransactionId(null);
-      };
-    }, [])
-  );
+  useEffect(() => {
+    if (!isActive) {
+      setIsDatePickerOpen(false);
+      setExpandedTransactionId(null);
+    }
+  }, [isActive]);
 
   const getWalletName = (walletId: string) => {
     return accounts.find((a) => a.id === walletId)?.name || 'Unknown Wallet';
@@ -199,7 +197,8 @@ export default function TransactionsScreen() {
                   Income
                 </Text>
                 <Text className="text-base font-bold text-income">
-                  {userProfile.currencySymbol}{totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {userProfile.currencySymbol}
+                  {totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>
@@ -212,7 +211,8 @@ export default function TransactionsScreen() {
                   Expenses
                 </Text>
                 <Text className="text-base font-bold text-expense">
-                  {userProfile.currencySymbol}{totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {userProfile.currencySymbol}
+                  {totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>

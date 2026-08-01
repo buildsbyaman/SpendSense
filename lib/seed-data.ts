@@ -82,15 +82,15 @@ const EXPENSE_TITLES: Record<string, string[]> = {
     'Insurance Payment',
     'Rent',
   ],
-  Health: ['Pharmacy', 'Gym Membership', 'Doctor Visit', 'Dental Cleaning', 'Vitamins'],
-  Education: ['Udemy Course', 'Book Purchase', 'Online Workshop', 'Skillshare'],
-  Other: ['Gift for Friend', 'Charity Donation', 'Pet Supplies', 'Dry Cleaning', 'ATM Fee'],
+  Medical: ['Pharmacy', 'Gym Membership', 'Doctor Visit', 'Dental Cleaning', 'Vitamins'],
+  Miscellaneous: ['Udemy Course', 'Book Purchase', 'Online Workshop', 'Skillshare'],
+  Others: ['Gift for Friend', 'Charity Donation', 'Pet Supplies', 'Dry Cleaning', 'ATM Fee'],
 };
 
 const INCOME_TITLES: Record<string, string[]> = {
   Salary: ['Monthly Salary'],
-  Freelance: ['Freelance Project', 'Consulting Fee', 'Side Gig', 'Client Payment'],
-  Interest: ['Interest Income', 'Dividend Payment'],
+  Business: ['Freelance Project', 'Consulting Fee', 'Side Gig', 'Client Payment'],
+  Investment: ['Interest Income', 'Dividend Payment'],
 };
 
 const EXPENSE_CATEGORIES = Object.keys(EXPENSE_TITLES);
@@ -101,15 +101,15 @@ const AMOUNT_RANGES: Record<string, [number, number]> = {
   Shopping: [25, 200],
   Entertainment: [10, 60],
   Bills: [40, 200],
-  Health: [15, 120],
-  Education: [15, 80],
-  Other: [5, 100],
+  Medical: [15, 120],
+  Miscellaneous: [15, 80],
+  Others: [5, 100],
 };
 
 const INCOME_AMOUNTS: Record<string, [number, number]> = {
   Salary: [3800, 5200],
-  Freelance: [200, 1500],
-  Interest: [15, 80],
+  Business: [200, 1500],
+  Investment: [15, 80],
 };
 
 function mulberry32(seed: number) {
@@ -137,7 +137,7 @@ function randDay(year: number, month: number, rand: () => number): number {
 
 const WALLET_IDS = ['wallet-bank', 'wallet-card', 'wallet-digital'] as const;
 
-export function generateSeedData() {
+export function generateSeedData(symbol?: string) {
   const rand = mulberry32(42);
   const now = new Date();
 
@@ -216,7 +216,7 @@ export function generateSeedData() {
       id: w.id,
       name: w.name,
       number: w.number,
-      balance: formatWalletBalance(reconciled.toString()),
+      balance: formatWalletBalance(reconciled.toString(), symbol),
       type: w.type,
       isDefault: w.isDefault,
     };

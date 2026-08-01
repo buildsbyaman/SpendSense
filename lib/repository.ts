@@ -149,6 +149,18 @@ export async function reassignTransactionsWallet(
   );
 }
 
+export async function reassignSubscriptionsWallet(
+  fromWalletId: string,
+  toWalletId: string
+): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    'UPDATE subscriptions SET wallet_id = ? WHERE wallet_id = ?',
+    toWalletId,
+    fromWalletId
+  );
+}
+
 export async function reassignTransactionsCategory(
   oldCategory: string,
   newCategory: string
@@ -269,18 +281,15 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
   );
 }
 
-export async function convertCurrencyInDB(rate: number): Promise<void> {
+export async function convertCurrencyInDB(rate: number, symbol?: string): Promise<void> {
+  if (!isFinite(rate) || rate <= 0) return;
   const db = await getDatabase();
 
   await db.withTransactionAsync(async () => {
-    // Convert transactions
-    await db.execAsync(`UPDATE transactions SET amount = amount * ${rate}`);
-    // Convert budgets
-    await db.execAsync(`UPDATE budgets SET amount = amount * ${rate}`);
-    // Convert subscriptions
-    await db.execAsync(`UPDATE subscriptions SET amount = amount * ${rate}`);
+    await db.runAsync('UPDATE transactions SET amount = amount * ?', rate);
+    await db.runAsync('UPDATE budgets SET amount = amount * ?', rate);
+    await db.runAsync('UPDATE subscriptions SET amount = amount * ?', rate);
 
-    // Accounts need to parse string balances, multiply, and save.
     const accounts = await db.getAllAsync<{ id: string; balance: string }>(
       'SELECT id, balance FROM accounts'
     );
@@ -294,7 +303,9 @@ export async function convertCurrencyInDB(rate: number): Promise<void> {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
-      const newBalanceStr = newBalance < 0 ? `-${formattedNumber}` : `${formattedNumber}`;
+      const sym = symbol ?? '$';
+      const newBalanceStr =
+        newBalance < 0 ? `-${sym}${formattedNumber}` : `${sym}${formattedNumber}`;
 
       await db.runAsync('UPDATE accounts SET balance = ? WHERE id = ?', newBalanceStr, acc.id);
     }
@@ -340,7 +351,7 @@ export async function replaceDeletedDefaultCategories(names: string[]): Promise<
   });
 }
 
-export async function seedDemoData(): Promise<void> {
+export async function seedDemoData(symbol?: string): Promise<void> {
   const db = await getDatabase();
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM transactions');
@@ -348,7 +359,7 @@ export async function seedDemoData(): Promise<void> {
     await db.runAsync('DELETE FROM budgets');
     await db.runAsync('DELETE FROM subscriptions');
   });
-  const { wallets, transactions } = generateSeedData();
+  const { wallets, transactions } = generateSeedData(symbol);
   for (const w of wallets) {
     await insertAccount(w as any);
   }

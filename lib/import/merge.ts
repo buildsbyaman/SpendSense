@@ -4,6 +4,7 @@ import { type Subscription, type SubscriptionCycle } from '@/utils/subscription'
 import { type Account } from '@/utils/wallet';
 import { type Budget, type UserProfile } from '@/lib/repository';
 import { type CustomCategory } from '@/utils/transaction';
+import { newId } from '@/lib/id';
 
 export type ImportMode = 'merge' | 'replace';
 export type ConflictPolicy = 'skip' | 'overwrite';
@@ -124,13 +125,6 @@ function detectTable(title: string, columns: string[]): TableKind {
   return 'unknown';
 }
 
-// ── ID generation ──────────────────────────────────────────────────────
-
-let _counter = 0;
-function newId(): string {
-  return `${Date.now()}-${++_counter}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 // ── Main builder ───────────────────────────────────────────────────────
 
 export function buildImportPlan(
@@ -142,6 +136,7 @@ export function buildImportPlan(
     budgets: Budget[];
     customCategories: CustomCategory[];
     categoryOrder: { expense: string[]; income: string[] };
+    hiddenCategories?: string[];
   },
   currentCurrency: string,
   importedCurrency: string | null,
@@ -241,8 +236,9 @@ export function buildImportPlan(
 
     // Category order: merge file order with existing order (append new names)
     if (kind === 'categoryorder' && want('categories')) {
-      const existingExpense = [...current.categoryOrder.expense];
-      const existingIncome = [...current.categoryOrder.income];
+      // In replace mode, only use file order (existing is cleared by apply.ts)
+      const existingExpense = isReplace ? [] : [...current.categoryOrder.expense];
+      const existingIncome = isReplace ? [] : [...current.categoryOrder.income];
       const fileExpense: string[] = [];
       const fileIncome: string[] = [];
       for (const row of table.rows) {
@@ -269,12 +265,14 @@ export function buildImportPlan(
 
     // Hidden categories: apply when categories selected
     if (kind === 'hiddencategories' && want('categories')) {
-      const hidden: string[] = [];
+      const fileHidden: string[] = [];
       for (const row of table.rows) {
         const name = String(row['Name'] ?? '').trim();
-        if (name) hidden.push(name);
+        if (name) fileHidden.push(name);
       }
-      plan.hiddenCategories = hidden;
+      // In merge mode, combine with existing; in replace mode, file list is authoritative
+      const existingHidden = isReplace ? [] : (current.hiddenCategories ?? []);
+      plan.hiddenCategories = [...new Set([...existingHidden, ...fileHidden])];
       continue;
     }
 
@@ -298,18 +296,28 @@ export function buildImportPlan(
           if (defaultFound) {
             isDefault = false;
           } else {
-            defaultFound = true;
+            // In merge mode, don't override existing app default
+            if (!isReplace && existingAccounts.some((a) => a.isDefault)) {
+              isDefault = false;
+            } else {
+              defaultFound = true;
+            }
           }
         }
 
         const existing = existingAccounts.find(
-          (a) =>
-            a.name.toLowerCase() === name.toLowerCase() &&
-            (a.number || number ? a.number === number : true)
+          (a) => a.name.toLowerCase() === name.toLowerCase() && (!number || a.number === number)
         );
         if (existing) {
           if (conflict === 'overwrite') {
-            const updated = { ...existing, name, number, type, balance, isDefault };
+            const updated = {
+              ...existing,
+              name,
+              number: number || existing.number,
+              type,
+              balance: balance || existing.balance,
+              isDefault,
+            };
             plan.wallets.update.push(updated);
             existingAccounts.splice(existingAccounts.indexOf(existing), 1, updated);
           } else {
@@ -461,7 +469,8 @@ export function buildImportPlan(
             e.name.toLowerCase() === sub.name.toLowerCase() &&
             Math.abs(e.amount - sub.amount) < 0.01 &&
             e.cycle === sub.cycle &&
-            e.wallet_id === sub.wallet_id
+            e.wallet_id === sub.wallet_id &&
+            e.next_billing_date.slice(0, 10) === sub.next_billing_date.slice(0, 10)
         );
         if (existing) {
           if (conflict === 'overwrite') {
@@ -563,8 +572,9 @@ function resolveWallet(
   balanceLookup: Map<string, string>
 ): string | null {
   if (!walletName) {
-    const existing = accounts[0];
-    if (existing) return existing.id;
+    const defaultAcc = accounts.find((a) => a.isDefault);
+    if (defaultAcc) return defaultAcc.id;
+    if (accounts.length > 0) return accounts[0].id;
     if (plan.wallets.insert.length > 0) return plan.wallets.insert[0].id;
     return null;
   }
@@ -578,7 +588,7 @@ function resolveWallet(
   const newAcc: Account = {
     id: newId(),
     name: walletName,
-    number: walletName,
+    number: '',
     type: 'Bank',
     balance,
     isDefault: false,

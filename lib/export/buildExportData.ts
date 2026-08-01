@@ -215,7 +215,8 @@ function buildWalletsTable(accounts: AppState['accounts']): ExportedTable {
 function buildBalancesTable(
   accounts: AppState['accounts'],
   txs: Transaction[],
-  period: ExportSelection['period']
+  period: ExportSelection['period'],
+  symbol?: string
 ): ExportedTable {
   const periodTxs = filterByPeriod(txs, period);
   const hasFilter = period.mode !== 'all';
@@ -235,9 +236,9 @@ function buildBalancesTable(
     };
 
     if (hasFilter) {
-      base.Income = fmtMoney(income);
-      base.Expense = fmtMoney(expense);
-      base.Net = fmtMoney(net);
+      base.Income = fmtMoney(income, symbol);
+      base.Expense = fmtMoney(expense, symbol);
+      base.Net = fmtMoney(net, symbol);
     }
 
     return base;
@@ -249,7 +250,8 @@ function buildBalancesTable(
 function buildBudgetsTable(
   budgets: AppState['budgets'],
   txs: Transaction[],
-  period: ExportSelection['period']
+  period: ExportSelection['period'],
+  symbol?: string
 ): ExportedTable {
   const periodTxs = filterByPeriod(txs, period);
 
@@ -265,9 +267,9 @@ function buildBudgetsTable(
 
       return {
         Category: b.category,
-        Budget: fmtMoney(b.amount),
-        Spent: fmtMoney(spent),
-        Remaining: fmtMoney(remaining),
+        Budget: fmtMoney(b.amount, symbol),
+        Spent: fmtMoney(spent, symbol),
+        Remaining: fmtMoney(remaining, symbol),
         '% Used': `${pct}%`,
       };
     }),
@@ -385,10 +387,14 @@ export function buildExportData(selection: ExportSelection, state: AppState): Ex
     tables.push(buildWalletsTable(state.accounts));
   }
   if (want('balances')) {
-    tables.push(buildBalancesTable(state.accounts, state.transactions, period));
+    tables.push(
+      buildBalancesTable(state.accounts, state.transactions, period, state.profile.currencySymbol)
+    );
   }
   if (want('budgets')) {
-    tables.push(buildBudgetsTable(state.budgets, state.transactions, period));
+    tables.push(
+      buildBudgetsTable(state.budgets, state.transactions, period, state.profile.currencySymbol)
+    );
   }
   if (want('categories')) {
     tables.push(buildCategoriesTable(state.customCategories));

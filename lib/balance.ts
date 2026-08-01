@@ -1,10 +1,10 @@
 import { type Account, parseBalance, formatWalletBalance } from '@/utils/wallet';
 
-export function adjustAccountBalance(account: Account, delta: number): Account {
+export function adjustAccountBalance(account: Account, delta: number, symbol?: string): Account {
   const currentVal = parseBalance(account.balance);
   return {
     ...account,
-    balance: formatWalletBalance((currentVal + delta).toString()),
+    balance: formatWalletBalance((currentVal + delta).toString(), symbol),
   };
 }
 
