@@ -59,19 +59,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
+    <View className="flex-1 mt-2 bg-background" style={{ paddingTop: insets.top + 16 }}>
       {/* Sticky Welcome Header */}
       <View className="mb-4 flex-row items-center justify-between px-5">
         <View>
-          <Text className="mt-0.5 text-2xl font-semibold text-foreground">Hey,</Text>
-          <Text className="text-sm font-medium text-muted">{userProfile.name}</Text>
+          <Text className="mt-0.5 text-2xl font-semibold text-foreground">Hey, {userProfile.name}</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/profile')}
-          className="h-11 w-11 items-center justify-center rounded-full border border-gray-100 bg-surface shadow-xs dark:border-gray-900"
-          activeOpacity={0.7}>
-          <Text className="text-sm font-semibold text-foreground">{initials}</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
