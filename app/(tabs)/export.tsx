@@ -20,6 +20,7 @@ import {
   FileJson,
   FileSpreadsheet,
   File,
+  UserRound,
 } from 'lucide-react-native';
 import AnimatedSegment from '@/components/ui/animated-segment';
 import Toast from 'react-native-toast-message';
@@ -45,6 +46,7 @@ const DATA_TYPES: { key: ExportType; label: string; icon: any }[] = [
   { key: 'balances', label: 'Balances', icon: CircleDashed },
   { key: 'budgets', label: 'Budgets', icon: PiggyBank },
   { key: 'categories', label: 'Categories', icon: Tags },
+  { key: 'profile', label: 'Profile', icon: UserRound },
   { key: 'alldata', label: 'All Data', icon: FileDown },
 ];
 
@@ -58,8 +60,16 @@ import { formatDatePickerDate } from '@/utils/transaction';
 
 export default function ExportScreen() {
   const insets = useSafeAreaInsets();
-  const { accounts, transactions, budgets, subscriptions, customCategories, userProfile } =
-    useApp();
+  const {
+    accounts,
+    transactions,
+    budgets,
+    subscriptions,
+    customCategories,
+    userProfile,
+    categoryOrder,
+    deletedDefaultCategories,
+  } = useApp();
   const { navigate: navigateTab } = useTabNavigation();
   const now = new Date();
 
@@ -101,8 +111,21 @@ export default function ExportScreen() {
         budgets,
         subscriptions,
         customCategories,
+        profile: userProfile,
+        categoryOrder,
+        deletedDefaultCategories,
       }),
-    [selection, transactions, accounts, budgets, subscriptions, customCategories]
+    [
+      selection,
+      transactions,
+      accounts,
+      budgets,
+      subscriptions,
+      customCategories,
+      userProfile,
+      categoryOrder,
+      deletedDefaultCategories,
+    ]
   );
 
   const totalRows = useMemo(() => tables.reduce((sum, t) => sum + t.rows.length, 0), [tables]);

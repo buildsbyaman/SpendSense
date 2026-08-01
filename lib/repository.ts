@@ -175,7 +175,7 @@ export async function fetchCustomCategories(): Promise<CustomCategory[]> {
 export async function insertCustomCategory(cat: CustomCategory): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'INSERT INTO custom_categories (id, name, type, icon, color) VALUES (?, ?, ?, ?, ?)',
+    'INSERT OR REPLACE INTO custom_categories (id, name, type, icon, color) VALUES (?, ?, ?, ?, ?)',
     cat.id,
     cat.name,
     cat.type,
@@ -316,7 +316,31 @@ export async function clearAll(): Promise<void> {
     DELETE FROM deleted_default_categories;
     DELETE FROM category_order;
     DELETE FROM budgets;
+    DELETE FROM subscriptions;
   `);
+}
+
+export async function clearAllData(): Promise<void> {
+  const db = await getDatabase();
+  await db.execAsync(`
+    DELETE FROM accounts;
+    DELETE FROM transactions;
+    DELETE FROM custom_categories;
+    DELETE FROM deleted_default_categories;
+    DELETE FROM category_order;
+    DELETE FROM budgets;
+    DELETE FROM subscriptions;
+  `);
+}
+
+export async function replaceDeletedDefaultCategories(names: string[]): Promise<void> {
+  const db = await getDatabase();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM deleted_default_categories');
+    for (const name of names) {
+      await db.runAsync('INSERT OR IGNORE INTO deleted_default_categories (name) VALUES (?)', name);
+    }
+  });
 }
 
 export async function seedDemoData(): Promise<void> {

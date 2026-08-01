@@ -6,7 +6,7 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react-native';
 
 export const toastConfig = {
   success: (props: ToastConfigParams<any>) => (
-    <View className="flex-row items-center w-[90%] bg-surface px-4 py-3 rounded-2xl shadow-sm">
+    <View className="flex-row items-center w-[90%] bg-surface px-4 py-4 rounded-2xl shadow-sm">
       <View className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/30 items-center justify-center mr-3">
         <Icon as={CheckCircle2} size={22} className="text-green-600 dark:text-green-400" />
       </View>

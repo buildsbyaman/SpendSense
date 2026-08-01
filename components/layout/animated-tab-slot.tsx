@@ -1,10 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Dimensions, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 import IndexScreen from '@/app/(tabs)/index';
 import TransactionsScreen from '@/app/(tabs)/transactions';
@@ -18,6 +14,7 @@ import SubscriptionsScreen from '@/app/(tabs)/subscriptions';
 import CategoriesScreen from '@/app/(tabs)/categories';
 import CurrencyScreen from '@/app/currency';
 import ExportScreen from '@/app/(tabs)/export';
+import ImportScreen from '@/app/(tabs)/import';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -39,6 +36,7 @@ const SUB_SCREENS: Record<string, React.ComponentType> = {
   categories: CategoriesScreen,
   currency: CurrencyScreen,
   export: ExportScreen,
+  import: ImportScreen,
 };
 
 const SPRING_CONFIG = {

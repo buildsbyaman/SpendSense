@@ -21,7 +21,7 @@ export async function exportData(
       break;
     }
     case 'pdf': {
-      const bytes = await buildPdfBytes(tables);
+      const bytes = await buildPdfBytes(tables, profile);
       await saveAndShareBytes(filename, bytes, 'pdf');
       break;
     }

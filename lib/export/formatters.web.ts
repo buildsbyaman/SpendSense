@@ -10,8 +10,12 @@ async function tablesToXLSXDownload(tables: ExportedTable[], filename: string): 
   downloadBlobDirect(filename, blob);
 }
 
-async function tablesToPDFDownload(tables: ExportedTable[], filename: string): Promise<void> {
-  const bytes = await buildPdfBytes(tables);
+async function tablesToPDFDownload(
+  tables: ExportedTable[],
+  filename: string,
+  profile: { name: string; currencyCode: string }
+): Promise<void> {
+  const bytes = await buildPdfBytes(tables, profile);
   const blob = new Blob([bytes], { type: 'application/pdf' });
   downloadBlobDirect(filename, blob);
 }
@@ -33,7 +37,7 @@ export async function exportData(
       break;
     }
     case 'pdf': {
-      await tablesToPDFDownload(tables, filename);
+      await tablesToPDFDownload(tables, filename, profile);
       break;
     }
   }

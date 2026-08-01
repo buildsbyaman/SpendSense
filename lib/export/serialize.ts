@@ -1,4 +1,5 @@
 import { type ExportedTable } from './buildExportData';
+import { encodeUtf8Base64 } from '../import/base64';
 
 // ── Shared constants ──────────────────────────────────────────────────
 
@@ -80,7 +81,10 @@ export async function buildXlsxBytes(tables: ExportedTable[]): Promise<Uint8Arra
 
 // ── PDF bytes ─────────────────────────────────────────────────────────
 
-export async function buildPdfBytes(tables: ExportedTable[]): Promise<Uint8Array<ArrayBuffer>> {
+export async function buildPdfBytes(
+  tables: ExportedTable[],
+  profile?: { name: string; currencyCode: string }
+): Promise<Uint8Array<ArrayBuffer>> {
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
@@ -106,6 +110,16 @@ export async function buildPdfBytes(tables: ExportedTable[]): Promise<Uint8Array
     });
 
     isFirstTable = false;
+  }
+
+  // Embed hidden payload for import round-trip (visible output unchanged)
+  if (profile) {
+    const payload = JSON.stringify({
+      app: 'SpendSense',
+      currency: profile.currencyCode,
+      tables: tables.map((t) => ({ title: t.title, columns: t.columns, rows: t.rows })),
+    });
+    doc.setProperties({ subject: encodeUtf8Base64(payload) });
   }
 
   const buf = doc.output('arraybuffer');

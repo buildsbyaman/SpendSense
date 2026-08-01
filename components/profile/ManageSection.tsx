@@ -1,14 +1,22 @@
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { ChevronRight, Repeat, Tags, PiggyBank, DollarSign, Download } from 'lucide-react-native';
+import {
+  ChevronRight,
+  Repeat,
+  Tags,
+  PiggyBank,
+  DollarSign,
+  Download,
+  FileUp,
+} from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 
 interface ManageRow {
   label: string;
   icon: any;
-  route: '/subscriptions' | '/categories' | '/budgets' | '/currency' | '/export';
+  route: '/subscriptions' | '/categories' | '/budgets' | '/currency' | '/export' | '/import';
   isTab?: boolean;
 }
 
@@ -17,6 +25,7 @@ const rows: ManageRow[] = [
   { label: 'Categories', icon: Tags, route: '/categories', isTab: true },
   { label: 'Budgets', icon: PiggyBank, route: '/budgets', isTab: true },
   { label: 'Currency Settings', icon: DollarSign, route: '/currency', isTab: true },
+  { label: 'Import', icon: FileUp, route: '/import', isTab: true },
   { label: 'Export', icon: Download, route: '/export', isTab: true },
 ];
 

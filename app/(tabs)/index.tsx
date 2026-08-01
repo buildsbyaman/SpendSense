@@ -62,7 +62,7 @@ export default function HomeScreen() {
   return (
     <View className="mt-2 flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
       {/* Sticky Welcome Header */}
-      <View className="mb-4 flex-row items-center justify-between px-5">
+      <View className="mb-4 ml-1 flex-row items-center justify-between px-5">
         <View className="flex-row items-center gap-3">
           <Avatar name={userProfile.name} avatar={userProfile.avatar} size={42} />
           <View>

@@ -1,10 +1,18 @@
 import { type Transaction } from '@/utils/transaction';
 import { type Subscription } from '@/utils/subscription';
+import { type UserProfile } from '@/lib/repository';
 import { parseBalance } from '@/utils/wallet';
 import { filterByMonth, filterByYear, filterByType, sumByType } from '@/utils/analytics';
 
 export type ExportType =
-  'transactions' | 'subscriptions' | 'wallets' | 'balances' | 'budgets' | 'categories' | 'alldata';
+  | 'transactions'
+  | 'subscriptions'
+  | 'wallets'
+  | 'balances'
+  | 'budgets'
+  | 'categories'
+  | 'profile'
+  | 'alldata';
 
 export type PeriodMode = 'all' | 'month' | 'year' | 'custom';
 
@@ -38,7 +46,10 @@ interface AppState {
   }[];
   budgets: { id: string; category: string; amount: number }[];
   subscriptions: Subscription[];
-  customCategories: { id: string; name: string; type: string; color?: string }[];
+  customCategories: { id: string; name: string; type: string; icon?: string; color?: string }[];
+  profile: UserProfile;
+  categoryOrder: { expense: string[]; income: string[] };
+  deletedDefaultCategories: string[];
 }
 
 function filterByPeriod(txs: Transaction[], period: ExportSelection['period']): Transaction[] {
@@ -149,10 +160,24 @@ function buildTransactionsTable(txs: Transaction[], accounts: AppState['accounts
   };
 }
 
-function buildSubscriptionsTable(subs: Subscription[]): ExportedTable {
+function buildSubscriptionsTable(
+  subs: Subscription[],
+  accounts: AppState['accounts']
+): ExportedTable {
+  const walletName = (wid: string) => accounts.find((a) => a.id === wid)?.name ?? wid;
+
   return {
     title: 'Subscriptions',
-    columns: ['Name', 'Amount', 'Cycle', 'Category', 'Next Billing', 'Status', 'End Date'],
+    columns: [
+      'Name',
+      'Amount',
+      'Cycle',
+      'Category',
+      'Next Billing',
+      'Status',
+      'End Date',
+      'Wallet',
+    ],
     rows: subs.map((s) => ({
       Name: s.name,
       Amount: fmtMoney(s.amount),
@@ -161,6 +186,7 @@ function buildSubscriptionsTable(subs: Subscription[]): ExportedTable {
       'Next Billing': fmtDate(s.next_billing_date),
       Status: s.is_active === 1 ? 'Active' : 'Inactive',
       'End Date': s.end_date ? fmtDate(s.end_date) : '—',
+      Wallet: walletName(s.wallet_id),
     })),
   };
 }
@@ -269,6 +295,7 @@ function buildCategoriesTable(customCats: AppState['customCategories']): Exporte
         Name: name,
         Source: custom ? 'Custom' : 'Default',
         Color: custom?.color ?? '—',
+        Icon: custom?.icon ?? '—',
       });
     }
   }
@@ -283,11 +310,44 @@ function buildCategoriesTable(customCats: AppState['customCategories']): Exporte
         Name: c.name,
         Source: 'Custom',
         Color: c.color ?? '—',
+        Icon: c.icon ?? '—',
       });
     }
   }
 
-  return { title: 'Categories', columns: ['Type', 'Name', 'Source', 'Color'], rows };
+  return { title: 'Categories', columns: ['Type', 'Name', 'Source', 'Color', 'Icon'], rows };
+}
+
+function buildProfileTable(profile: UserProfile): ExportedTable {
+  return {
+    title: 'Profile',
+    columns: ['Field', 'Value'],
+    rows: [
+      { Field: 'Name', Value: profile.name },
+      { Field: 'Currency Symbol', Value: profile.currencySymbol },
+      { Field: 'Currency Code', Value: profile.currencyCode },
+      { Field: 'Avatar', Value: profile.avatar ?? '—' },
+    ],
+  };
+}
+
+function buildCategoryOrderTable(order: { expense: string[]; income: string[] }): ExportedTable {
+  const rows: Record<string, string>[] = [];
+  for (const name of order.expense) {
+    rows.push({ Type: 'expense', Name: name });
+  }
+  for (const name of order.income) {
+    rows.push({ Type: 'income', Name: name });
+  }
+  return { title: 'Category Order', columns: ['Type', 'Name'], rows };
+}
+
+function buildHiddenCategoriesTable(deleted: string[]): ExportedTable {
+  return {
+    title: 'Hidden Categories',
+    columns: ['Name'],
+    rows: deleted.map((name) => ({ Name: name })),
+  };
 }
 
 // ── Main builder ───────────────────────────────────────────────────────
@@ -296,37 +356,34 @@ export function buildExportData(selection: ExportSelection, state: AppState): Ex
   const { types, period } = selection;
   const periodTxs = filterByPeriod(state.transactions, period);
 
+  const wantAll = types.includes('alldata');
+  const want = (kind: string) => wantAll || types.includes(kind as ExportType);
+
   const tables: ExportedTable[] = [];
 
-  if (types.includes('alldata')) {
-    tables.push(
-      buildTransactionsTable(periodTxs, state.accounts),
-      buildSubscriptionsTable(filterSubsByPeriod(state.subscriptions, period)),
-      buildWalletsTable(state.accounts),
-      buildBalancesTable(state.accounts, state.transactions, period),
-      buildBudgetsTable(state.budgets, state.transactions, period),
-      buildCategoriesTable(state.customCategories)
-    );
-  } else {
-    if (types.includes('transactions')) {
-      tables.push(buildTransactionsTable(periodTxs, state.accounts));
-    }
-    if (types.includes('subscriptions')) {
-      const filteredSubs = filterSubsByPeriod(state.subscriptions, period);
-      tables.push(buildSubscriptionsTable(filteredSubs));
-    }
-    if (types.includes('wallets')) {
-      tables.push(buildWalletsTable(state.accounts));
-    }
-    if (types.includes('balances')) {
-      tables.push(buildBalancesTable(state.accounts, state.transactions, period));
-    }
-    if (types.includes('budgets')) {
-      tables.push(buildBudgetsTable(state.budgets, state.transactions, period));
-    }
-    if (types.includes('categories')) {
-      tables.push(buildCategoriesTable(state.customCategories));
-    }
+  if (want('transactions')) {
+    tables.push(buildTransactionsTable(periodTxs, state.accounts));
+  }
+  if (want('subscriptions')) {
+    const filteredSubs = filterSubsByPeriod(state.subscriptions, period);
+    tables.push(buildSubscriptionsTable(filteredSubs, state.accounts));
+  }
+  if (want('wallets')) {
+    tables.push(buildWalletsTable(state.accounts));
+  }
+  if (want('balances')) {
+    tables.push(buildBalancesTable(state.accounts, state.transactions, period));
+  }
+  if (want('budgets')) {
+    tables.push(buildBudgetsTable(state.budgets, state.transactions, period));
+  }
+  if (want('categories')) {
+    tables.push(buildCategoriesTable(state.customCategories));
+    tables.push(buildCategoryOrderTable(state.categoryOrder));
+    tables.push(buildHiddenCategoriesTable(state.deletedDefaultCategories));
+  }
+  if (want('profile')) {
+    tables.push(buildProfileTable(state.profile));
   }
 
   return tables;

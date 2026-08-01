@@ -8,7 +8,7 @@ import { Redirect } from 'expo-router';
 
 function TabLayoutInner() {
   const [activeTab, setActiveTab] = useState('index');
-  const { addListener } = useTabNavigation();
+  const { addListener, navigate } = useTabNavigation();
   const { ready, userProfile } = useApp();
 
   useEffect(() => {
@@ -18,8 +18,8 @@ function TabLayoutInner() {
   }, [addListener]);
 
   const handleTabChange = useCallback((name: string) => {
-    setActiveTab(name);
-  }, []);
+    navigate(name);
+  }, [navigate]);
 
   if (!ready) return null;
   if (!userProfile.hasOnboarded) return <Redirect href="/onboarding" />;

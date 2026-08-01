@@ -18,11 +18,9 @@ function getInitials(name: string) {
 }
 
 function getColorIndex(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % AVATAR_COLORS_LIGHT.length;
+  const firstLetter = name.trim().charAt(0).toLowerCase();
+  if (!firstLetter) return 0;
+  return firstLetter.charCodeAt(0) % AVATAR_COLORS_LIGHT.length;
 }
 
 export function Avatar({ name, avatar, size = 48 }: AvatarProps) {

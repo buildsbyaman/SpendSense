@@ -80,6 +80,7 @@ interface AppContextType {
     code: string,
     shouldConvert: boolean
   ) => Promise<void>;
+  refreshAllData: () => Promise<void>;
   customCategories: CustomCategory[];
   addCustomCategory: (category: Omit<CustomCategory, 'id'>) => void;
   deleteCustomCategory: (id: string) => void;
@@ -238,6 +239,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSubscriptions(await fetchSubscriptions());
     }
   };
+
+  const refreshAllData = useCallback(async () => {
+    const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
+    const storedTransactions = await fetchTransactions();
+    const storedCategories = await fetchCustomCategories();
+    const storedDeletedDefaults = await fetchDeletedDefaultCategories();
+    const expenseOrder = (await fetchCategoryOrder('expense')) || [];
+    const incomeOrder = (await fetchCategoryOrder('income')) || [];
+    const storedBudgets = await fetchBudgets();
+    const storedSubscriptions = await fetchSubscriptions();
+    setAccounts(storedAccounts);
+    setTransactions(storedTransactions);
+    setCustomCategories(storedCategories);
+    setDeletedDefaultCategories(storedDeletedDefaults);
+    setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
+    setBudgets(storedBudgets);
+    setSubscriptions(storedSubscriptions);
+  }, []);
 
   const addCustomCategory = useCallback((catData: Omit<CustomCategory, 'id'>) => {
     const newCategory: CustomCategory = {
@@ -577,6 +596,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         completeOnboarding,
         ready,
         updateCurrencyAndConvert,
+        refreshAllData,
         customCategories,
         addCustomCategory,
         deleteCustomCategory,
