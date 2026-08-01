@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 CREATE TABLE IF NOT EXISTS profile (
   id TEXT PRIMARY KEY NOT NULL,
-  name TEXT NOT NULL
+  name TEXT NOT NULL,
+  currency_symbol TEXT NOT NULL DEFAULT '$',
+  currency_code TEXT NOT NULL DEFAULT 'USD'
 );
 `;
 
@@ -132,6 +134,18 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
         ALTER TABLE subscriptions ADD COLUMN end_date TEXT;
       `);
       await db!.execAsync('PRAGMA user_version = 9');
+    }
+
+    const { user_version: currentVersionAfter9 } = await db!.getFirstAsync<{ user_version: number }>(
+      'PRAGMA user_version'
+    ) ?? { user_version: 0 };
+
+    if (currentVersionAfter9 < 10) {
+      await db!.execAsync(`
+        ALTER TABLE profile ADD COLUMN currency_symbol TEXT DEFAULT '$';
+        ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'USD';
+      `);
+      await db!.execAsync('PRAGMA user_version = 10');
     }
   });
   return db;

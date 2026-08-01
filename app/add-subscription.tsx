@@ -28,7 +28,7 @@ import AnimatedSegment from '@/components/ui/animated-segment';
 
 export default function AddSubscriptionScreen() {
   const insets = useSafeAreaInsets();
-  const { accounts, addSubscription, updateSubscription, getSortedCategories, subscriptions } = useApp();
+  const { accounts, addSubscription, updateSubscription, getSortedCategories, subscriptions, userProfile } = useApp();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { colorScheme } = useColorScheme();
   const placeholderColor =
@@ -198,7 +198,7 @@ export default function AddSubscriptionScreen() {
           <View>
             <Text className="mb-2 ml-1 text-sm text-muted">Amount</Text>
             <View className="relative justify-center">
-              <Text className="absolute left-5 z-10 text-base font-semibold text-foreground">$</Text>
+              <Text className="absolute left-5 z-10 text-base font-semibold text-foreground">{userProfile.currencySymbol}</Text>
               <TextInput
                 value={amount}
                 onChangeText={(text) => setAmount(sanitizeAmountInput(text))}

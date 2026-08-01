@@ -253,14 +253,14 @@ export function niceCeil(value: number): number {
 }
 
 /** Compact axis label: $1.2k, $850, $12.5k */
-export function formatCompactCurrency(v: number): string {
+export function formatCompactCurrency(v: number, symbol: string = '$'): string {
   const abs = Math.abs(v);
   if (abs >= 1000) {
     const k = abs / 1000;
     const s = k % 1 === 0 ? k.toFixed(0) : k.toFixed(1);
-    return v < 0 ? `-$${s}k` : `$${s}k`;
+    return v < 0 ? `-${symbol}${s}k` : `${symbol}${s}k`;
   }
-  return v < 0 ? `-$${Math.round(abs)}` : `$${Math.round(abs)}`;
+  return v < 0 ? `-${symbol}${Math.round(abs)}` : `${symbol}${Math.round(abs)}`;
 }
 
 export function savingsRate(income: number, expense: number): number | null {

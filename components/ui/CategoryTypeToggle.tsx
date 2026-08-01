@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { type TransactionType } from '@/utils/transaction';
 import AnimatedSegment from '@/components/ui/animated-segment';
 

@@ -38,6 +38,7 @@ import {
   insertSubscription,
   updateSubscription as repoUpdateSubscription,
   deleteSubscription as repoDeleteSubscription,
+  convertCurrencyInDB,
 } from '@/lib/repository';
 
 interface AppContextType {
@@ -52,8 +53,9 @@ interface AppContextType {
   updateTransaction: (updated: Transaction) => void;
   clearAllData: () => void;
   seedDemoData: () => Promise<void>;
-  userProfile: { name: string };
-  updateUserProfile: (profile: { name: string }) => void;
+  userProfile: { name: string; currencySymbol: string; currencyCode: string };
+  updateUserProfile: (profile: { name: string; currencySymbol: string; currencyCode: string }) => void;
+  updateCurrencyAndConvert: (rate: number, symbol: string, code: string, shouldConvert: boolean) => Promise<void>;
   customCategories: CustomCategory[];
   addCustomCategory: (category: Omit<CustomCategory, 'id'>) => void;
   deleteCustomCategory: (id: string) => void;
@@ -80,7 +82,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [deletedDefaultCategories, setDeletedDefaultCategories] = useState<string[]>([]);
   const [categoryOrder, setCategoryOrder] = useState<{ expense: string[]; income: string[] }>({ expense: [], income: [] });
-  const [userProfile, setUserProfile] = useState<{ name: string }>({ name: 'User' });
+  const [userProfile, setUserProfile] = useState<{ name: string; currencySymbol: string; currencyCode: string }>({ name: 'User', currencySymbol: '$', currencyCode: 'USD' });
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [ready, setReady] = useState(false);
@@ -94,7 +96,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const storedDeletedDefaults = await fetchDeletedDefaultCategories();
       const expenseOrder = await fetchCategoryOrder('expense') || [];
       const incomeOrder = await fetchCategoryOrder('income') || [];
-      const storedProfile = await fetchProfile();
+      const storedProfile = await fetchProfile() || { name: 'User', currencySymbol: '$', currencyCode: 'USD' };
+      setUserProfile(storedProfile);
       const storedBudgets = await fetchBudgets();
       const storedSubscriptions = await fetchSubscriptions();
       
@@ -144,17 +147,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCustomCategories(storedCategories);
       setDeletedDefaultCategories(storedDeletedDefaults);
       setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
-      if (storedProfile) setUserProfile(storedProfile);
+      if (storedProfile) {
+        setUserProfile(storedProfile);
+      }
       setBudgets(storedBudgets);
       setSubscriptions(storedSubscriptions);
       setReady(true);
     })();
   }, []);
 
-  const updateUserProfile = useCallback((profile: { name: string }) => {
+  const updateUserProfile = async (profile: { name: string; currencySymbol: string; currencyCode: string }) => {
     setUserProfile(profile);
-    saveProfile(profile);
-  }, []);
+    await saveProfile(profile);
+  };
+
+  const updateCurrencyAndConvert = async (rate: number, symbol: string, code: string, shouldConvert: boolean) => {
+    if (shouldConvert) {
+      await convertCurrencyInDB(rate);
+    }
+    
+    // Always update the profile to the new currency
+    const newProfile = { ...userProfile, currencySymbol: symbol, currencyCode: code };
+    await saveProfile(newProfile);
+    setUserProfile(newProfile);
+    
+    // Refresh all state if we converted
+    if (shouldConvert) {
+      const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
+      setAccounts(storedAccounts);
+      setTransactions(await fetchTransactions());
+      setBudgets(await fetchBudgets());
+      setSubscriptions(await fetchSubscriptions());
+    }
+  };
 
   const addCustomCategory = useCallback((catData: Omit<CustomCategory, 'id'>) => {
     const newCategory: CustomCategory = {
@@ -359,7 +384,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTransactions([]);
     setCustomCategories([]);
     setBudgets([]);
-    setUserProfile({ name: 'User' });
+    setUserProfile({ name: 'User', currencySymbol: '$', currencyCode: 'USD' });
     clearAll();
   }, []);
 
@@ -464,6 +489,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         seedDemoData,
         userProfile,
         updateUserProfile,
+        updateCurrencyAndConvert,
         customCategories,
         addCustomCategory,
         deleteCustomCategory,

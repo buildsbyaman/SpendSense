@@ -4,6 +4,7 @@ import { useColorScheme } from 'nativewind';
 import { PieChart } from 'react-native-gifted-charts';
 import { Text } from '@/components/ui/text';
 import { CHART_COLORS, type ColorScheme } from '@/lib/chart-theme';
+import { useApp } from '@/context/AppContext';
 
 interface CategoryDonutProps {
   data: { name: string; amount: number; color: string; count: number }[];
@@ -16,6 +17,7 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
   const { colorScheme } = useColorScheme();
   const scheme = (colorScheme ?? 'light') as ColorScheme;
   const colors = CHART_COLORS[scheme];
+  const { userProfile } = useApp();
 
   const total = data.reduce((sum, d) => sum + d.amount, 0);
 
@@ -45,7 +47,7 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
             <Text className="ml-1 text-sm text-muted shrink-0">{pct}%</Text>
           </View>
           <Text className="text-sm font-semibold text-foreground">
-            ${d.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {userProfile.currencySymbol}{d.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
         </View>
       </View>
@@ -65,7 +67,7 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
             <View className="items-center">
               <Text className="text-md text-muted mb-1">{totalLabel}</Text>
               <Text className="text-xl font-bold text-foreground">
-                ${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {userProfile.currencySymbol}{total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </Text>
             </View>
           )}

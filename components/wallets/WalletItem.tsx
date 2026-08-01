@@ -2,7 +2,8 @@ import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Star, ChevronDown } from 'lucide-react-native';
-import { type Account, parseBalance } from '@/utils/wallet';
+import { type Account, parseBalance, formatWalletBalance } from '@/utils/wallet';
+import { useApp } from '@/context/AppContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -34,7 +35,9 @@ export function WalletItem({
   onDelete,
   onEditClick,
 }: WalletItemProps) {
+  const { userProfile } = useApp();
   const numericBalance = parseBalance(account.balance);
+  const displayBalance = formatWalletBalance(numericBalance, userProfile.currencySymbol);
   const balanceColorClass = numericBalance >= 0 ? 'text-income' : 'text-expense';
 
   // 0 = collapsed, 1 = expanded
@@ -80,7 +83,7 @@ export function WalletItem({
           </View>
         </View>
         <View className="flex-row items-center gap-3">
-          <Text className={`text-base font-bold ${balanceColorClass}`}>{account.balance}</Text>
+          <Text className={`text-base font-bold ${balanceColorClass}`}>{displayBalance}</Text>
           <Animated.View style={chevronStyle}>
             <Icon as={ChevronDown} size={20} className="text-muted" />
           </Animated.View>

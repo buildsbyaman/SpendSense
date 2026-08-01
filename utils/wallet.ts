@@ -27,7 +27,7 @@ export const parseBalance = (val: string): number => {
  * Ensures the balance is within safe bounds (-999,999,999 to 999,999,999).
  * Returns a formatted US currency string (e.g. -$50.00).
  */
-export const formatWalletBalance = (balanceInput: string | number): string => {
+export const formatWalletBalance = (balanceInput: string | number, symbol: string = '$'): string => {
   const balanceStr = typeof balanceInput === 'number' ? balanceInput.toString() : balanceInput;
   // Allow numbers, decimal points, and negative signs
   const cleaned = balanceStr.replace(/[^0-9.-]/g, '');
@@ -49,5 +49,5 @@ export const formatWalletBalance = (balanceInput: string | number): string => {
     maximumFractionDigits: 2 
   });
 
-  return isNegative ? `-$${formattedNumber}` : `$${formattedNumber}`;
+  return isNegative ? `-${symbol}${formattedNumber}` : `${symbol}${formattedNumber}`;
 };

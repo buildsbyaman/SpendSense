@@ -21,7 +21,7 @@ interface AddWalletFormProps {
 
 export function AddWalletForm({ visible, onSave, onCancel, editWalletId, onDelete, onSetDefault }: AddWalletFormProps) {
   const { colorScheme } = useColorScheme();
-  const { accounts } = useApp();
+  const { accounts, userProfile } = useApp();
   const placeholderColor =
     colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -38,7 +38,8 @@ export function AddWalletForm({ visible, onSave, onCancel, editWalletId, onDelet
         if (wallet) {
           setNewName(wallet.name);
           setNewNumber(wallet.number || '');
-          setNewBalance(wallet.balance.replace('$', '').replace(/,/g, ''));
+          // Remove any non-numeric characters except . and -
+          setNewBalance(wallet.balance.replace(/[^0-9.-]/g, ''));
           setAccountType(wallet.type || 'Card');
         }
       } else {
@@ -63,10 +64,9 @@ export function AddWalletForm({ visible, onSave, onCancel, editWalletId, onDelet
     }
 
     const formattedName = newName.trim();
-    const formattedBalance = formatWalletBalance(newBalance);
+    const formattedBalance = formatWalletBalance(newBalance, userProfile.currencySymbol);
 
     onSave({
-      id: editWalletId || undefined,
       name: formattedName,
       number: newNumber.trim(),
       balance: formattedBalance,
@@ -166,7 +166,7 @@ export function AddWalletForm({ visible, onSave, onCancel, editWalletId, onDelet
           <Text className="mb-2 ml-1 text-sm text-muted">Current Balance</Text>
           <TextInput
             className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${errors.balance ? 'border-red-500' : focusedInput === 'balance' ? 'border-primary' : 'border-transparent'}`}
-            placeholder="$0.00"
+              placeholder={`${userProfile.currencySymbol}0.00`}
             placeholderTextColor={placeholderColor}
             keyboardType="decimal-pad"
             value={newBalance}

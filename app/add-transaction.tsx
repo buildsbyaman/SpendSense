@@ -31,7 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddTransactionScreen() {
   const insets = useSafeAreaInsets();
-  const { accounts, addTransaction, updateTransaction, getSortedCategories, budgets, transactions } = useApp();
+  const { accounts, addTransaction, updateTransaction, getSortedCategories, budgets, transactions, userProfile } = useApp();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { colorScheme } = useColorScheme();
   const placeholderColor =
@@ -155,7 +155,7 @@ export default function AddTransactionScreen() {
       Toast.show({
         type: 'error',
         text1: 'Budget Exceeded Warning',
-        text2: `Transaction ${editId ? 'updated' : 'added'}, but "${category}" is over budget! ($${totalSpent.toFixed(2)} / $${budget.amount} spent)`,
+        text2: `Transaction ${editId ? 'updated' : 'added'}, but "${category}" is over budget! (${userProfile.currencySymbol}${totalSpent.toFixed(2)} / ${userProfile.currencySymbol}${budget.amount} spent)`,
       });
     } else {
       Toast.show({
@@ -213,7 +213,7 @@ export default function AddTransactionScreen() {
             <Text className="mb-2 ml-1 text-sm text-muted">Amount</Text>
             <View className="relative justify-center">
               <Text className="absolute left-5 z-10 text-base font-semibold text-foreground">
-                $
+                {userProfile.currencySymbol}
               </Text>
               <TextInput
                 value={amount}

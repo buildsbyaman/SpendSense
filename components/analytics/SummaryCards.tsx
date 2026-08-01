@@ -3,6 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import { savingsRate } from '@/utils/analytics';
+import { useApp } from '@/context/AppContext';
 
 interface SummaryCardsProps {
   income: number;
@@ -53,6 +54,7 @@ export function SummaryCards({
 }: SummaryCardsProps) {
   const net = income - expense;
   const rate = savingsRate(income, expense);
+  const { userProfile } = useApp();
 
   return (
     <View className="mb-4 rounded-[32px] border border-gray-100 bg-surface p-5 shadow-xs dark:border-gray-900">
@@ -67,7 +69,7 @@ export function SummaryCards({
         <View className="flex-row items-center gap-2">
           <DeltaBadge delta={incomeDelta} type="income" />
           <Text className="text-sm font-semibold text-foreground">
-            ${income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {userProfile.currencySymbol}{income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
         </View>
       </View>
@@ -83,7 +85,7 @@ export function SummaryCards({
         <View className="flex-row items-center gap-2">
           <DeltaBadge delta={expenseDelta} type="expense" />
           <Text className="text-sm font-semibold text-foreground">
-            ${expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {userProfile.currencySymbol}{expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
         </View>
       </View>
@@ -95,7 +97,7 @@ export function SummaryCards({
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-semibold text-foreground">Net</Text>
         <Text className={`text-lg font-bold ${net >= 0 ? 'text-income' : 'text-expense'}`}>
-          {net >= 0 ? '+' : ''}${net.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          {net >= 0 ? '+' : ''}{userProfile.currencySymbol}{Math.abs(net).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </Text>
       </View>
 

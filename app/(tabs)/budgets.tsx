@@ -15,7 +15,7 @@ import { MonthNavigator } from '@/components/analytics/MonthNavigator';
 export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { budgets, transactions, getSortedCategories } = useApp();
+  const { budgets, transactions, getSortedCategories, userProfile } = useApp();
   const scrollRef = useRef<ScrollView>(null);
   
   useEffect(() => {
@@ -150,13 +150,13 @@ export default function BudgetsScreen() {
                       <View>
                         <Text className="text-base font-semibold">{bp.category}</Text>
                         <Text className="text-xs text-muted">
-                          ${bp.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })} spent ({Math.round((bp.spent / bp.amount) * 100)}%)
+                          {userProfile.currencySymbol}{bp.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })} spent ({Math.round((bp.spent / bp.amount) * 100)}%)
                         </Text>
                       </View>
                     </View>
                     <View className="items-end">
                       <Text className="text-base font-bold">
-                        ${bp.amount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                        {userProfile.currencySymbol}{bp.amount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
                       </Text>
                       <Text className="text-xs text-muted">Limit</Text>
                     </View>
@@ -171,7 +171,7 @@ export default function BudgetsScreen() {
                   
                   {isOverBudget && (
                     <Text className="mt-3 text-xs font-medium text-red-500 text-center">
-                      Over budget by ${(bp.spent - bp.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      Over budget by {userProfile.currencySymbol}{(bp.spent - bp.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </Text>
                   )}
                 </TouchableOpacity>

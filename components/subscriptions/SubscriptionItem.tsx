@@ -31,7 +31,7 @@ export function SubscriptionItem({
   onToggleExpand,
   onDelete,
 }: SubscriptionItemProps) {
-  const { accounts } = useApp();
+  const { accounts, userProfile } = useApp();
   const wallet = accounts.find((a) => a.id === subscription.wallet_id);
 
   const progress = useSharedValue(isExpanded ? 1 : 0);
@@ -83,7 +83,7 @@ export function SubscriptionItem({
       <View className="flex-row items-center gap-3">
         <View className="items-end">
           <Text className="text-expense text-base font-bold">
-            ${subscription.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {userProfile.currencySymbol}{subscription.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
           {subscription.is_active === 0 && (
             <Text className="text-[10px] font-bold text-muted uppercase tracking-wider">Paused</Text>

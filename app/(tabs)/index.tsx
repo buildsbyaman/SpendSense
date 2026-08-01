@@ -81,7 +81,7 @@ export default function HomeScreen() {
       <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
         <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
         <Text className="mb-4 text-3xl font-bold text-foreground">
-          ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          {userProfile.currencySymbol}{totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </Text>
 
         {/* Divider */}
@@ -96,7 +96,7 @@ export default function HomeScreen() {
             <View>
               <Text className="text-xs font-medium text-muted">Income</Text>
               <Text className="mt-0.5 text-sm font-bold text-income">
-                ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {userProfile.currencySymbol}{totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </Text>
             </View>
           </View>
@@ -110,7 +110,7 @@ export default function HomeScreen() {
             <View>
               <Text className="text-xs font-medium text-muted">Expenses</Text>
               <Text className="mt-0.5 text-sm font-bold text-expense">
-                ${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {userProfile.currencySymbol}{totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </Text>
             </View>
           </View>
@@ -191,7 +191,7 @@ export default function HomeScreen() {
 
                     <Text
                       className={`text-base font-bold ${tx.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                      {tx.type === 'income' ? '+' : '-'}$
+                      {tx.type === 'income' ? '+' : '-'}{userProfile.currencySymbol}
                       {tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </Text>
                   </View>

@@ -26,7 +26,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 export default function TransactionsScreen() {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { transactions, accounts, deleteTransaction, updateTransaction } = useApp();
+  const { transactions, accounts, deleteTransaction, updateTransaction, userProfile } = useApp();
   const scrollRef = useRef<ScrollView>(null);
   
   useEffect(() => {
@@ -198,7 +198,7 @@ export default function TransactionsScreen() {
                   Income
                 </Text>
                 <Text className="text-base font-bold text-income">
-                  ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {userProfile.currencySymbol}{totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>
@@ -211,7 +211,7 @@ export default function TransactionsScreen() {
                   Expenses
                 </Text>
                 <Text className="text-base font-bold text-expense">
-                  ${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {userProfile.currencySymbol}{totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>

@@ -1,20 +1,22 @@
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { ChevronRight, Repeat, Tags, PiggyBank } from 'lucide-react-native';
+import { ChevronRight, Repeat, Tags, PiggyBank, DollarSign } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 
 interface ManageRow {
   label: string;
   icon: any;
-  route: '/subscriptions' | '/categories' | '/budgets';
+  route: '/subscriptions' | '/categories' | '/budgets' | '/currency';
+  isTab?: boolean;
 }
 
 const rows: ManageRow[] = [
-  { label: 'Subscriptions', icon: Repeat, route: '/subscriptions' },
-  { label: 'Categories', icon: Tags, route: '/categories' },
-  { label: 'Budgets', icon: PiggyBank, route: '/budgets' },
+  { label: 'Subscriptions', icon: Repeat, route: '/subscriptions', isTab: true },
+  { label: 'Categories', icon: Tags, route: '/categories', isTab: true },
+  { label: 'Budgets', icon: PiggyBank, route: '/budgets', isTab: true },
+  { label: 'Currency Settings', icon: DollarSign, route: '/currency', isTab: true },
 ];
 
 export function ManageSection() {
@@ -28,8 +30,11 @@ export function ManageSection() {
           <View key={row.route}>
             <TouchableOpacity
               onPress={() => {
-                // Strip leading slash — navigateTab uses the screen name
-                navigateTab(row.route.replace('/', ''));
+                if (row.isTab) {
+                  navigateTab(row.route.replace('/', ''));
+                } else {
+                  router.push(row.route);
+                }
               }}
               activeOpacity={0.7}
               className="flex-row items-center gap-3 py-3">

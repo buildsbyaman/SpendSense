@@ -14,7 +14,7 @@ interface AddBudgetModalProps {
 }
 
 export function AddBudgetModal({ visible, onClose, editBudgetId }: AddBudgetModalProps) {
-  const { budgets, addBudget, updateBudget, deleteBudget, getSortedCategories } = useApp();
+  const { budgets, addBudget, updateBudget, deleteBudget, getSortedCategories, userProfile } = useApp();
   
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
@@ -159,7 +159,7 @@ export function AddBudgetModal({ visible, onClose, editBudgetId }: AddBudgetModa
               <Text className="mb-2 ml-1 text-sm text-muted">Monthly Limit</Text>
               <TextInput
                 className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-4 text-base font-semibold dark:bg-gray-900 ${error ? 'border-red-500' : 'border-transparent'}`}
-                placeholder="$0.00"
+                placeholder={`${userProfile.currencySymbol}0.00`}
                 placeholderTextColor="#9ca3af"
                 keyboardType="decimal-pad"
                 value={amount}

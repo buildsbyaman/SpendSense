@@ -217,20 +217,61 @@ export async function saveCategoryOrder(type: string, sortOrder: string[]): Prom
 interface ProfileRow {
   id: string;
   name: string;
+  currency_symbol?: string;
+  currency_code?: string;
 }
 
-export async function fetchProfile(): Promise<{ name: string } | null> {
+export interface UserProfile {
+  name: string;
+  currencySymbol: string;
+  currencyCode: string;
+}
+
+export async function fetchProfile(): Promise<UserProfile | null> {
   const db = await getDatabase();
   const row = await db.getFirstAsync<ProfileRow>("SELECT * FROM profile WHERE id = 'default'");
-  return row ? { name: row.name } : null;
+  return row ? { 
+    name: row.name, 
+    currencySymbol: row.currency_symbol || '$',
+    currencyCode: row.currency_code || 'USD' 
+  } : null;
 }
 
-export async function saveProfile(profile: { name: string }): Promise<void> {
+export async function saveProfile(profile: UserProfile): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    "INSERT OR REPLACE INTO profile (id, name) VALUES ('default', ?)",
-    profile.name
+    "INSERT OR REPLACE INTO profile (id, name, currency_symbol, currency_code) VALUES ('default', ?, ?, ?)",
+    profile.name,
+    profile.currencySymbol,
+    profile.currencyCode
   );
+}
+
+export async function convertCurrencyInDB(rate: number): Promise<void> {
+  const db = await getDatabase();
+  
+  await db.withTransactionAsync(async () => {
+    // Convert transactions
+    await db.execAsync(`UPDATE transactions SET amount = amount * ${rate}`);
+    // Convert budgets
+    await db.execAsync(`UPDATE budgets SET amount = amount * ${rate}`);
+    // Convert subscriptions
+    await db.execAsync(`UPDATE subscriptions SET amount = amount * ${rate}`);
+    
+    // Accounts need to parse string balances, multiply, and save.
+    const accounts = await db.getAllAsync<{ id: string, balance: string }>('SELECT id, balance FROM accounts');
+    for (const acc of accounts) {
+      const cleaned = acc.balance.replace(/[^0-9.-]/g, '');
+      let parsed = parseFloat(cleaned);
+      if (isNaN(parsed)) parsed = 0;
+      
+      const newBalance = parsed * rate;
+      const formattedNumber = Math.abs(newBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const newBalanceStr = newBalance < 0 ? `-${formattedNumber}` : `${formattedNumber}`;
+      
+      await db.runAsync('UPDATE accounts SET balance = ? WHERE id = ?', newBalanceStr, acc.id);
+    }
+  });
 }
 
 // ── Reset ────────────────────────────────────────────────────────────
@@ -249,8 +290,13 @@ export async function clearAll(): Promise<void> {
 }
 
 export async function seedDemoData(): Promise<void> {
-  const db = await getDatabase();
-  await generateSeedData(db);
+  const { wallets, transactions } = generateSeedData();
+  for (const w of wallets) {
+    await insertAccount(w as any);
+  }
+  for (const tx of transactions) {
+    await insertTransaction(tx);
+  }
 }
 
 // ── Budgets ──────────────────────────────────────────────────────────

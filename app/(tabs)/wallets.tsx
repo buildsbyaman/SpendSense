@@ -20,7 +20,7 @@ import { useRef, useEffect } from 'react';
 export default function AccountsScreen() {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { accounts, transactions, addWallet, updateWallet, deleteWallet, setDefaultWallet } = useApp();
+  const { accounts, transactions, addWallet, updateWallet, deleteWallet, setDefaultWallet, userProfile } = useApp();
   const scrollRef = useRef<ScrollView>(null);
   
   useEffect(() => {
@@ -165,7 +165,7 @@ export default function AccountsScreen() {
         <View className="bg-surface rounded-[32px] p-6 mb-6 border border-gray-100 dark:border-gray-900 shadow-xs">
           <Text className="text-muted text-sm font-medium mb-1">Total Balance</Text>
           <Text className="text-3xl font-bold text-foreground ">
-            ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {userProfile.currencySymbol}{totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
         </View>
       )}

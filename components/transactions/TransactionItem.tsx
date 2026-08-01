@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
+import { useApp } from '@/context/AppContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -50,6 +51,7 @@ export function TransactionItem({
   getWalletName,
 }: TransactionItemProps) {
   const { colorScheme } = useColorScheme();
+  const { userProfile } = useApp();
 
   const progress = useSharedValue(isExpanded ? 1 : 0);
 
@@ -95,7 +97,7 @@ export function TransactionItem({
       <View className="flex-row items-center gap-3">
         <Text
           className={`text-base font-bold ${transaction.type === 'income' ? 'text-income' : 'text-expense'}`}>
-          {transaction.type === 'income' ? '+' : '-'}$
+          {transaction.type === 'income' ? '+' : '-'}{userProfile.currencySymbol}
           {transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </Text>
         <Animated.View style={chevronStyle}>
