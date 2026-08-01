@@ -5,18 +5,10 @@ import { Icon } from '@/components/ui/icon';
 import { ChevronDown } from 'lucide-react-native';
 import { getCategoryIcon, getCategoryColor } from '@/utils/transaction';
 import { type Subscription } from '@/utils/subscription';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  Easing,
-} from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useApp } from '@/context/AppContext';
-
-const DURATION = 280;
-const EASING = Easing.out(Easing.cubic);
+import { useExpandAnimation } from '@/hooks/useExpandAnimation';
+import Animated from 'react-native-reanimated';
 
 interface SubscriptionItemProps {
   subscription: Subscription;
@@ -34,21 +26,7 @@ export function SubscriptionItem({
   const { accounts, userProfile } = useApp();
   const wallet = accounts.find((a) => a.id === subscription.wallet_id);
 
-  const progress = useSharedValue(isExpanded ? 1 : 0);
-
-  React.useEffect(() => {
-    progress.value = withTiming(isExpanded ? 1 : 0, { duration: DURATION, easing: EASING });
-  }, [isExpanded]);
-
-  const actionsStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(progress.value, [0, 1], [0, 70]),
-    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0, 1]),
-    overflow: 'hidden',
-  }));
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 180])}deg` }],
-  }));
+  const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);
 
   const icon = getCategoryIcon(subscription.category, subscription.name);
   const color = getCategoryColor(subscription.category);
@@ -71,22 +49,26 @@ export function SubscriptionItem({
           <Icon as={icon} size={22} color={color} />
         </View>
         <View className="flex-1">
-          <Text className="text-foreground text-base font-semibold" numberOfLines={1}>
+          <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
             {subscription.name}
           </Text>
           <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>
-            {wallet?.name || 'Unknown'} • <Text className="capitalize">{subscription.cycle}</Text> • Next: {nextDateStr}
+            {wallet?.name || 'Unknown'} • <Text className="capitalize">{subscription.cycle}</Text> •
+            Next: {nextDateStr}
           </Text>
         </View>
       </View>
 
       <View className="flex-row items-center gap-3">
         <View className="items-end">
-          <Text className="text-expense text-base font-bold">
-            {userProfile.currencySymbol}{subscription.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          <Text className="text-base font-bold text-expense">
+            {userProfile.currencySymbol}
+            {subscription.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
           {subscription.is_active === 0 && (
-            <Text className="text-[10px] font-bold text-muted uppercase tracking-wider">Paused</Text>
+            <Text className="text-[10px] font-bold uppercase tracking-wider text-muted">
+              Paused
+            </Text>
           )}
         </View>
         <Animated.View style={chevronStyle}>
@@ -103,8 +85,10 @@ export function SubscriptionItem({
         <View className="flex-row gap-2.5 px-4 pb-4">
           <TouchableOpacity
             className="flex-1 items-center justify-center rounded-full bg-secondary py-3"
-            onPress={() => router.push({ pathname: '/add-subscription', params: { editId: subscription.id } })}>
-            <Text className="text-foreground text-xs font-bold">Edit</Text>
+            onPress={() =>
+              router.push({ pathname: '/add-subscription', params: { editId: subscription.id } })
+            }>
+            <Text className="text-xs font-bold text-foreground">Edit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

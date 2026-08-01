@@ -12,68 +12,69 @@ interface TrendChartProps {
   type: TypeFilter;
 }
 
-
-
 export function TrendChart({ data, type }: TrendChartProps) {
   const { colorScheme } = useColorScheme();
   const scheme = (colorScheme ?? 'light') as ColorScheme;
   const isDark = scheme === 'dark';
   const colors = CHART_COLORS[scheme];
 
-  const showIncome = type === 'income';
+  const showIncome = type === 'income' || type === 'all';
   const showExpense = type === 'expense' || type === 'all';
 
-  const expenseData = data.map((d) => ({
-    value: d.expense,
-    frontColor: colors.expense,
-    label: d.label || '',
-  }));
-
-  const incomeData = data.map((d) => ({
-    value: d.income,
-    frontColor: colors.income,
-    label: d.label || '',
-  }));
-
   const maxRaw = Math.max(
-    ...data.map((d) => (showIncome && !showExpense ? d.income : d.expense)),
+    ...data.map((d) => Math.max(showIncome ? d.income : 0, showExpense ? d.expense : 0)),
     1
   );
   const maxVal = niceCeil(maxRaw);
-  const visualOffset = maxVal * 0.01; // 5% floor lift
+  const visualOffset = maxVal * 0.05; // 5% floor lift
 
-  const chartColor = showIncome ? colors.income : colors.expense;
-  
+  const chartColor = showExpense ? colors.expense : colors.income;
+
   const lineData = data.map((d) => {
-    const rawVal = showIncome ? d.income : d.expense;
+    const rawVal = showExpense ? d.expense : d.income;
     return {
       value: rawVal + visualOffset,
       customData: { rawValue: rawVal },
       label: d.label || '',
     };
   });
-  
+
+  const incomeLineData =
+    type === 'all'
+      ? data.map((d) => ({
+          value: d.income + visualOffset,
+          customData: { rawValue: d.income },
+          label: d.label || '',
+        }))
+      : undefined;
+
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = screenWidth - 100;
   const initialSpacing = 10;
   const endSpacing = 10;
   const computedSpacing = (chartWidth - initialSpacing - endSpacing) / Math.max(data.length - 1, 1);
-  const spacing = Math.max(computedSpacing, 45); // Guarantee enough space between points
+  const spacing = Math.max(computedSpacing, 20);
 
   return (
     <View style={{ marginLeft: -10 }}>
       <LineChart
         areaChart
         data={lineData}
+        data2={incomeLineData}
         width={chartWidth}
         hideDataPoints
         spacing={spacing}
         color={chartColor}
+        color2={colors.income}
         thickness={2.5}
         startFillColor={chartColor}
         startOpacity={isDark ? 0.7 : 0.5}
         endFillColor={chartColor}
         endOpacity={0.05}
+        startFillColor2={colors.income}
+        startOpacity2={isDark ? 0.7 : 0.5}
+        endFillColor2={colors.income}
+        endOpacity2={0.05}
         initialSpacing={initialSpacing}
         endSpacing={endSpacing}
         noOfSections={4}
@@ -99,8 +100,8 @@ export function TrendChart({ data, type }: TrendChartProps) {
             const item = items[0];
             const val = item.customData?.rawValue ?? item.value;
             return (
-              <View className="items-center justify-center bg-surface px-3 py-1.5 rounded-xl shadow-md border border-black/5 dark:border-white/5">
-                <Text className="text-foreground font-bold text-sm">
+              <View className="items-center justify-center rounded-xl border border-black/5 bg-surface px-3 py-1.5 shadow-md dark:border-white/5">
+                <Text className="text-sm font-bold text-foreground">
                   {formatCompactCurrency(val)}
                 </Text>
               </View>

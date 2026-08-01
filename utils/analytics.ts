@@ -32,15 +32,12 @@ export function filterByMonth(
   });
 }
 
-export function filterByYear(
-  transactions: Transaction[],
-  year: number
-): Transaction[] {
+export function filterByYear(transactions: Transaction[], year: number): Transaction[] {
   const from = new Date(year, 0, 1);
   from.setHours(0, 0, 0, 0);
   const to = new Date(year, 11, 31);
   to.setHours(23, 59, 59, 999);
-  
+
   return transactions.filter((tx) => {
     const d = new Date(tx.date);
     return d >= from && d <= to;
@@ -92,28 +89,6 @@ export function groupByCategory(transactions: Transaction[]): {
     .sort((a, b) => b.amount - a.amount);
 }
 
-export function buildDailySeries(
-  transactions: Transaction[],
-  year: number,
-  month: number
-): { day: number; income: number; expense: number }[] {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const series: { day: number; income: number; expense: number }[] = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    series.push({ day: d, income: 0, expense: 0 });
-  }
-  const { from, to } = getMonthBounds(year, month);
-  for (const tx of transactions) {
-    const d = new Date(tx.date);
-    if (d >= from && d <= to) {
-      const idx = d.getDate() - 1;
-      if (tx.type === 'income') series[idx].income += tx.amount;
-      else series[idx].expense += tx.amount;
-    }
-  }
-  return series;
-}
-
 export function buildWeeklySeries(
   transactions: Transaction[],
   year: number,
@@ -121,7 +96,7 @@ export function buildWeeklySeries(
 ): { day: number; label: string; income: number; expense: number }[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const series: { day: number; label: string; income: number; expense: number }[] = [];
-  
+
   for (let w = 0; w < 5; w++) {
     const start = w * 7 + 1;
     if (start > daysInMonth) break;
@@ -145,13 +120,26 @@ export function buildMonthlySeries(
   transactions: Transaction[],
   year: number
 ): { day: number; label: string; income: number; expense: number }[] {
-  const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const SHORT_MONTHS = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   const series: { day: number; label: string; income: number; expense: number }[] = [];
-  
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const maxMonth = year === currentYear ? now.getMonth() : 11;
-  
+
   for (let m = 0; m <= maxMonth; m++) {
     series.push({ day: m, label: SHORT_MONTHS[m], income: 0, expense: 0 });
   }

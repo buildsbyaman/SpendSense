@@ -16,7 +16,7 @@ export async function exportData(
       break;
     }
     case 'xlsx': {
-      const bytes = await buildXlsxBytes(tables);
+      const bytes = await buildXlsxBytes(tables, profile);
       await saveAndShareBytes(filename, bytes, 'xlsx');
       break;
     }

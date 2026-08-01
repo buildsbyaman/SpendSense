@@ -14,7 +14,6 @@ import { TypeFilterToggle, type TypeFilter } from '@/components/analytics/TypeFi
 import { SummaryCards } from '@/components/analytics/SummaryCards';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TrendChart } from '@/components/analytics/TrendChart';
-import { MonthlyBarChart } from '@/components/analytics/MonthlyBarChart';
 import { CategoryDonut } from '@/components/analytics/CategoryDonut';
 import { SectionCard } from '@/components/analytics/SectionCard';
 
@@ -34,7 +33,7 @@ export default function AnalyticsScreen() {
   const { navigate: navigateTab, addListener } = useTabNavigation();
   const { transactions } = useApp();
   const scrollRef = useRef<ScrollView>(null);
-  
+
   useEffect(() => {
     return addListener((tabName) => {
       if (tabName === 'analytics') {
@@ -50,13 +49,17 @@ export default function AnalyticsScreen() {
   const [type, setType] = useState<TypeFilter>('expense');
 
   const scopeTxs = useMemo(
-    () => month !== null ? filterByMonth(transactions, year, month) : filterByYear(transactions, year),
+    () =>
+      month !== null ? filterByMonth(transactions, year, month) : filterByYear(transactions, year),
     [transactions, year, month]
   );
   const filteredTxs = useMemo(() => filterByType(scopeTxs, type), [scopeTxs, type]);
   const { income, expense } = useMemo(() => sumByType(scopeTxs), [scopeTxs]);
   const trendSeries = useMemo(
-    () => month !== null ? buildWeeklySeries(transactions, year, month) : buildMonthlySeries(transactions, year),
+    () =>
+      month !== null
+        ? buildWeeklySeries(transactions, year, month)
+        : buildMonthlySeries(transactions, year),
     [transactions, year, month]
   );
   const { incomeDelta, expenseDelta } = useMemo(
@@ -84,56 +87,55 @@ export default function AnalyticsScreen() {
           paddingBottom: 120,
           paddingHorizontal: 20,
         }}>
+        <View className="mb-6 flex-row items-center justify-between gap-3">
+          <View className="flex-1">
+            <TypeFilterToggle value={type} onChange={setType} />
+          </View>
 
-      <View className="mb-6 flex-row items-center justify-between gap-3">
-        <View className="flex-1">
-          <TypeFilterToggle value={type} onChange={setType} />
+          <MonthNavigator
+            year={year}
+            month={month}
+            onChange={(y, m) => {
+              setYear(y);
+              setMonth(m);
+            }}
+            maxYear={now.getFullYear()}
+            maxMonth={now.getMonth()}
+          />
         </View>
 
-        <MonthNavigator
-          year={year}
-          month={month}
-          onChange={(y, m) => {
-            setYear(y);
-            setMonth(m);
-          }}
-          maxYear={now.getFullYear()}
-          maxMonth={now.getMonth()}
-        />
-      </View>
-
-      {!hasData ? (
-        <EmptyState
-          icon={TrendingUp}
-          title="No Transactions"
-          description="Add some transactions to see your monthly analytics here."
-          buttonText="Add Transaction"
-          onButtonPress={() => router.push('/add-transaction')}
-        />
-      ) : (
-        <>
-          {/* 1. Month Overview */}
-          <SummaryCards
-            income={income}
-            expense={expense}
-            incomeDelta={incomeDelta}
-            expenseDelta={expenseDelta}
-            count={filteredTxs.length}
+        {!hasData ? (
+          <EmptyState
+            icon={TrendingUp}
+            title="No Transactions"
+            description="Add some transactions to see your monthly analytics here."
+            buttonText="Add Transaction"
+            onButtonPress={() => router.push('/add-transaction')}
           />
-
-          <SectionCard>
-            <TrendChart data={trendSeries} type={type} />
-          </SectionCard>
-
-          {/* 3. By Category */}
-          <SectionCard title="By Category">
-            <CategoryDonut
-              data={categoryData}
-              totalLabel={type === 'income' ? 'Income' : 'Expenses'}
+        ) : (
+          <>
+            {/* 1. Month Overview */}
+            <SummaryCards
+              income={income}
+              expense={expense}
+              incomeDelta={incomeDelta}
+              expenseDelta={expenseDelta}
+              count={filteredTxs.length}
             />
-          </SectionCard>
-        </>
-      )}
+
+            <SectionCard>
+              <TrendChart data={trendSeries} type={type} />
+            </SectionCard>
+
+            {/* 3. By Category */}
+            <SectionCard title="By Category">
+              <CategoryDonut
+                data={categoryData}
+                totalLabel={type === 'income' ? 'Income' : 'Expenses'}
+              />
+            </SectionCard>
+          </>
+        )}
       </ScrollView>
     </View>
   );

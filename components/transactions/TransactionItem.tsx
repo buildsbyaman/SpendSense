@@ -18,16 +18,8 @@ import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import { useApp } from '@/context/AppContext';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  Easing,
-} from 'react-native-reanimated';
-
-const DURATION = 280;
-const EASING = Easing.out(Easing.cubic);
+import { useExpandAnimation } from '@/hooks/useExpandAnimation';
+import Animated from 'react-native-reanimated';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -53,21 +45,7 @@ export function TransactionItem({
   const { colorScheme } = useColorScheme();
   const { userProfile } = useApp();
 
-  const progress = useSharedValue(isExpanded ? 1 : 0);
-
-  useEffect(() => {
-    progress.value = withTiming(isExpanded ? 1 : 0, { duration: DURATION, easing: EASING });
-  }, [isExpanded]);
-
-  const actionsStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(progress.value, [0, 1], [0, 70]),
-    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0, 1]),
-    overflow: 'hidden',
-  }));
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 180])}deg` }],
-  }));
+  const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);
 
   const icon = getCategoryIcon(transaction.category, transaction.title);
   const color = getCategoryColor(transaction.category);
@@ -85,7 +63,7 @@ export function TransactionItem({
           <Icon as={icon} size={22} color={color} />
         </View>
         <View className="flex-1">
-          <Text className="text-foreground text-base font-semibold" numberOfLines={1}>
+          <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
             {transaction.title}
           </Text>
           <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>
@@ -97,7 +75,8 @@ export function TransactionItem({
       <View className="flex-row items-center gap-3">
         <Text
           className={`text-base font-bold ${transaction.type === 'income' ? 'text-income' : 'text-expense'}`}>
-          {transaction.type === 'income' ? '+' : '-'}{userProfile.currencySymbol}
+          {transaction.type === 'income' ? '+' : '-'}
+          {userProfile.currencySymbol}
           {transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </Text>
         <Animated.View style={chevronStyle}>
@@ -114,8 +93,10 @@ export function TransactionItem({
         <View className="flex-row gap-2.5 px-4 pb-4">
           <TouchableOpacity
             className="flex-1 items-center justify-center rounded-full bg-secondary py-3"
-            onPress={() => router.push({ pathname: '/add-transaction', params: { editId: transaction.id } })}>
-            <Text className="text-foreground text-xs font-bold">Edit</Text>
+            onPress={() =>
+              router.push({ pathname: '/add-transaction', params: { editId: transaction.id } })
+            }>
+            <Text className="text-xs font-bold text-foreground">Edit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

@@ -14,14 +14,18 @@ export interface Subscription {
 
 export function getNextBillingDate(date: Date, cycle: SubscriptionCycle): Date {
   const next = new Date(date);
+  const day = next.getDate();
   if (cycle === 'weekly') {
     next.setDate(next.getDate() + 7);
   } else if (cycle === 'monthly') {
     next.setMonth(next.getMonth() + 1);
+    if (next.getDate() !== day) next.setDate(0);
   } else if (cycle === 'quarterly') {
     next.setMonth(next.getMonth() + 3);
+    if (next.getDate() !== day) next.setDate(0);
   } else if (cycle === 'yearly') {
     next.setFullYear(next.getFullYear() + 1);
+    if (next.getDate() !== day) next.setDate(0);
   }
   return next;
 }

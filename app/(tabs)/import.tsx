@@ -84,6 +84,7 @@ export default function ImportScreen() {
     subscriptions,
     customCategories,
     userProfile,
+    categoryOrder,
     refreshAllData,
   } = useApp();
   const { navigate: navigateTab } = useTabNavigation();
@@ -102,11 +103,21 @@ export default function ImportScreen() {
   const getPlanTotalRecords = useCallback((plan: ImportPlan | null): number => {
     if (!plan) return 0;
     return (
-      plan.wallets.insert.length + plan.wallets.update.length +
-      plan.transactions.insert.length + plan.transactions.update.length +
-      plan.subscriptions.insert.length + plan.subscriptions.update.length +
-      plan.budgets.insert.length + plan.budgets.update.length +
-      plan.categories.insert.length + plan.categories.update.length
+      plan.wallets.insert.length +
+      plan.wallets.update.length +
+      plan.transactions.insert.length +
+      plan.transactions.update.length +
+      plan.subscriptions.insert.length +
+      plan.subscriptions.update.length +
+      plan.budgets.insert.length +
+      plan.budgets.update.length +
+      plan.categories.insert.length +
+      plan.categories.update.length +
+      (plan.profile.apply ? 1 : 0) +
+      (plan.categoryOrder
+        ? plan.categoryOrder.expense.length + plan.categoryOrder.income.length
+        : 0) +
+      (plan.hiddenCategories ? plan.hiddenCategories.length : 0)
     );
   }, []);
 
@@ -159,7 +170,7 @@ export default function ImportScreen() {
 
     const plan = buildImportPlan(
       parsedData.tables,
-      { accounts, transactions, budgets, subscriptions, customCategories },
+      { accounts, transactions, budgets, subscriptions, customCategories, categoryOrder },
       userProfile.currencyCode,
       parsedData.meta.currency ?? null,
       selectedTypes,
@@ -174,10 +185,11 @@ export default function ImportScreen() {
     budgets,
     subscriptions,
     customCategories,
+    categoryOrder,
     userProfile.currencyCode,
     selectedTypes,
     importMode,
-    conflictPolicy
+    conflictPolicy,
   ]);
 
   const handlePickFile = useCallback(async () => {
@@ -266,7 +278,7 @@ export default function ImportScreen() {
       setParsedData(null);
 
       // Auto-navigate back to home
-      navigateTab('index');
+      navigateTab('profile');
     } catch (err) {
       Toast.show({
         type: 'error',
@@ -300,16 +312,24 @@ export default function ImportScreen() {
       plan.subscriptions.skip +
       plan.budgets.skip +
       plan.categories.skip;
+    const totalDropped =
+      plan.wallets.dropped +
+      plan.transactions.dropped +
+      plan.subscriptions.dropped +
+      plan.budgets.dropped +
+      plan.categories.dropped;
     const totalUpdate =
       plan.wallets.update.length +
       plan.transactions.update.length +
       plan.subscriptions.update.length +
       plan.budgets.update.length +
       plan.categories.update.length;
-    if (parts.length === 0 && totalSkip === 0) return 'No importable data found.';
+    if (parts.length === 0 && totalSkip === 0 && totalDropped === 0)
+      return 'No importable data found.';
     let summary = parts.length > 0 ? `Add: ${parts.join(', ')}` : 'Nothing to add';
     if (totalSkip > 0) summary += ` | Skip: ${totalSkip} existing`;
     if (totalUpdate > 0) summary += ` | Overwrite: ${totalUpdate}`;
+    if (totalDropped > 0) summary += ` | Dropped: ${totalDropped} invalid`;
     if (plan.replace) summary = `Replace all data → ${summary}`;
     if (plan.currencyWarning) summary += ` | ${plan.currencyWarning}`;
     return summary;
@@ -417,22 +437,56 @@ export default function ImportScreen() {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={handleImportAction}
-          disabled={importing || parsing || selectedTypes.length === 0 || !selectedFile || !pendingPlan || getPlanTotalRecords(pendingPlan) === 0}
+          disabled={
+            importing ||
+            parsing ||
+            selectedTypes.length === 0 ||
+            !selectedFile ||
+            !pendingPlan ||
+            getPlanTotalRecords(pendingPlan) === 0
+          }
           className={`mb-4 flex-row items-center justify-center gap-2 rounded-full py-4 ${
-            importing || parsing || selectedTypes.length === 0 || !selectedFile || !pendingPlan || getPlanTotalRecords(pendingPlan) === 0 ? 'bg-gray-200 dark:bg-gray-800' : 'bg-primary'
+            importing ||
+            parsing ||
+            selectedTypes.length === 0 ||
+            !selectedFile ||
+            !pendingPlan ||
+            getPlanTotalRecords(pendingPlan) === 0
+              ? 'bg-gray-200 dark:bg-gray-800'
+              : 'bg-primary'
           }`}>
           <Icon
             as={FileUp}
             size={18}
             className={
-              importing || parsing || selectedTypes.length === 0 || !selectedFile || !pendingPlan || getPlanTotalRecords(pendingPlan) === 0 ? 'text-muted' : 'text-white dark:text-black'
+              importing ||
+              parsing ||
+              selectedTypes.length === 0 ||
+              !selectedFile ||
+              !pendingPlan ||
+              getPlanTotalRecords(pendingPlan) === 0
+                ? 'text-muted'
+                : 'text-white dark:text-black'
             }
           />
           <Text
             className={`text-base font-semibold ${
-              importing || parsing || selectedTypes.length === 0 || !selectedFile || !pendingPlan || getPlanTotalRecords(pendingPlan) === 0 ? 'text-muted' : 'text-white dark:text-black'
+              importing ||
+              parsing ||
+              selectedTypes.length === 0 ||
+              !selectedFile ||
+              !pendingPlan ||
+              getPlanTotalRecords(pendingPlan) === 0
+                ? 'text-muted'
+                : 'text-white dark:text-black'
             }`}>
-            {parsing ? 'Parsing file...' : (importing ? 'Importing...' : (selectedFile && pendingPlan && getPlanTotalRecords(pendingPlan) === 0 ? 'No Data to Import' : 'Import'))}
+            {parsing
+              ? 'Parsing file...'
+              : importing
+                ? 'Importing...'
+                : selectedFile && pendingPlan && getPlanTotalRecords(pendingPlan) === 0
+                  ? 'No Data to Import'
+                  : 'Import'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -442,14 +496,24 @@ export default function ImportScreen() {
         icon={getPlanTotalRecords(pendingPlan) === 0 ? AlertTriangle : FileUp}
         title={getPlanTotalRecords(pendingPlan) === 0 ? 'No Data Found' : 'Confirm Import'}
         message={pendingPlan ? formatSummary(pendingPlan) : ''}
-        confirmText={getPlanTotalRecords(pendingPlan) === 0 ? 'Got it' : (importMode === 'replace' ? 'Replace All' : 'Import')}
+        confirmText={
+          getPlanTotalRecords(pendingPlan) === 0
+            ? 'Got it'
+            : importMode === 'replace'
+              ? 'Replace All'
+              : 'Import'
+        }
         cancelText="Cancel"
         destructive={importMode === 'replace'}
         hideCancel={getPlanTotalRecords(pendingPlan) === 0}
-        onConfirm={getPlanTotalRecords(pendingPlan) === 0 ? () => {
-          setShowConfirm(false);
-          setPendingPlan(null);
-        } : handleConfirmImport}
+        onConfirm={
+          getPlanTotalRecords(pendingPlan) === 0
+            ? () => {
+                setShowConfirm(false);
+                setPendingPlan(null);
+              }
+            : handleConfirmImport
+        }
         onCancel={() => {
           setShowConfirm(false);
           setPendingPlan(null);

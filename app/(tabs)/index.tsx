@@ -129,7 +129,7 @@ export default function HomeScreen() {
             className="flex-row items-center justify-center gap-1"
             activeOpacity={0.7}
             onPress={() => navigateTab('analytics')}>
-            <Text className="text-md font-bold text-primary">See analytics</Text>
+            <Text className="text-base font-bold text-primary">See analytics</Text>
             <Icon as={ArrowRight} size={14} className="text-primary" />
           </TouchableOpacity>
         </View>

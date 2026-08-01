@@ -43,7 +43,9 @@ export default function CurrencySettings() {
   const { navigate: navigateTab } = useTabNavigation();
 
   const getDefaultSelection = () => {
-    return userProfile.currencyCode === 'USD' ? 'INR' : 'USD';
+    return PRESET_CURRENCIES.some((c) => c.code === userProfile.currencyCode)
+      ? userProfile.currencyCode
+      : 'USD';
   };
   const [selectedCode, setSelectedCode] = useState(getDefaultSelection);
 
@@ -56,14 +58,19 @@ export default function CurrencySettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  const placeholderColor = colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
+  const placeholderColor =
+    colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
   const isCustom = selectedCode === CUSTOM_KEY;
-  const selectedPreset = PRESET_CURRENCIES.find(c => c.code === selectedCode);
+  const selectedPreset = PRESET_CURRENCIES.find((c) => c.code === selectedCode);
 
   const effectiveNewCurrency = isCustom
-    ? (customName.trim() && customCode.trim() && customSymbol.trim()
-        ? { code: customCode.trim().toUpperCase(), symbol: customSymbol.trim(), name: customName.trim() }
-        : null)
+    ? customName.trim() && customCode.trim() && customSymbol.trim()
+      ? {
+          code: customCode.trim().toUpperCase(),
+          symbol: customSymbol.trim(),
+          name: customName.trim(),
+        }
+      : null
     : (selectedPreset ?? null);
 
   const parsedRate = parseFloat(conversionRate);
@@ -118,22 +125,16 @@ export default function CurrencySettings() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-background"
-      style={{ paddingTop: insets.top + 16 }}
-    >
+      style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header
-          title="Currency"
-          showBack={true}
-          onLeftPress={() => navigateTab('profile')}
-        />
+        <Header title="Currency" showBack={true} onLeftPress={() => navigateTab('profile')} />
       </View>
 
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
-        keyboardShouldPersistTaps="handled"
-      >
+        keyboardShouldPersistTaps="handled">
         {/* ── Section 1: Select Currency ── */}
         <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
           <Text className="mb-1 text-sm font-medium text-muted">Active Currency</Text>
@@ -156,12 +157,13 @@ export default function CurrencySettings() {
                     isSelected
                       ? 'border-primary bg-primary'
                       : 'border-gray-200 bg-transparent dark:border-gray-800'
-                  }`}
-                >
-                  <Text className={`text-sm font-bold ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
+                  }`}>
+                  <Text
+                    className={`text-sm font-bold ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
                     {c.symbol}
                   </Text>
-                  <Text className={`text-xs font-semibold ${isSelected ? 'text-white dark:text-black' : 'text-muted'}`}>
+                  <Text
+                    className={`text-xs font-semibold ${isSelected ? 'text-white dark:text-black' : 'text-muted'}`}>
                     {c.code}
                   </Text>
                 </TouchableOpacity>
@@ -179,10 +181,14 @@ export default function CurrencySettings() {
                 isCustom
                   ? 'border-primary bg-primary'
                   : 'border-dashed border-gray-300 bg-transparent dark:border-gray-700'
-              }`}
-            >
-              <Icon as={isCustom ? Check : Plus} size={13} className={isCustom ? 'text-white dark:text-black' : 'text-muted'} />
-              <Text className={`text-xs font-semibold ${isCustom ? 'text-white dark:text-black' : 'text-muted'}`}>
+              }`}>
+              <Icon
+                as={isCustom ? Check : Plus}
+                size={13}
+                className={isCustom ? 'text-white dark:text-black' : 'text-muted'}
+              />
+              <Text
+                className={`text-xs font-semibold ${isCustom ? 'text-white dark:text-black' : 'text-muted'}`}>
                 Custom
               </Text>
             </TouchableOpacity>
@@ -207,7 +213,7 @@ export default function CurrencySettings() {
               <View>
                 <Text className="mb-2 ml-1 text-sm text-muted">Full Name</Text>
                 <TextInput
-                  className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${focusedInput === 'cn' ? 'border-primary' : 'border-transparent'}`}
+                  className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'cn' ? 'border-primary' : 'border-transparent'}`}
                   placeholder="e.g. Bitcoin"
                   placeholderTextColor={placeholderColor}
                   value={customName}
@@ -221,7 +227,7 @@ export default function CurrencySettings() {
                 <View className="flex-1">
                   <Text className="mb-2 ml-1 text-sm text-muted">Short Code</Text>
                   <TextInput
-                    className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${focusedInput === 'cc' ? 'border-primary' : 'border-transparent'}`}
+                    className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'cc' ? 'border-primary' : 'border-transparent'}`}
                     placeholder="BTC"
                     placeholderTextColor={placeholderColor}
                     autoCapitalize="characters"
@@ -235,7 +241,7 @@ export default function CurrencySettings() {
                 <View className="flex-1">
                   <Text className="mb-2 ml-1 text-sm text-muted">Symbol</Text>
                   <TextInput
-                    className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${focusedInput === 'cs' ? 'border-primary' : 'border-transparent'}`}
+                    className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'cs' ? 'border-primary' : 'border-transparent'}`}
                     placeholder="₿"
                     placeholderTextColor={placeholderColor}
                     maxLength={5}
@@ -273,7 +279,7 @@ export default function CurrencySettings() {
                   1 {userProfile.currencyCode} = ? {effectiveNewCurrency?.code ?? '—'}
                 </Text>
                 <TextInput
-                  className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base font-semibold dark:bg-gray-900 ${focusedInput === 'rate' ? 'border-primary' : 'border-transparent'}`}
+                  className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base font-semibold text-foreground dark:bg-gray-900 ${focusedInput === 'rate' ? 'border-primary' : 'border-transparent'}`}
                   placeholder="e.g. 83.50"
                   placeholderTextColor={placeholderColor}
                   keyboardType="decimal-pad"
@@ -286,14 +292,16 @@ export default function CurrencySettings() {
 
               {conversionRate.trim() !== '' && parsedRate > 0 && effectiveNewCurrency && (
                 <Text className="text-center text-xs text-muted">
-                  {userProfile.currencySymbol}10.00 → {effectiveNewCurrency.symbol}{previewAmount}
+                  {userProfile.currencySymbol}10.00 → {effectiveNewCurrency.symbol}
+                  {previewAmount}
                 </Text>
               )}
 
               <View className="flex-row items-start gap-2.5 rounded-2xl bg-gray-50 p-4 dark:bg-gray-900">
                 <Icon as={Info} size={14} className="mt-0.5 text-muted" />
-                <Text className="flex-1 text-xs text-muted leading-4">
-                  All wallets, transactions, budgets and subscriptions will be permanently multiplied by this rate.
+                <Text className="flex-1 text-xs leading-4 text-muted">
+                  All wallets, transactions, budgets and subscriptions will be permanently
+                  multiplied by this rate.
                 </Text>
               </View>
             </View>
@@ -305,8 +313,7 @@ export default function CurrencySettings() {
           onPress={handleSave}
           disabled={isSaving}
           activeOpacity={0.8}
-          className={`items-center justify-center rounded-full bg-primary py-4 ${isSaving ? 'opacity-50' : ''}`}
-        >
+          className={`items-center justify-center rounded-full bg-primary py-4 ${isSaving ? 'opacity-50' : ''}`}>
           <Text className="text-base font-medium text-white dark:text-black">
             {isSaving ? 'Applying...' : 'Apply Currency'}
           </Text>

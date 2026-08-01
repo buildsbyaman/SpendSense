@@ -1,4 +1,4 @@
-import { type Account, parseBalance } from '@/utils/wallet';
+import { type Account } from '@/utils/wallet';
 import { type Transaction, type CustomCategory } from '@/utils/transaction';
 import { type Subscription } from '@/utils/subscription';
 import { getDatabase } from './database';
@@ -98,7 +98,9 @@ function rowToTransaction(row: TransactionRow): Transaction {
 
 export async function fetchTransactions(): Promise<Transaction[]> {
   const db = await getDatabase();
-  const rows = await db.getAllAsync<TransactionRow>('SELECT * FROM transactions');
+  const rows = await db.getAllAsync<TransactionRow>(
+    'SELECT * FROM transactions ORDER BY date DESC'
+  );
   return rows.map(rowToTransaction);
 }
 
@@ -133,11 +135,6 @@ export async function updateTransaction(tx: Transaction): Promise<void> {
 export async function deleteTransaction(id: string): Promise<void> {
   const db = await getDatabase();
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
-}
-
-export async function deleteTransactionsForWallet(walletId: string): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM transactions WHERE wallet_id = ?', walletId);
 }
 
 export async function reassignTransactionsWallet(
@@ -344,6 +341,13 @@ export async function replaceDeletedDefaultCategories(names: string[]): Promise<
 }
 
 export async function seedDemoData(): Promise<void> {
+  const db = await getDatabase();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM transactions');
+    await db.runAsync('DELETE FROM accounts');
+    await db.runAsync('DELETE FROM budgets');
+    await db.runAsync('DELETE FROM subscriptions');
+  });
   const { wallets, transactions } = generateSeedData();
   for (const w of wallets) {
     await insertAccount(w as any);

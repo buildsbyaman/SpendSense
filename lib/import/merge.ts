@@ -4,17 +4,16 @@ import { type Subscription, type SubscriptionCycle } from '@/utils/subscription'
 import { type Account } from '@/utils/wallet';
 import { type Budget, type UserProfile } from '@/lib/repository';
 import { type CustomCategory } from '@/utils/transaction';
-import { parseBalance } from '@/utils/wallet';
 
 export type ImportMode = 'merge' | 'replace';
 export type ConflictPolicy = 'skip' | 'overwrite';
 
 export interface ImportPlan {
-  wallets: { insert: Account[]; update: Account[]; skip: number };
-  transactions: { insert: Transaction[]; update: Transaction[]; skip: number };
-  subscriptions: { insert: Subscription[]; update: Subscription[]; skip: number };
-  budgets: { insert: Budget[]; update: Budget[]; skip: number };
-  categories: { insert: CustomCategory[]; update: CustomCategory[]; skip: number };
+  wallets: { insert: Account[]; update: Account[]; skip: number; dropped: number };
+  transactions: { insert: Transaction[]; update: Transaction[]; skip: number; dropped: number };
+  subscriptions: { insert: Subscription[]; update: Subscription[]; skip: number; dropped: number };
+  budgets: { insert: Budget[]; update: Budget[]; skip: number; dropped: number };
+  categories: { insert: CustomCategory[]; update: CustomCategory[]; skip: number; dropped: number };
   profile: { value: UserProfile | null; apply: boolean };
   categoryOrder: { expense: string[]; income: string[] } | null;
   hiddenCategories: string[] | null;
@@ -47,15 +46,20 @@ export function parseDisplayDate(str: string): string | null {
   if (month == null) return null;
   const y = parseInt(m[3]);
   const d = parseInt(m[2]);
+  if (y < 2000 || y > 2100 || d < 1 || d > 31) return null;
   const ms = Date.UTC(y, month, d);
   if (isNaN(ms)) return null;
-  return new Date(ms).toISOString();
+  const result = new Date(ms);
+  if (result.getUTCFullYear() !== y || result.getUTCMonth() !== month || result.getUTCDate() !== d)
+    return null;
+  return result.toISOString();
 }
 
 export function parseDisplayAmount(str: string): number {
   const cleaned = str.replace(/[^0-9.\-]/g, '');
+  if (!cleaned || cleaned === '-' || cleaned === '.') return 0;
   const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
+  return isNaN(num) || num < 0 ? 0 : num;
 }
 
 function parseCycle(raw: string): SubscriptionCycle {
@@ -120,15 +124,6 @@ function detectTable(title: string, columns: string[]): TableKind {
   return 'unknown';
 }
 
-// ── Wallet name → ID resolution ────────────────────────────────────────
-
-function buildWalletMap(current: Account[], toInsert: Account[]): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const a of current) map.set(a.name.toLowerCase(), a.id);
-  for (const a of toInsert) map.set(a.name.toLowerCase(), a.id);
-  return map;
-}
-
 // ── ID generation ──────────────────────────────────────────────────────
 
 let _counter = 0;
@@ -146,6 +141,7 @@ export function buildImportPlan(
     subscriptions: Subscription[];
     budgets: Budget[];
     customCategories: CustomCategory[];
+    categoryOrder: { expense: string[]; income: string[] };
   },
   currentCurrency: string,
   importedCurrency: string | null,
@@ -159,11 +155,11 @@ export function buildImportPlan(
   const isReplace = mode === 'replace';
 
   const plan: ImportPlan = {
-    wallets: { insert: [], update: [], skip: 0 },
-    transactions: { insert: [], update: [], skip: 0 },
-    subscriptions: { insert: [], update: [], skip: 0 },
-    budgets: { insert: [], update: [], skip: 0 },
-    categories: { insert: [], update: [], skip: 0 },
+    wallets: { insert: [], update: [], skip: 0, dropped: 0 },
+    transactions: { insert: [], update: [], skip: 0, dropped: 0 },
+    subscriptions: { insert: [], update: [], skip: 0, dropped: 0 },
+    budgets: { insert: [], update: [], skip: 0, dropped: 0 },
+    categories: { insert: [], update: [], skip: 0, dropped: 0 },
     profile: { value: null, apply: false },
     categoryOrder: null,
     hiddenCategories: null,
@@ -171,11 +167,28 @@ export function buildImportPlan(
     currencyWarning: null,
   };
 
-  const existingAccounts = [...current.accounts];
-  const existingTxs = [...current.transactions];
-  const existingSubs = [...current.subscriptions];
-  const existingBudgets = [...current.budgets];
-  const existingCats = [...current.customCategories];
+  // In replace mode, treat all file data as inserts (existing data will be cleared first)
+  const existingAccounts = isReplace ? [] : [...current.accounts];
+  const existingTxs = isReplace ? [] : [...current.transactions];
+  const existingSubs = isReplace ? [] : [...current.subscriptions];
+  const existingBudgets = isReplace ? [] : [...current.budgets];
+  const existingCats = isReplace ? [] : [...current.customCategories];
+
+  // Build balance lookup from any Balances table (for auto-creating wallets with correct balances)
+  const balanceLookup = new Map<string, string>();
+  for (const table of tables) {
+    const kind = detectTable(table.title, table.columns);
+    if (kind === 'balances') {
+      for (const row of table.rows) {
+        const walletName = String(row['Wallet'] ?? '').trim();
+        const balance = String(row['Balance'] ?? '').trim();
+        if (walletName) {
+          balanceLookup.set(walletName.toLowerCase(), balance || '0.00');
+        }
+      }
+      break;
+    }
+  }
 
   // Process tables in dependency order
   const sorted = [...tables].sort((a, b) => {
@@ -226,20 +239,31 @@ export function buildImportPlan(
       continue;
     }
 
-    // Category order: apply when categories selected
+    // Category order: merge file order with existing order (append new names)
     if (kind === 'categoryorder' && want('categories')) {
-      const expenseOrder: string[] = [];
-      const incomeOrder: string[] = [];
+      const existingExpense = [...current.categoryOrder.expense];
+      const existingIncome = [...current.categoryOrder.income];
+      const fileExpense: string[] = [];
+      const fileIncome: string[] = [];
       for (const row of table.rows) {
         const type = String(row['Type'] ?? '')
           .toLowerCase()
           .trim();
         const name = String(row['Name'] ?? '').trim();
         if (!name) continue;
-        if (type === 'expense') expenseOrder.push(name);
-        else if (type === 'income') incomeOrder.push(name);
+        if (type === 'expense') fileExpense.push(name);
+        else if (type === 'income') fileIncome.push(name);
       }
-      plan.categoryOrder = { expense: expenseOrder, income: incomeOrder };
+      // Merge: file order first, then append existing names not in file
+      const mergedExpense = [
+        ...fileExpense,
+        ...existingExpense.filter((n) => !fileExpense.includes(n)),
+      ];
+      const mergedIncome = [
+        ...fileIncome,
+        ...existingIncome.filter((n) => !fileIncome.includes(n)),
+      ];
+      plan.categoryOrder = { expense: mergedExpense, income: mergedIncome };
       continue;
     }
 
@@ -257,15 +281,32 @@ export function buildImportPlan(
     if (!want(kind)) continue;
 
     if (kind === 'wallets') {
+      let defaultFound = false;
       for (const row of table.rows) {
         const name = String(row['Name'] ?? '').trim();
         const number = String(row['Number'] ?? '').trim();
         const type = String(row['Type'] ?? 'Bank').trim();
         const balance = String(row['Balance'] ?? '0').trim();
-        const isDefault = String(row['Default'] ?? '').toLowerCase() === 'yes';
-        if (!name) continue;
+        let isDefault = String(row['Default'] ?? '').toLowerCase() === 'yes';
+        if (!name) {
+          plan.wallets.dropped++;
+          continue;
+        }
 
-        const existing = existingAccounts.find((a) => a.name.toLowerCase() === name.toLowerCase());
+        // Enforce single default wallet
+        if (isDefault) {
+          if (defaultFound) {
+            isDefault = false;
+          } else {
+            defaultFound = true;
+          }
+        }
+
+        const existing = existingAccounts.find(
+          (a) =>
+            a.name.toLowerCase() === name.toLowerCase() &&
+            (a.number || number ? a.number === number : true)
+        );
         if (existing) {
           if (conflict === 'overwrite') {
             const updated = { ...existing, name, number, type, balance, isDefault };
@@ -299,15 +340,31 @@ export function buildImportPlan(
           .toLowerCase();
         const amountStr = String(row['Amount'] ?? '0');
         const dateStr = String(row['Date'] ?? '');
+        const dateISO = String(row['Date ISO'] ?? '').trim();
         const walletName = String(row['Wallet'] ?? '').trim();
-        if (!title || !typeStr) continue;
+        if (!title || !typeStr || (typeStr !== 'income' && typeStr !== 'expense')) {
+          plan.transactions.dropped++;
+          continue;
+        }
 
         const amount = parseDisplayAmount(amountStr);
-        const date = parseDisplayDate(dateStr);
-        if (!date) continue;
+        // Prefer raw ISO date if present, fall back to parsed display date
+        const parsedISO = typeof row['Date ISO'] === 'string' ? dateISO : '';
+        const dateISOValid =
+          parsedISO &&
+          !isNaN(new Date(parsedISO).getTime()) &&
+          new Date(parsedISO).getFullYear() >= 2000;
+        const date = dateISOValid ? parsedISO : parseDisplayDate(dateStr);
+        if (!date) {
+          plan.transactions.dropped++;
+          continue;
+        }
 
-        const walletId = resolveWallet(walletName, existingAccounts, plan);
-        if (!walletId) continue;
+        const walletId = resolveWallet(walletName, existingAccounts, plan, balanceLookup);
+        if (!walletId) {
+          plan.transactions.dropped++;
+          continue;
+        }
 
         const tx: Transaction = {
           id: newId(),
@@ -324,7 +381,7 @@ export function buildImportPlan(
             e.title === tx.title &&
             Math.abs(e.amount - tx.amount) < 0.01 &&
             e.category === tx.category &&
-            e.date === tx.date &&
+            e.date.slice(0, 10) === tx.date.slice(0, 10) &&
             e.walletId === tx.walletId
         );
         if (existing) {
@@ -346,21 +403,46 @@ export function buildImportPlan(
         const amountStr = String(row['Amount'] ?? '0');
         const cycleStr = String(row['Cycle'] ?? 'monthly');
         const category = String(row['Category'] ?? '').trim();
+        const nextBillingISO = String(row['Next Billing ISO'] ?? '');
         const nextBillingStr = String(row['Next Billing'] ?? '');
         const statusStr = String(row['Status'] ?? 'Active');
+        const endDateISO = String(row['End Date ISO'] ?? '');
         const endDateStr = String(row['End Date'] ?? '');
         const walletName = String(row['Wallet'] ?? '').trim();
-        if (!name) continue;
+        if (!name) {
+          plan.subscriptions.dropped++;
+          continue;
+        }
 
         const amount = parseDisplayAmount(amountStr);
-        const next_billing_date = parseDisplayDate(nextBillingStr) || new Date().toISOString();
-        const end_date = endDateStr === '—' || !endDateStr ? null : parseDisplayDate(endDateStr);
+
+        // Prefer ISO columns for lossless round-trip
+        let next_billing_date: string | null = null;
+        if (nextBillingISO && !isNaN(new Date(nextBillingISO).getTime())) {
+          next_billing_date = new Date(nextBillingISO).toISOString();
+        } else if (nextBillingStr) {
+          next_billing_date = parseDisplayDate(nextBillingStr);
+        }
+        if (!next_billing_date) {
+          plan.subscriptions.dropped++;
+          continue;
+        }
+
+        let end_date: string | null = null;
+        if (endDateISO && endDateISO !== 'null' && !isNaN(new Date(endDateISO).getTime())) {
+          end_date = new Date(endDateISO).toISOString();
+        } else if (endDateStr && endDateStr !== '—') {
+          end_date = parseDisplayDate(endDateStr);
+        }
 
         // Wallet: resolve by name (new Column), fallback to default
         const walletId = walletName
-          ? resolveWallet(walletName, existingAccounts, plan)
-          : resolveWalletDefault(existingAccounts, plan);
-        if (!walletId) continue;
+          ? resolveWallet(walletName, existingAccounts, plan, balanceLookup)
+          : resolveWalletDefault(existingAccounts, plan, balanceLookup);
+        if (!walletId) {
+          plan.subscriptions.dropped++;
+          continue;
+        }
 
         const sub: Subscription = {
           id: newId(),
@@ -377,7 +459,9 @@ export function buildImportPlan(
         const existing = existingSubs.find(
           (e) =>
             e.name.toLowerCase() === sub.name.toLowerCase() &&
-            Math.abs(e.amount - sub.amount) < 0.01
+            Math.abs(e.amount - sub.amount) < 0.01 &&
+            e.cycle === sub.cycle &&
+            e.wallet_id === sub.wallet_id
         );
         if (existing) {
           if (conflict === 'overwrite') {
@@ -396,7 +480,10 @@ export function buildImportPlan(
       for (const row of table.rows) {
         const category = String(row['Category'] ?? '').trim();
         const budgetStr = String(row['Budget'] ?? '0');
-        if (!category) continue;
+        if (!category) {
+          plan.budgets.dropped++;
+          continue;
+        }
 
         const amount = parseDisplayAmount(budgetStr);
         const budget: Budget = { id: newId(), category, amount };
@@ -427,7 +514,10 @@ export function buildImportPlan(
         const name = String(row['Name'] ?? '').trim();
         const colorStr = String(row['Color'] ?? '').trim();
         const iconStr = String(row['Icon'] ?? '').trim();
-        if (!name || !typeStr) continue;
+        if (!name || !typeStr) {
+          plan.categories.dropped++;
+          continue;
+        }
 
         const cat: CustomCategory = {
           id: newId(),
@@ -454,15 +544,24 @@ export function buildImportPlan(
     }
   }
 
-  // Currency warning: only when currency differs AND profile not being applied
-  if (importedCurrency && importedCurrency !== currentCurrency && !plan.profile.apply) {
-    plan.currencyWarning = `File was exported with currency ${importedCurrency}, your app uses ${currentCurrency}. Amounts imported as-is.`;
+  // Currency warning: always warn when currencies differ
+  if (importedCurrency && importedCurrency !== currentCurrency) {
+    if (plan.profile.apply) {
+      plan.currencyWarning = `File uses ${importedCurrency}, app will switch to ${importedCurrency}. Existing data remains in ${currentCurrency}.`;
+    } else {
+      plan.currencyWarning = `File was exported with currency ${importedCurrency}, your app uses ${currentCurrency}. Amounts imported as-is.`;
+    }
   }
 
   return plan;
 }
 
-function resolveWallet(walletName: string, accounts: Account[], plan: ImportPlan): string | null {
+function resolveWallet(
+  walletName: string,
+  accounts: Account[],
+  plan: ImportPlan,
+  balanceLookup: Map<string, string>
+): string | null {
   if (!walletName) {
     const existing = accounts[0];
     if (existing) return existing.id;
@@ -474,13 +573,14 @@ function resolveWallet(walletName: string, accounts: Account[], plan: ImportPlan
   if (found) return found.id;
   const inserting = plan.wallets.insert.find((a) => a.name.toLowerCase() === lower);
   if (inserting) return inserting.id;
-  // Auto-create missing wallet
+  // Auto-create missing wallet — use balance from Balances table if available
+  const balance = balanceLookup.get(lower) ?? '0.00';
   const newAcc: Account = {
     id: newId(),
     name: walletName,
     number: walletName,
     type: 'Bank',
-    balance: '0.00',
+    balance,
     isDefault: false,
     icon: undefined as any,
   };
@@ -489,7 +589,11 @@ function resolveWallet(walletName: string, accounts: Account[], plan: ImportPlan
   return newAcc.id;
 }
 
-function resolveWalletDefault(accounts: Account[], plan: ImportPlan): string {
+function resolveWalletDefault(
+  accounts: Account[],
+  plan: ImportPlan,
+  balanceLookup: Map<string, string>
+): string {
   const defaultAcc = accounts.find((a) => a.isDefault);
   if (defaultAcc) return defaultAcc.id;
   if (plan.wallets.insert.length > 0) return plan.wallets.insert[0].id;

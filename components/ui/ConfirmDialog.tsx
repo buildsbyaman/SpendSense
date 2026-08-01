@@ -68,8 +68,8 @@ export function ConfirmDialog({
             className="w-full rounded-[32px] bg-surface p-6 items-center shadow-2xl"
             onStartShouldSetResponder={() => true}>
             
-            <View className={`w-16 h-16 rounded-full items-center justify-center mb-5 ${content.destructive ? 'bg-red-50 dark:bg-red-900/20' : 'bg-primary/10'}`}>
-              <Icon as={displayIcon} size={28} className={content.destructive ? 'text-red-500' : 'text-primary'} />
+            <View className="w-16 h-16 rounded-full items-center justify-center mb-5 bg-red-50 dark:bg-red-900/20">
+              <Icon as={displayIcon} size={28} className="text-red-500" />
             </View>
 
             <Text variant="h3" className="mb-2 text-center text-foreground">{content.title}</Text>

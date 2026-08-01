@@ -29,10 +29,28 @@ export async function parseXlsx(bytes: Uint8Array): Promise<ParsedFile> {
   const XLSX = await import('xlsx');
   const wb = XLSX.read(bytes, { type: 'array' });
   const tables: ExportedTable[] = [];
+  let meta: { app?: string; currency?: string; user?: string } = { app: 'SpendSense' };
+
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name];
     const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
     if (aoa.length === 0) continue;
+
+    // Read metadata from __meta__ sheet
+    if (name === '__meta__') {
+      for (let i = 1; i < aoa.length; i++) {
+        const row = aoa[i];
+        if (!Array.isArray(row) || row.length < 2) continue;
+        const field = String(row[0] ?? '')
+          .trim()
+          .toLowerCase();
+        const value = String(row[1] ?? '').trim();
+        if (field === 'currency') meta.currency = value;
+        else if (field === 'user') meta.user = value;
+      }
+      continue;
+    }
+
     const columns = (aoa[0] as string[]).map(String);
     const rows: Record<string, string | number>[] = [];
     for (let i = 1; i < aoa.length; i++) {
@@ -47,7 +65,7 @@ export async function parseXlsx(bytes: Uint8Array): Promise<ParsedFile> {
     }
     tables.push({ title: name, columns, rows });
   }
-  return { meta: { app: 'SpendSense' }, tables };
+  return { meta, tables };
 }
 
 export function parsePdf(pdfText: string): ParsedFile {
@@ -60,10 +78,4 @@ export function parsePdf(pdfText: string): ParsedFile {
     meta: { app: payload.app, currency: payload.currency },
     tables: payload.tables,
   };
-}
-
-export function parseFile(text: string, format: 'json' | 'xlsx' | 'pdf'): ParsedFile {
-  if (format === 'json') return parseJson(text);
-  if (format === 'pdf') return parsePdf(text);
-  throw new Error('XLSX parsing requires Uint8 bytes. Use parseXlsx instead.');
 }

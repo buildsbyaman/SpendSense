@@ -4,17 +4,8 @@ import { Icon } from '@/components/ui/icon';
 import { Star, ChevronDown } from 'lucide-react-native';
 import { type Account, parseBalance, formatWalletBalance } from '@/utils/wallet';
 import { useApp } from '@/context/AppContext';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  Easing,
-} from 'react-native-reanimated';
-import { useEffect } from 'react';
-
-const DURATION = 280;
-const EASING = Easing.out(Easing.cubic);
+import { useExpandAnimation } from '@/hooks/useExpandAnimation';
+import Animated from 'react-native-reanimated';
 
 interface WalletItemProps {
   account: Account;
@@ -40,22 +31,7 @@ export function WalletItem({
   const displayBalance = formatWalletBalance(numericBalance, userProfile.currencySymbol);
   const balanceColorClass = numericBalance >= 0 ? 'text-income' : 'text-expense';
 
-  // 0 = collapsed, 1 = expanded
-  const progress = useSharedValue(isExpanded ? 1 : 0);
-
-  useEffect(() => {
-    progress.value = withTiming(isExpanded ? 1 : 0, { duration: DURATION, easing: EASING });
-  }, [isExpanded]);
-
-  const actionsStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(progress.value, [0, 1], [0, 70]),
-    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0, 1]),
-    overflow: 'hidden',
-  }));
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 180])}deg` }],
-  }));
+  const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);
 
   return (
     <View className="mb-4 overflow-hidden rounded-3xl border border-border bg-surface shadow-xs">
@@ -74,7 +50,7 @@ export function WalletItem({
             )}
           </View>
           <View className="flex-1">
-            <Text className="text-foreground text-base font-semibold" numberOfLines={1}>
+            <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
               {account.name}
             </Text>
             {!!account.number && (
@@ -110,7 +86,7 @@ export function WalletItem({
           <TouchableOpacity
             className="flex-1 items-center justify-center rounded-full bg-secondary py-3"
             onPress={onEditClick}>
-            <Text className="text-foreground text-xs font-bold">Edit</Text>
+            <Text className="text-xs font-bold text-foreground">Edit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

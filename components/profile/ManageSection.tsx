@@ -54,7 +54,7 @@ export function ManageSection() {
               <Text className="flex-1 text-base font-medium text-foreground">{row.label}</Text>
               <Icon as={ChevronRight} size={16} className="text-muted" />
             </TouchableOpacity>
-            {!isLast && <View className="ml-13 h-[1px] bg-divider" />}
+            {!isLast && <View className="ml-12 h-[1px] bg-divider" />}
           </View>
         );
       })}

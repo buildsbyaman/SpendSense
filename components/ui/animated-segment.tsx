@@ -30,7 +30,10 @@ export default function AnimatedSegment<T extends string>({
   const [toggleWidth, setToggleWidth] = useState(0);
   const toggleX = useSharedValue(0);
 
-  const activeIndex = options.findIndex((o) => o.value === selectedValue) || 0;
+  const activeIndex = (() => {
+    const idx = options.findIndex((o) => o.value === selectedValue);
+    return idx === -1 ? 0 : idx;
+  })();
 
   useEffect(() => {
     if (toggleWidth > 0 && options.length > 0) {
@@ -62,7 +65,7 @@ export default function AnimatedSegment<T extends string>({
   };
 
   return (
-    <View className="items-center w-full">
+    <View className="w-full items-center">
       <View
         className="w-full rounded-full bg-secondary p-1"
         onLayout={(e: LayoutChangeEvent) => {
@@ -104,7 +107,14 @@ export default function AnimatedSegment<T extends string>({
                 style={{
                   fontWeight: '600',
                   fontSize: 13,
-                  color: selectedValue === option.value ? (isDark ? '#ffffff' : '#000000') : (isDark ? '#8a8a94' : '#9b9b9b'),
+                  color:
+                    selectedValue === option.value
+                      ? isDark
+                        ? '#ffffff'
+                        : '#000000'
+                      : isDark
+                        ? '#8a8a94'
+                        : '#9b9b9b',
                 }}>
                 {option.label}
               </Text>

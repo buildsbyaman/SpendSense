@@ -73,15 +73,9 @@ export default function ExportScreen() {
   const { navigate: navigateTab } = useTabNavigation();
   const now = new Date();
 
-  const [selectedTypes, setSelectedTypes] = useState<ExportType[]>(['transactions']);
-  const [rangeFrom, setRangeFrom] = useState<Date | null>(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
-  const [rangeTo, setRangeTo] = useState<Date | null>(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-  });
+  const [selectedTypes, setSelectedTypes] = useState<ExportType[]>(['alldata']);
+  const [rangeFrom, setRangeFrom] = useState<Date | null>(null);
+  const [rangeTo, setRangeTo] = useState<Date | null>(null);
   const [format, setFormat] = useState<ExportFormat>('json');
   const [exporting, setExporting] = useState(false);
 
@@ -190,6 +184,7 @@ export default function ExportScreen() {
         text1: 'Exported',
         text2: `${totalRows} rows exported as ${filename}`,
       });
+      navigateTab('profile');
     } catch (err) {
       Toast.show({
         type: 'error',
@@ -246,7 +241,7 @@ export default function ExportScreen() {
                       )}
                     </View>
                   </TouchableOpacity>
-                  {!isLast && <View className="ml-13 h-[1px] bg-divider" />}
+                  {!isLast && <View className="ml-12 h-[1px] bg-divider" />}
                 </View>
               );
             })}

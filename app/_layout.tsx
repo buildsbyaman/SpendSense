@@ -39,12 +39,19 @@ export default function RootLayout() {
           <ThemeInit />
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
           <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right',
+                animationTypeForReplace: 'push',
+              }}
+            />
             <Stack.Screen
               name="onboarding"
               options={{
                 headerShown: false,
-                animation: 'fade',
+                animation: 'slide_from_left',
               }}
             />
             <Stack.Screen

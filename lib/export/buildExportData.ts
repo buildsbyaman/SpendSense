@@ -1,8 +1,7 @@
 import { type Transaction } from '@/utils/transaction';
 import { type Subscription } from '@/utils/subscription';
 import { type UserProfile } from '@/lib/repository';
-import { parseBalance } from '@/utils/wallet';
-import { filterByMonth, filterByYear, filterByType, sumByType } from '@/utils/analytics';
+import { filterByMonth, filterByYear, sumByType } from '@/utils/analytics';
 
 export type ExportType =
   | 'transactions'
@@ -118,16 +117,14 @@ function filterSubsByPeriod(
   return subs;
 }
 
-const CURRENCY_SYMBOL = '$';
-
-function fmtMoney(v: number): string {
+function fmtMoney(v: number, symbol: string = '$'): string {
   const neg = v < 0;
   const abs = Math.abs(v);
   const formatted = abs.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return neg ? `-${CURRENCY_SYMBOL}${formatted}` : `${CURRENCY_SYMBOL}${formatted}`;
+  return neg ? `-${symbol}${formatted}` : `${symbol}${formatted}`;
 }
 
 function fmtDate(iso: string): string {
@@ -141,12 +138,16 @@ function fmtDate(iso: string): string {
 
 // ── Table builders ─────────────────────────────────────────────────────
 
-function buildTransactionsTable(txs: Transaction[], accounts: AppState['accounts']): ExportedTable {
+function buildTransactionsTable(
+  txs: Transaction[],
+  accounts: AppState['accounts'],
+  symbol?: string
+): ExportedTable {
   const walletName = (wid: string) => accounts.find((a) => a.id === wid)?.name ?? wid;
 
   return {
     title: 'Transactions',
-    columns: ['Date', 'Title', 'Category', 'Type', 'Amount', 'Wallet'],
+    columns: ['Date', 'Title', 'Category', 'Type', 'Amount', 'Wallet', 'Date ISO'],
     rows: [...txs]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((tx) => ({
@@ -154,15 +155,17 @@ function buildTransactionsTable(txs: Transaction[], accounts: AppState['accounts
         Title: tx.title,
         Category: tx.category,
         Type: tx.type,
-        Amount: fmtMoney(tx.amount),
+        Amount: fmtMoney(tx.amount, symbol),
         Wallet: walletName(tx.walletId),
+        'Date ISO': tx.date,
       })),
   };
 }
 
 function buildSubscriptionsTable(
   subs: Subscription[],
-  accounts: AppState['accounts']
+  accounts: AppState['accounts'],
+  symbol?: string
 ): ExportedTable {
   const walletName = (wid: string) => accounts.find((a) => a.id === wid)?.name ?? wid;
 
@@ -174,18 +177,22 @@ function buildSubscriptionsTable(
       'Cycle',
       'Category',
       'Next Billing',
+      'Next Billing ISO',
       'Status',
       'End Date',
+      'End Date ISO',
       'Wallet',
     ],
     rows: subs.map((s) => ({
       Name: s.name,
-      Amount: fmtMoney(s.amount),
+      Amount: fmtMoney(s.amount, symbol),
       Cycle: s.cycle.charAt(0).toUpperCase() + s.cycle.slice(1),
       Category: s.category,
       'Next Billing': fmtDate(s.next_billing_date),
+      'Next Billing ISO': s.next_billing_date,
       Status: s.is_active === 1 ? 'Active' : 'Inactive',
       'End Date': s.end_date ? fmtDate(s.end_date) : '—',
+      'End Date ISO': s.end_date ?? '',
       Wallet: walletName(s.wallet_id),
     })),
   };
@@ -289,7 +296,9 @@ function buildCategoriesTable(customCats: AppState['customCategories']): Exporte
 
   for (const d of defaults) {
     for (const name of d.names) {
-      const custom = customCats.find((c) => c.name.toLowerCase() === name.toLowerCase());
+      const custom = customCats.find(
+        (c) => c.name.toLowerCase() === name.toLowerCase() && c.type === d.type.toLowerCase()
+      );
       rows.push({
         Type: d.type,
         Name: name,
@@ -301,8 +310,10 @@ function buildCategoriesTable(customCats: AppState['customCategories']): Exporte
   }
 
   for (const c of customCats) {
-    const isDefault = defaults.some((d) =>
-      d.names.some((n) => n.toLowerCase() === c.name.toLowerCase())
+    const isDefault = defaults.some(
+      (d) =>
+        d.type.toLowerCase() === c.type &&
+        d.names.some((n) => n.toLowerCase() === c.name.toLowerCase())
     );
     if (!isDefault) {
       rows.push({
@@ -362,11 +373,13 @@ export function buildExportData(selection: ExportSelection, state: AppState): Ex
   const tables: ExportedTable[] = [];
 
   if (want('transactions')) {
-    tables.push(buildTransactionsTable(periodTxs, state.accounts));
+    tables.push(buildTransactionsTable(periodTxs, state.accounts, state.profile.currencySymbol));
   }
   if (want('subscriptions')) {
     const filteredSubs = filterSubsByPeriod(state.subscriptions, period);
-    tables.push(buildSubscriptionsTable(filteredSubs, state.accounts));
+    tables.push(
+      buildSubscriptionsTable(filteredSubs, state.accounts, state.profile.currencySymbol)
+    );
   }
   if (want('wallets')) {
     tables.push(buildWalletsTable(state.accounts));

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { type Account, formatWalletBalance, parseBalance } from '@/utils/wallet';
+import { adjustAccountBalance, computeTransactionDelta } from '@/lib/balance';
 import {
   type Transaction,
   type CustomCategory,
@@ -14,7 +15,6 @@ import {
   insertAccount,
   updateAccount,
   deleteAccount,
-  deleteTransactionsForWallet,
   setDefaultWallet as repoSetDefaultWallet,
   fetchTransactions,
   insertTransaction,
@@ -124,78 +124,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      await getDatabase();
-      const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
-      const storedTransactions = await fetchTransactions();
-      const storedCategories = await fetchCustomCategories();
-      const storedDeletedDefaults = await fetchDeletedDefaultCategories();
-      const expenseOrder = (await fetchCategoryOrder('expense')) || [];
-      const incomeOrder = (await fetchCategoryOrder('income')) || [];
-      const storedProfile = (await fetchProfile()) || {
-        name: 'User',
-        currencySymbol: '$',
-        currencyCode: 'USD',
-        avatar: null,
-        hasOnboarded: false,
-      };
-      setUserProfile(storedProfile);
-      const storedBudgets = await fetchBudgets();
-      const storedSubscriptions = await fetchSubscriptions();
+      try {
+        await getDatabase();
+        const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
+        const storedTransactions = await fetchTransactions();
+        const storedCategories = await fetchCustomCategories();
+        const storedDeletedDefaults = await fetchDeletedDefaultCategories();
+        const expenseOrder = (await fetchCategoryOrder('expense')) || [];
+        const incomeOrder = (await fetchCategoryOrder('income')) || [];
+        const storedProfile = (await fetchProfile()) || {
+          name: 'User',
+          currencySymbol: '$',
+          currencyCode: 'USD',
+          avatar: null,
+          hasOnboarded: false,
+        };
+        const storedBudgets = await fetchBudgets();
+        const storedSubscriptions = await fetchSubscriptions();
 
-      // Handle auto-billing for active subscriptions
-      const now = new Date();
-      for (const sub of storedSubscriptions) {
-        if (sub.is_active === 1) {
-          let nextDate = new Date(sub.next_billing_date);
-          let changed = false;
-          while (nextDate <= now) {
-            if (sub.end_date && nextDate > new Date(sub.end_date)) break;
+        // Handle auto-billing for active subscriptions (cap at 24 iterations)
+        const now = new Date();
+        for (const sub of storedSubscriptions) {
+          if (sub.is_active === 1) {
+            let nextDate = new Date(sub.next_billing_date);
+            let changed = false;
+            let iterations = 0;
+            while (nextDate <= now && iterations < 24) {
+              if (sub.end_date && nextDate > new Date(sub.end_date)) break;
 
-            // Auto-create transaction
-            const tx: Transaction = {
-              id: Date.now().toString() + Math.random().toString(),
-              title: sub.name,
-              amount: sub.amount,
-              type: 'expense',
-              category: sub.category,
-              date: nextDate.toISOString(),
-              walletId: sub.wallet_id,
-            };
-            await insertTransaction(tx);
-            storedTransactions.push(tx);
+              const tx: Transaction = {
+                id: Date.now().toString() + Math.random().toString(),
+                title: sub.name,
+                amount: sub.amount,
+                type: 'expense',
+                category: sub.category,
+                date: nextDate.toISOString(),
+                walletId: sub.wallet_id,
+              };
+              await insertTransaction(tx);
+              storedTransactions.push(tx);
 
-            // Deduct wallet balance
-            const acc = storedAccounts.find((a) => a.id === sub.wallet_id);
-            if (acc) {
-              const numBal = parseBalance(acc.balance);
-              acc.balance = formatWalletBalance((numBal - sub.amount).toString());
-              await updateAccount(acc);
+              const acc = storedAccounts.find((a) => a.id === sub.wallet_id);
+              if (acc) {
+                const updated = adjustAccountBalance(acc, -sub.amount);
+                Object.assign(acc, updated);
+                await updateAccount(acc);
+              }
+
+              nextDate = getNextBillingDate(nextDate, sub.cycle);
+              sub.next_billing_date = nextDate.toISOString();
+              changed = true;
+              iterations++;
             }
-
-            // Increment date
-            nextDate = getNextBillingDate(nextDate, sub.cycle);
-            sub.next_billing_date = nextDate.toISOString();
-            changed = true;
-          }
-          if (changed) {
-            await repoUpdateSubscription(sub);
+            if (changed) {
+              await repoUpdateSubscription(sub);
+            }
           }
         }
-      }
 
-      setAccounts(storedAccounts);
-      setTransactions(storedTransactions);
-      setCustomCategories(storedCategories);
-      setDeletedDefaultCategories(storedDeletedDefaults);
-      setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
-      if (storedProfile) {
+        if (cancelled) return;
+        setAccounts(storedAccounts);
+        setTransactions(storedTransactions);
+        setCustomCategories(storedCategories);
+        setDeletedDefaultCategories(storedDeletedDefaults);
+        setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
         setUserProfile(storedProfile);
+        setBudgets(storedBudgets);
+        setSubscriptions(storedSubscriptions);
+        setReady(true);
+      } catch (err) {
+        console.error('App init failed:', err);
+        if (!cancelled) setReady(true);
       }
-      setBudgets(storedBudgets);
-      setSubscriptions(storedSubscriptions);
-      setReady(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const updateUserProfile = async (profile: {
@@ -249,6 +255,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const incomeOrder = (await fetchCategoryOrder('income')) || [];
     const storedBudgets = await fetchBudgets();
     const storedSubscriptions = await fetchSubscriptions();
+    const storedProfile = (await fetchProfile()) || {
+      name: 'User',
+      currencySymbol: '$',
+      currencyCode: 'USD',
+      avatar: null,
+      hasOnboarded: false,
+    };
     setAccounts(storedAccounts);
     setTransactions(storedTransactions);
     setCustomCategories(storedCategories);
@@ -256,6 +269,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
     setBudgets(storedBudgets);
     setSubscriptions(storedSubscriptions);
+    setUserProfile(storedProfile);
   }, []);
 
   const addCustomCategory = useCallback((catData: Omit<CustomCategory, 'id'>) => {
@@ -399,9 +413,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAccounts((prev) =>
       prev.map((acc) => {
         if (acc.id === txData.walletId) {
-          const currentVal = parseBalance(acc.balance);
-          const diff = txData.type === 'income' ? txData.amount : -txData.amount;
-          const updated = { ...acc, balance: formatWalletBalance((currentVal + diff).toString()) };
+          const delta = computeTransactionDelta(txData.type, txData.amount, 'apply');
+          const updated = adjustAccountBalance(acc, delta);
           updateAccount(updated);
           return updated;
         }
@@ -418,12 +431,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setAccounts((prevAcc) =>
           prevAcc.map((acc) => {
             if (acc.id === tx.walletId) {
-              const currentVal = parseBalance(acc.balance);
-              const diff = tx.type === 'income' ? -tx.amount : tx.amount;
-              const updated = {
-                ...acc,
-                balance: formatWalletBalance((currentVal + diff).toString()),
-              };
+              const delta = computeTransactionDelta(tx.type, tx.amount, 'reverse');
+              const updated = adjustAccountBalance(acc, delta);
               updateAccount(updated);
               return updated;
             }
@@ -442,27 +451,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (oldTx) {
         setAccounts((prevAcc) =>
           prevAcc.map((acc) => {
+            let delta = 0;
             if (acc.id === oldTx.walletId) {
-              const currentVal = parseBalance(acc.balance);
-              const diff = oldTx.type === 'income' ? -oldTx.amount : oldTx.amount;
-              const updated = {
-                ...acc,
-                balance: formatWalletBalance((currentVal + diff).toString()),
-              };
-              updateAccount(updated);
-              return updated;
+              delta += computeTransactionDelta(oldTx.type, oldTx.amount, 'reverse');
             }
             if (acc.id === updatedTx.walletId) {
-              const currentVal = parseBalance(acc.balance);
-              const diff = updatedTx.type === 'income' ? updatedTx.amount : -updatedTx.amount;
-              const updated = {
-                ...acc,
-                balance: formatWalletBalance((currentVal + diff).toString()),
-              };
-              updateAccount(updated);
-              return updated;
+              delta += computeTransactionDelta(updatedTx.type, updatedTx.amount, 'apply');
             }
-            return acc;
+            if (delta === 0) return acc;
+            const updated = adjustAccountBalance(acc, delta);
+            updateAccount(updated);
+            return updated;
           })
         );
       }
@@ -476,6 +475,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTransactions([]);
     setCustomCategories([]);
     setBudgets([]);
+    setSubscriptions([]);
+    setDeletedDefaultCategories([]);
+    setCategoryOrder({ expense: [], income: [] });
     setUserProfile({
       name: 'User',
       currencySymbol: '$',
@@ -487,13 +489,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const seedDemoData = useCallback(async () => {
-    await repoSeedDemoData();
-    const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
-    const storedTransactions = await fetchTransactions();
-    const storedBudgets = await fetchBudgets();
-    setAccounts(storedAccounts);
-    setTransactions(storedTransactions);
-    setBudgets(storedBudgets);
+    try {
+      await repoSeedDemoData();
+      const storedAccounts = (await fetchAccounts()).map(deserializeAccount);
+      const storedTransactions = await fetchTransactions();
+      const storedBudgets = await fetchBudgets();
+      setAccounts(storedAccounts);
+      setTransactions(storedTransactions);
+      setBudgets(storedBudgets);
+    } catch (err) {
+      console.error('Seed demo data failed:', err);
+    }
   }, []);
 
   const addBudget = useCallback((budget: Omit<Budget, 'id'>) => {
@@ -522,7 +528,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (newSub.is_active === 1) {
         const now = new Date();
         let nextDate = new Date(newSub.next_billing_date);
-        while (nextDate <= now) {
+        let iterations = 0;
+        while (nextDate <= now && iterations < 24) {
           if (newSub.end_date && nextDate > new Date(newSub.end_date)) break;
 
           addTransaction({
@@ -534,6 +541,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             walletId: newSub.wallet_id,
           });
           nextDate = getNextBillingDate(nextDate, newSub.cycle);
+          iterations++;
         }
         newSub.next_billing_date = nextDate.toISOString();
       }
@@ -550,7 +558,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (subToSave.is_active === 1) {
         const now = new Date();
         let nextDate = new Date(subToSave.next_billing_date);
-        while (nextDate <= now) {
+        let iterations = 0;
+        while (nextDate <= now && iterations < 24) {
           if (subToSave.end_date && nextDate > new Date(subToSave.end_date)) break;
 
           addTransaction({
@@ -562,6 +571,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             walletId: subToSave.wallet_id,
           });
           nextDate = getNextBillingDate(nextDate, subToSave.cycle);
+          iterations++;
         }
         subToSave.next_billing_date = nextDate.toISOString();
       }

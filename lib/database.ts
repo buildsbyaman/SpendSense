@@ -141,10 +141,14 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
     }>('PRAGMA user_version')) ?? { user_version: 0 };
 
     if (currentVersionAfter9 < 10) {
-      await db!.execAsync(`
-        ALTER TABLE profile ADD COLUMN currency_symbol TEXT DEFAULT '$';
-        ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'USD';
-      `);
+      const cols9 = await db!.getAllAsync<{ name: string }>('PRAGMA table_info(profile)');
+      const colNames9 = cols9.map((c) => c.name);
+      if (!colNames9.includes('currency_symbol')) {
+        await db!.runAsync("ALTER TABLE profile ADD COLUMN currency_symbol TEXT DEFAULT '$'");
+      }
+      if (!colNames9.includes('currency_code')) {
+        await db!.runAsync("ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'USD'");
+      }
       await db!.execAsync('PRAGMA user_version = 10');
     }
 
@@ -153,10 +157,16 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
     }>('PRAGMA user_version')) ?? { user_version: 0 };
 
     if (currentVersionAfter10 < 11) {
-      await db!.execAsync(`
-        ALTER TABLE profile ADD COLUMN avatar TEXT;
-        ALTER TABLE profile ADD COLUMN has_onboarded INTEGER NOT NULL DEFAULT 0;
-      `);
+      const cols10 = await db!.getAllAsync<{ name: string }>('PRAGMA table_info(profile)');
+      const colNames10 = cols10.map((c) => c.name);
+      if (!colNames10.includes('avatar')) {
+        await db!.runAsync('ALTER TABLE profile ADD COLUMN avatar TEXT');
+      }
+      if (!colNames10.includes('has_onboarded')) {
+        await db!.runAsync(
+          'ALTER TABLE profile ADD COLUMN has_onboarded INTEGER NOT NULL DEFAULT 0'
+        );
+      }
       await db!.execAsync('PRAGMA user_version = 11');
     }
   });

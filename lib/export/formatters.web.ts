@@ -2,8 +2,12 @@ import { downloadContent, downloadBlobDirect } from './download';
 import { tablesToJSON, buildXlsxBytes, buildPdfBytes, type ExportFormat } from './serialize';
 import { type ExportedTable } from './buildExportData';
 
-async function tablesToXLSXDownload(tables: ExportedTable[], filename: string): Promise<void> {
-  const bytes = await buildXlsxBytes(tables);
+async function tablesToXLSXDownload(
+  tables: ExportedTable[],
+  filename: string,
+  profile: { name: string; currencyCode: string }
+): Promise<void> {
+  const bytes = await buildXlsxBytes(tables, profile);
   const blob = new Blob([bytes], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
@@ -33,7 +37,7 @@ export async function exportData(
       break;
     }
     case 'xlsx': {
-      await tablesToXLSXDownload(tables, filename);
+      await tablesToXLSXDownload(tables, filename, profile);
       break;
     }
     case 'pdf': {

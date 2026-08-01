@@ -46,11 +46,26 @@ export function tablesToJSON(
 
 // ── XLSX bytes ────────────────────────────────────────────────────────
 
-export async function buildXlsxBytes(tables: ExportedTable[]): Promise<Uint8Array<ArrayBuffer>> {
+export async function buildXlsxBytes(
+  tables: ExportedTable[],
+  profile?: { name: string; currencyCode: string }
+): Promise<Uint8Array<ArrayBuffer>> {
   const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
   const usedNames = new Map<string, number>();
+
+  // Embed metadata sheet for import round-trip
+  if (profile) {
+    const metaWs = XLSX.utils.aoa_to_sheet([
+      ['Field', 'Value'],
+      ['App', 'SpendSense'],
+      ['User', profile.name],
+      ['Currency', profile.currencyCode],
+    ]);
+    metaWs['!cols'] = [{ wch: 10 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, metaWs, '__meta__');
+  }
 
   for (const table of tables) {
     const wsData = [

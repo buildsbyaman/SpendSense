@@ -35,7 +35,7 @@ export function MonthlyBarChart({ data }: MonthlyBarChartProps) {
       <BarChart
         data={barData}
         barWidth={16}
-        spacing={(280 - 40) / data.length}
+        spacing={data.length > 0 ? (280 - 40) / data.length : 280}
         noOfSections={4}
         xAxisColor={colors.grid}
         yAxisColor={colors.grid}

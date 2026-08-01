@@ -12,7 +12,6 @@ import {
   saveProfile,
   saveCategoryOrder,
   replaceDeletedDefaultCategories,
-  clearAllData,
 } from '@/lib/repository';
 import { type ImportPlan } from './merge';
 
@@ -47,9 +46,24 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
   };
 
   await db.withTransactionAsync(async () => {
-    // Replace mode: clear all data tables before importing
+    // Replace mode: only clear tables that have data in the plan
     if (plan.replace) {
-      await clearAllData();
+      if (plan.wallets.insert.length > 0 || plan.wallets.update.length > 0) {
+        await db.runAsync('DELETE FROM accounts');
+      }
+      if (plan.transactions.insert.length > 0 || plan.transactions.update.length > 0) {
+        await db.runAsync('DELETE FROM transactions');
+      }
+      if (plan.subscriptions.insert.length > 0 || plan.subscriptions.update.length > 0) {
+        await db.runAsync('DELETE FROM subscriptions');
+      }
+      if (plan.budgets.insert.length > 0 || plan.budgets.update.length > 0) {
+        await db.runAsync('DELETE FROM budgets');
+      }
+      if (plan.categories.insert.length > 0 || plan.categories.update.length > 0) {
+        await db.runAsync('DELETE FROM custom_categories');
+        await db.runAsync('DELETE FROM deleted_default_categories');
+      }
     }
 
     // Profile (always restore when selected)
@@ -119,7 +133,7 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
     }
 
     // Hidden default categories
-    if (plan.hiddenCategories) {
+    if (plan.hiddenCategories && plan.hiddenCategories.length > 0) {
       await replaceDeletedDefaultCategories(plan.hiddenCategories);
     }
   });
