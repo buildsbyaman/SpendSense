@@ -19,6 +19,7 @@ import { ManageSection } from '@/components/profile/ManageSection';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import { saveThemePreference } from '@/lib/theme-persistence';
+import { loadDevToolsEnabled, saveDevToolsEnabled } from '@/lib/dev-tools';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { useRef } from 'react';
@@ -37,6 +38,12 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
   const [confirmSeed, setConfirmSeed] = useState(false);
   const { addListener } = useTabNavigation();
   const scrollRef = useRef<ScrollView>(null);
+  const [devToolsEnabled, setDevToolsEnabled] = useState(false);
+  const tapTimestampsRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    loadDevToolsEnabled().then(setDevToolsEnabled);
+  }, []);
 
   useEffect(() => {
     return addListener((tabName) => {
@@ -45,6 +52,28 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       }
     });
   }, [addListener]);
+
+  const handleTitlePress = useCallback(() => {
+    const now = Date.now();
+    const TAP_THRESHOLD = 5;
+    const WINDOW_MS = 3000;
+    const ts = tapTimestampsRef.current.filter((t) => now - t < WINDOW_MS);
+    ts.push(now);
+    tapTimestampsRef.current = ts;
+    if (ts.length >= TAP_THRESHOLD) {
+      tapTimestampsRef.current = [];
+      setDevToolsEnabled((prev) => {
+        const next = !prev;
+        saveDevToolsEnabled(next);
+        Toast.show({
+          type: 'success',
+          text1: next ? 'Developer tools enabled' : 'Developer tools disabled',
+          text2: next ? 'Load Demo Data is now visible below.' : 'Load Demo Data is now hidden.',
+        });
+        return next;
+      });
+    }
+  }, []);
 
   const isDark = colorScheme === 'dark';
   const placeholderColor = isDark ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
@@ -105,7 +134,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       className="flex-1 bg-background"
       style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header title="Settings" showBack={false} onRightPress={() => setIsMenuOpen(true)} />
+        <Header title="Settings" showBack={false} onRightPress={() => setIsMenuOpen(true)} onTitlePress={handleTitlePress} />
       </View>
       <ScrollView
         ref={scrollRef}
@@ -207,7 +236,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
         <ManageSection />
 
         {/* Dev-only: Load Demo Data */}
-        {__DEV__ && (
+        {(devToolsEnabled || process.env.EXPO_PUBLIC_DEV_MODE === '1') && (
           <View className="mt-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
             <Text className="mb-4 text-sm font-medium text-muted">Developer</Text>
             <TouchableOpacity

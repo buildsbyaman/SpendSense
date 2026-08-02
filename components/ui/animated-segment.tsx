@@ -35,20 +35,22 @@ export default function AnimatedSegment<T extends string>({
     return idx === -1 ? 0 : idx;
   })();
 
+  const SPRING_CONFIG = {
+    damping: 20,
+    stiffness: 250,
+    mass: 0.8,
+  };
+
   useEffect(() => {
     if (toggleWidth > 0 && options.length > 0) {
-      toggleX.value = (toggleWidth / options.length) * activeIndex;
+      toggleX.value = withSpring((toggleWidth / options.length) * activeIndex, SPRING_CONFIG);
     }
   }, [activeIndex, toggleWidth, options.length]);
 
   const thumbStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateX: withSpring(toggleX.value, {
-          damping: 20,
-          stiffness: 250,
-          mass: 0.8,
-        }),
+        translateX: toggleX.value,
       },
     ],
   }));
@@ -60,7 +62,7 @@ export default function AnimatedSegment<T extends string>({
   const handleSelect = (index: number) => {
     onChange(options[index].value);
     if (toggleWidth > 0 && options.length > 0) {
-      toggleX.value = (toggleWidth / options.length) * index;
+      toggleX.value = withSpring((toggleWidth / options.length) * index, SPRING_CONFIG);
     }
   };
 
@@ -72,7 +74,7 @@ export default function AnimatedSegment<T extends string>({
           const w = e.nativeEvent.layout.width - 8;
           setToggleWidth(w);
           if (options.length > 0) {
-            toggleX.value = (w / options.length) * activeIndex;
+            toggleX.value = withSpring((w / options.length) * activeIndex, SPRING_CONFIG);
           }
         }}>
         <View style={{ flexDirection: 'row', position: 'relative' }}>

@@ -169,7 +169,7 @@ export function generateSeedData(symbol?: string) {
 
     const extraIncomeCount = 1 + (rand() > 0.5 ? 1 : 0);
     for (let i = 0; i < extraIncomeCount; i++) {
-      const cat = pick(['Freelance', 'Interest'] as const, rand);
+      const cat = pick(['Business', 'Investment'] as const, rand);
       const title = pick(INCOME_TITLES[cat], rand);
       const amount = randAmount(...INCOME_AMOUNTS[cat], rand);
       const walletId = pick([...WALLET_IDS], rand);

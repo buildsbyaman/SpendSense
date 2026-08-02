@@ -100,9 +100,8 @@ export async function buildPdfBytes(
   tables: ExportedTable[],
   profile?: { name: string; currencyCode: string }
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const { default: jsPDF } = await import('jspdf');
+  const { jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
-
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   let isFirstTable = true;

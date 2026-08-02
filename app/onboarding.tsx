@@ -152,12 +152,12 @@ export default function OnboardingScreen() {
         <TouchableOpacity
           onPress={handleContinue}
           disabled={!canContinue}
-          className={`mb-8 mt-10 flex-row items-center justify-center gap-2 rounded-full py-4 shadow-sm ${
-            canContinue ? 'bg-primary' : 'bg-gray-100 dark:bg-gray-900'
+          className={`mb-8 mt-10 flex-row items-center justify-center gap-2 rounded-full py-4 shadow-sm bg-primary ${
+            canContinue ? '' : 'opacity-50'
           }`}
           activeOpacity={0.8}>
           <Text
-            className={`text-lg font-bold ${canContinue ? 'text-white dark:text-black' : 'text-muted'}`}>
+            className="text-lg font-bold text-white dark:text-black">
             Get Started
           </Text>
         </TouchableOpacity>

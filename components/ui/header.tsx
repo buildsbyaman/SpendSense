@@ -10,6 +10,7 @@ interface HeaderProps {
   rightIcon?: LucideIcon;
   onLeftPress?: () => void;
   onRightPress?: () => void;
+  onTitlePress?: () => void;
   showBack?: boolean;
 }
 
@@ -19,6 +20,7 @@ export function Header({
   rightIcon,
   onLeftPress,
   onRightPress,
+  onTitlePress,
   showBack = false,
 }: HeaderProps) {
   const router = useRouter();
@@ -49,7 +51,13 @@ export function Header({
       </View>
 
       {/* Title */}
-      <Text className="text-lg font-semibold text-foreground">{title}</Text>
+      {onTitlePress ? (
+        <TouchableOpacity onPress={onTitlePress} activeOpacity={1}>
+          <Text className="text-lg font-semibold text-foreground">{title}</Text>
+        </TouchableOpacity>
+      ) : (
+        <Text className="text-lg font-semibold text-foreground">{title}</Text>
+      )}
 
       {/* Right Action */}
       <View className="w-10 items-end">

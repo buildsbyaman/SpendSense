@@ -1,3 +1,137 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* ========= Colors ========= */
+
+  --background: #f8f9fa;
+  --foreground: #000000;
+
+  --surface: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #000000;
+
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+
+  --primary: #1c1c1e;
+  --primary-foreground: #ffffff;
+
+  --secondary: #e8e8e8;
+  --secondary-foreground: #1c1c1e;
+
+  --muted: #9ca3af;
+  --muted-foreground: #ffffff;
+  --placeholder: #9ca3af;
+
+  --accent: #f6c98a;
+  --accent-foreground: #7d5b2d;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+
+  --expense: #f87171;
+  --income: #16a34a;
+
+  --border: #e8e8e8;
+  --divider: #efefef;
+  --input: #f6f6f6;
+  --ring: #f6c98a;
+
+  --gray-50: #fafafa;
+  --gray-100: #f6f6f6;
+  --gray-200: #ededed;
+  --gray-300: #dedede;
+  --gray-400: #c8c8c8;
+  --gray-500: #a8a8a8;
+  --gray-600: #888888;
+  --gray-700: #606060;
+  --gray-800: #3c3c3c;
+  --gray-900: #242424;
+
+  --accent-dark: #7d5b2d;
+
+  /* ========= Radius ========= */
+
+  --radius: 0.75rem;
+  --radius-xs: 12px;
+  --radius-sm: 18px;
+  --radius-md: 22px;
+  --radius-lg: 30px;
+  --radius-xl: 36px;
+  --radius-pill: 999px;
+
+  /* ========= Shadows ========= */
+
+  --shadow-xs: 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.07);
+
+  /* ========= Typography ========= */
+
+  --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dark:root {
+  --background: #000000;
+  --foreground: #ffffff;
+
+  --surface: #1c1c1e;
+  --card: #1c1c1e;
+  --card-foreground: #ffffff;
+
+  --popover: #1c1c1e;
+  --popover-foreground: #ffffff;
+
+  --primary: #ffffff;
+  --primary-foreground: #1c1c1e;
+
+  --secondary: #2c2c2e;
+  --secondary-foreground: #ffffff;
+
+  --muted: #8e8e93;
+  --muted-foreground: #ffffff;
+  --placeholder: #8e8e93;
+
+  --accent: #f6c98a;
+  --accent-foreground: #111113;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+
+  --expense: #f87171;
+  --income: #4ade80;
+
+  --border: #2e2e32;
+  --divider: #242428;
+  --input: #1a1a1e;
+  --ring: #f6c98a;
+
+  --gray-50: #131316;
+  --gray-100: #1c1c1f;
+  --gray-200: #27272b;
+  --gray-300: #36363b;
+  --gray-400: #52525a;
+  --gray-500: #676770;
+  --gray-600: #4a4a52;
+  --gray-700: #36363c;
+  --gray-800: #27272d;
+  --gray-900: #1a1a1e;
+
+  --accent-dark: #c4984e;
+
+  --shadow-xs: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.7);
+}

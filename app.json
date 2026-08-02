@@ -15,6 +15,7 @@
       "icon": "./assets/images/favicon.png"
     },
     "android": {
+      "package": "com.buildsbyaman.spendsense",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/favicon.png",
         "backgroundColor": "#ffffff"

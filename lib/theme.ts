@@ -2,16 +2,16 @@ import { DarkTheme, DefaultTheme, type Theme } from 'expo-router/react-navigatio
 
 export const THEME = {
   light: {
-    background: '#f2f2f2',
-    foreground: '#1a1c1b',
+    background: '#f8f9fa',
+    foreground: '#000000',
     surface: '#ffffff',
     card: '#ffffff',
-    cardForeground: '#1a1c1b',
-    primary: '#1a1c1b',
+    cardForeground: '#000000',
+    primary: '#1c1c1e',
     primaryForeground: '#ffffff',
     secondary: '#e8e8e8',
-    secondaryForeground: '#1a1c1b',
-    muted: '#9b9b9b',
+    secondaryForeground: '#1c1c1e',
+    muted: '#9ca3af',
     mutedForeground: '#ffffff',
     accent: '#f6c98a',
     accentForeground: '#7d5b2d',
@@ -22,17 +22,17 @@ export const THEME = {
     ring: '#f6c98a',
   },
   dark: {
-    background: '#111113',
-    foreground: '#f0f0f2',
-    surface: '#1c1c1f',
-    card: '#1c1c1f',
-    cardForeground: '#f0f0f2',
-    primary: '#e8e8ec',
-    primaryForeground: '#111113',
-    secondary: '#2a2a2e',
-    secondaryForeground: '#e8e8ec',
-    muted: '#8a8a94',
-    mutedForeground: '#e8e8ec',
+    background: '#000000',
+    foreground: '#ffffff',
+    surface: '#1c1c1e',
+    card: '#1c1c1e',
+    cardForeground: '#ffffff',
+    primary: '#ffffff',
+    primaryForeground: '#1c1c1e',
+    secondary: '#2c2c2e',
+    secondaryForeground: '#ffffff',
+    muted: '#8e8e93',
+    mutedForeground: '#ffffff',
     accent: '#f6c98a',
     accentForeground: '#111113',
     destructive: '#ef4444',
@@ -45,7 +45,7 @@ export const THEME = {
 
 export const PLACEHOLDER_COLORS = {
   light: '#9ca3af',
-  dark: '#8a8a94',
+  dark: '#8e8e93',
 } as const;
 
 export const NAV_THEME: Record<'light' | 'dark', Theme> = {
