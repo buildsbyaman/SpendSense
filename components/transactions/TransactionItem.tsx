@@ -12,7 +12,7 @@ import {
   INCOME_CATEGORIES,
   sanitizeAmountInput,
 } from '@/utils/transaction';
-import { type Account } from '@/utils/wallet';
+import { type Account, formatNumber } from '@/utils/wallet';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
@@ -77,9 +77,9 @@ export function TransactionItem({
           className={`text-base font-bold ${transaction.type === 'income' ? 'text-income' : 'text-expense'}`}>
           {transaction.type === 'income' ? '+' : '-'}
           {userProfile.currencySymbol}
-          {transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          {formatNumber(transaction.amount)}
         </Text>
-        <Animated.View style={chevronStyle}>
+        <Animated.View style={chevronStyle} className="shrink-0">
           <Icon as={ChevronDown} size={20} className="text-muted" />
         </Animated.View>
       </View>

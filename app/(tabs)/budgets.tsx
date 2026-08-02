@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useApp } from '@/context/AppContext';
 import { filterByMonth } from '@/utils/analytics';
 import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
+import { formatNumber } from '@/utils/wallet';
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
 import { router } from 'expo-router';
 
@@ -131,13 +132,13 @@ export default function BudgetsScreen() {
                       <View>
                         <Text className="text-base font-semibold">{bp.category}</Text>
                         <Text className="text-xs text-muted">
-                          {userProfile.currencySymbol}{bp.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })} spent ({Math.round((bp.spent / bp.amount) * 100)}%)
+                          {userProfile.currencySymbol}{formatNumber(bp.spent)} spent ({Math.round((bp.spent / bp.amount) * 100)}%)
                         </Text>
                       </View>
                     </View>
                     <View className="items-end">
                       <Text className="text-base font-bold">
-                        {userProfile.currencySymbol}{bp.amount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                        {userProfile.currencySymbol}{formatNumber(bp.amount, 0)}
                       </Text>
                       <Text className="text-xs text-muted">Limit</Text>
                     </View>
@@ -152,7 +153,7 @@ export default function BudgetsScreen() {
                   
                   {isOverBudget && (
                     <Text className="mt-3 text-xs font-medium text-red-500 text-center">
-                      Over budget by {userProfile.currencySymbol}{(bp.spent - bp.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      Over budget by {userProfile.currencySymbol}{formatNumber(bp.spent - bp.amount)}
                     </Text>
                   )}
                 </TouchableOpacity>

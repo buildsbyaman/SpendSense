@@ -4,6 +4,7 @@ import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
+import { formatNumber } from '@/utils/wallet';
 import AnimatedSegment from '@/components/ui/animated-segment';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
@@ -198,7 +199,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                 </Text>
                 <Text className="text-base font-bold text-income">
                   {userProfile.currencySymbol}
-                  {totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {formatNumber(totalIncome)}
                 </Text>
               </View>
             </View>
@@ -212,7 +213,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                 </Text>
                 <Text className="text-base font-bold text-expense">
                   {userProfile.currencySymbol}
-                  {totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {formatNumber(totalExpense)}
                 </Text>
               </View>
             </View>

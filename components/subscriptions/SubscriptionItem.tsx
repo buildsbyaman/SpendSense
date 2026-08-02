@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { ChevronDown } from 'lucide-react-native';
 import { getCategoryIcon, getCategoryColor } from '@/utils/transaction';
 import { type Subscription } from '@/utils/subscription';
+import { formatNumber } from '@/utils/wallet';
 import { router } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { useExpandAnimation } from '@/hooks/useExpandAnimation';
@@ -63,7 +64,7 @@ export function SubscriptionItem({
         <View className="items-end">
           <Text className="text-base font-bold text-expense">
             {userProfile.currencySymbol}
-            {subscription.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {formatNumber(subscription.amount)}
           </Text>
           {subscription.is_active === 0 && (
             <Text className="text-[10px] font-bold uppercase tracking-wider text-muted">
@@ -71,7 +72,7 @@ export function SubscriptionItem({
             </Text>
           )}
         </View>
-        <Animated.View style={chevronStyle}>
+        <Animated.View style={chevronStyle} className="shrink-0">
           <Icon as={ChevronDown} size={20} className="text-muted" />
         </Animated.View>
       </View>

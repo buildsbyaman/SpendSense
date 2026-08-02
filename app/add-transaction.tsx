@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/icon';
 import { X, Calendar } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
+import { formatNumber } from '@/utils/wallet';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -163,7 +164,7 @@ export default function AddTransactionScreen() {
       Toast.show({
         type: 'error',
         text1: 'Budget Exceeded Warning',
-        text2: `Transaction ${editId ? 'updated' : 'added'}, but "${category}" is over budget! (${userProfile.currencySymbol}${totalSpent.toFixed(2)} / ${userProfile.currencySymbol}${budget.amount} spent)`,
+        text2: `Transaction ${editId ? 'updated' : 'added'}, but "${category}" is over budget! (${userProfile.currencySymbol}${formatNumber(totalSpent)} / ${userProfile.currencySymbol}${formatNumber(budget.amount)} spent)`,
       });
     } else {
       Toast.show({

@@ -15,6 +15,7 @@ import { Icon } from '@/components/ui/icon';
 import { Info, Check, Plus } from 'lucide-react-native';
 
 import { useApp } from '@/context/AppContext';
+import { formatNumber } from '@/utils/wallet';
 import AnimatedSegment from '@/components/ui/animated-segment';
 import Toast from 'react-native-toast-message';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
@@ -74,7 +75,7 @@ export default function CurrencySettings() {
     : (selectedPreset ?? null);
 
   const parsedRate = parseFloat(conversionRate);
-  const previewAmount = (10 * (parsedRate || 1)).toFixed(2);
+  const previewAmount = formatNumber(10 * (parsedRate || 1));
 
   const handleSelectPreset = (code: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);

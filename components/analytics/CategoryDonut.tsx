@@ -5,6 +5,7 @@ import { PieChart } from 'react-native-gifted-charts';
 import { Text } from '@/components/ui/text';
 import { CHART_COLORS, type ColorScheme } from '@/lib/chart-theme';
 import { useApp } from '@/context/AppContext';
+import { formatNumber } from '@/utils/wallet';
 
 interface CategoryDonutProps {
   data: { name: string; amount: number; color: string; count: number }[];
@@ -45,7 +46,7 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
           </View>
           <Text className="text-sm font-semibold text-foreground">
             {userProfile.currencySymbol}
-            {d.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {formatNumber(d.amount)}
           </Text>
         </View>
       </View>
@@ -64,9 +65,9 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
           centerLabelComponent={() => (
             <View className="items-center">
               <Text className="mb-1 text-base text-muted">{totalLabel}</Text>
-              <Text className="text-xl font-bold text-foreground">
+              <Text className="text-xl font-bold text-foreground" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
                 {userProfile.currencySymbol}
-                {total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {formatNumber(total)}
               </Text>
             </View>
           )}

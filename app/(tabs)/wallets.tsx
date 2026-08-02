@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { Wallet, Landmark, CreditCard, Smartphone, Plus } from 'lucide-react-native';
-import { type Account, parseBalance } from '@/utils/wallet';
+import { type Account, parseBalance, formatNumber } from '@/utils/wallet';
 
 import { WalletList } from '@/components/wallets/WalletList';
 import { DeleteWalletModal } from '@/components/wallets/DeleteWalletModal';
@@ -127,7 +127,7 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
             <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
             <Text className="text-3xl font-bold text-foreground">
               {userProfile.currencySymbol}
-              {totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              {formatNumber(totalBalance)}
             </Text>
           </View>
         )}

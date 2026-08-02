@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Dimensions, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { View, StyleSheet, useWindowDimensions, LayoutChangeEvent } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 import IndexScreen from '@/app/(tabs)/index';
@@ -15,8 +15,6 @@ import CategoriesScreen from '@/app/(tabs)/categories';
 import CurrencyScreen from '@/app/currency';
 import ExportScreen from '@/app/(tabs)/export';
 import ImportScreen from '@/app/(tabs)/import';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Only the 4 tab bar tabs — determines horizontal slide order
 const MAIN_TABS = ['index', 'transactions', 'wallets', 'profile'];
@@ -51,11 +49,23 @@ interface AnimatedTabSlotProps {
 }
 
 export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const [layoutWidth, setLayoutWidth] = useState(windowWidth);
+  const [layoutHeight, setLayoutHeight] = useState(windowHeight);
+
+  useEffect(() => {
+    setLayoutWidth(windowWidth);
+    setLayoutHeight(windowHeight);
+  }, [windowWidth, windowHeight]);
+
+  const activeWidth = layoutWidth > 0 ? layoutWidth : windowWidth;
+  const activeHeight = layoutHeight > 0 ? layoutHeight : windowHeight;
+
   // Horizontal row translation for main tabs
   const translateX = useSharedValue(0);
 
   // Vertical overlay for sub-screens
-  const overlayY = useSharedValue(SCREEN_HEIGHT);
+  const overlayY = useSharedValue(activeHeight);
   const [activeSubScreen, setActiveSubScreen] = useState<string | null>(null);
   const prevActiveTab = useRef(activeTab);
 
@@ -67,11 +77,11 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
     if (isMainTab) {
       // Slide main row to the correct tab
       const index = MAIN_TABS.indexOf(activeTab);
-      translateX.value = withSpring(-index * SCREEN_WIDTH, SPRING_CONFIG);
+      translateX.value = withSpring(-index * activeWidth, SPRING_CONFIG);
 
       // If coming back from a sub-screen, slide the overlay away
       if (wasSubScreen) {
-        overlayY.value = withSpring(SCREEN_HEIGHT, {
+        overlayY.value = withSpring(activeHeight, {
           ...SPRING_CONFIG,
           damping: 32,
         });
@@ -81,10 +91,18 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
     } else {
       // Sub-screen — show overlay sliding up from bottom
       setActiveSubScreen(activeTab);
-      overlayY.value = SCREEN_HEIGHT;
+      overlayY.value = activeHeight;
       overlayY.value = withSpring(0, SPRING_CONFIG);
     }
-  }, [activeTab]);
+  }, [activeTab, activeWidth, activeHeight]);
+
+  const handleLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    if (w > 0 && h > 0) {
+      setLayoutWidth(w);
+      setLayoutHeight(h);
+    }
+  }, []);
 
   const rowStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -97,13 +115,18 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
   const SubScreen = activeSubScreen ? SUB_SCREENS[activeSubScreen] : null;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={handleLayout}>
       {/* Horizontal main tab row */}
-      <Animated.View style={[styles.row, rowStyle]}>
+      <Animated.View
+        style={[
+          styles.row,
+          { width: activeWidth * MAIN_TABS.length },
+          rowStyle,
+        ]}>
         {MAIN_TABS.map((tabName) => {
           const Screen = MAIN_SCREENS[tabName];
           return (
-            <View key={tabName} style={styles.screen}>
+            <View key={tabName} style={[styles.screen, { width: activeWidth }]}>
               <Screen isActive={activeTab === tabName} />
             </View>
           );
@@ -128,10 +151,8 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     flexDirection: 'row',
-    width: SCREEN_WIDTH * MAIN_TABS.length,
   },
   screen: {
-    width: SCREEN_WIDTH,
     flex: 1,
   },
 });
