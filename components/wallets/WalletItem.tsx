@@ -2,7 +2,7 @@ import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Star, ChevronDown } from 'lucide-react-native';
-import { type Account, parseBalance, formatWalletBalance } from '@/utils/wallet';
+import { type Account, parseBalance, formatWalletDisplay } from '@/utils/wallet';
 import { useApp } from '@/context/AppContext';
 import { useExpandAnimation } from '@/hooks/useExpandAnimation';
 import Animated from 'react-native-reanimated';
@@ -28,7 +28,7 @@ export function WalletItem({
 }: WalletItemProps) {
   const { userProfile } = useApp();
   const numericBalance = parseBalance(account.balance);
-  const displayBalance = formatWalletBalance(numericBalance, userProfile.currencySymbol);
+  const displayBalance = formatWalletDisplay(numericBalance, userProfile.currencySymbol);
   const balanceColorClass = numericBalance >= 0 ? 'text-income' : 'text-expense';
 
   const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);

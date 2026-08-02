@@ -22,11 +22,6 @@ export const parseBalance = (val: string): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
-/**
- * Safely parses and formats a wallet balance.
- * Ensures the balance is within safe bounds (-999,999,999 to 999,999,999).
- * Returns a formatted US currency string (e.g. -$50.00).
- */
 const compactAbs = (absValue: number, decimals = 2): string => {
   const compact = (divisor: number, suffix: string) => {
     const scaled = absValue / divisor;
@@ -39,6 +34,11 @@ const compactAbs = (absValue: number, decimals = 2): string => {
   return absValue.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 };
 
+/**
+ * Safely parses and formats a wallet balance for storage.
+ * Ensures the balance is within safe bounds (-999,999,999 to 999,999,999).
+ * Returns a full-precision formatted string (e.g. -$50.00, $6,000,000.00).
+ */
 export const formatWalletBalance = (balanceInput: string | number, symbol: string = '$'): string => {
   const balanceStr = typeof balanceInput === 'number' ? balanceInput.toString() : balanceInput;
   const cleaned = balanceStr.replace(/[^0-9.-]/g, '');
@@ -53,9 +53,20 @@ export const formatWalletBalance = (balanceInput: string | number, symbol: strin
   }
 
   const isNegative = parsedBalance < 0;
-  const formattedNumber = compactAbs(Math.abs(parsedBalance), 2);
+  const formattedNumber = Math.abs(parsedBalance).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
   return isNegative ? `-${symbol}${formattedNumber}` : `${symbol}${formattedNumber}`;
+};
+
+/**
+ * Formats a wallet balance for compact display (e.g. $6M, -$1.25B).
+ */
+export const formatWalletDisplay = (value: number, symbol: string = '$'): string => {
+  const isNegative = value < 0;
+  return `${isNegative ? '-' : ''}${symbol}${compactAbs(Math.abs(value), 2)}`;
 };
 
 export const formatNumber = (value: number, decimals = 2): string => {
