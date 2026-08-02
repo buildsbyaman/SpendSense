@@ -19,7 +19,7 @@ import { ManageSection } from '@/components/profile/ManageSection';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import { saveThemePreference } from '@/lib/theme-persistence';
-import { loadDevToolsEnabled, saveDevToolsEnabled } from '@/lib/dev-tools';
+import { loadDevToolsEnabled, saveDevToolsEnabled, DEV_MODE } from '@/lib/dev-tools';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { useRef } from 'react';
@@ -42,6 +42,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
   const tapTimestampsRef = useRef<number[]>([]);
 
   useEffect(() => {
+    if (!DEV_MODE) return;
     loadDevToolsEnabled().then(setDevToolsEnabled);
   }, []);
 
@@ -54,6 +55,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
   }, [addListener]);
 
   const handleTitlePress = useCallback(() => {
+    if (!DEV_MODE) return;
     const now = Date.now();
     const TAP_THRESHOLD = 5;
     const WINDOW_MS = 3000;
@@ -134,7 +136,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       className="flex-1 bg-background"
       style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header title="Settings" showBack={false} onRightPress={() => setIsMenuOpen(true)} onTitlePress={handleTitlePress} />
+        <Header title="Settings" showBack={false} onRightPress={() => setIsMenuOpen(true)} onTitlePress={DEV_MODE ? handleTitlePress : undefined} />
       </View>
       <ScrollView
         ref={scrollRef}
@@ -236,7 +238,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
         <ManageSection />
 
         {/* Dev-only: Load Demo Data */}
-        {(devToolsEnabled || process.env.EXPO_PUBLIC_DEV_MODE === '1') && (
+        {DEV_MODE && devToolsEnabled && (
           <View className="mt-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
             <Text className="mb-4 text-sm font-medium text-muted">Developer</Text>
             <TouchableOpacity
