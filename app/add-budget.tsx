@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { X, Trash2, Info } from 'lucide-react-native';
@@ -15,8 +15,6 @@ export default function AddBudgetScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [error, setError] = useState<string>('');
-
-  const [visible, setVisible] = useState(true);
 
   const expenseCategories = getSortedCategories('expense');
 
@@ -34,14 +32,11 @@ export default function AddBudgetScreen() {
   }, [editId, budgets, expenseCategories]);
 
   const handleClose = () => {
-    setVisible(false);
-    setTimeout(() => {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/budgets');
-      }
-    }, 300);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/budgets');
+    }
   };
 
   const handleSave = () => {
@@ -95,8 +90,7 @@ export default function AddBudgetScreen() {
 
   return (
     <View className="flex-1 bg-transparent">
-      <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
-        <KeyboardAvoidingView 
+      <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
@@ -205,7 +199,6 @@ export default function AddBudgetScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 }

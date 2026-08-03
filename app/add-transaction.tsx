@@ -5,7 +5,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Modal,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -60,7 +59,6 @@ export default function AddTransactionScreen() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
     if (editId) {
@@ -75,20 +73,14 @@ export default function AddTransactionScreen() {
         setCalendarMonth(new Date(tx.date));
       }
     }
-    // Mount the modal slightly after the screen renders to ensure the slide-in animation fires
-    setIsModalVisible(true);
   }, [editId]);
 
   const handleClose = () => {
-    setIsModalVisible(false);
-    // Wait for the native modal slide-out animation to finish before unmounting the screen
-    setTimeout(() => {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/');
-      }
-    }, 300);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   };
 
   const handleTypeChange = (newType: TransactionType) => {
@@ -189,8 +181,7 @@ export default function AddTransactionScreen() {
 
   return (
     <View className="flex-1 bg-transparent">
-      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
-        <KeyboardAvoidingView
+      <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           {/* Background touch area to close */}
@@ -392,7 +383,6 @@ export default function AddTransactionScreen() {
             <View style={{ height: insets.bottom }} />
           </View>
         </KeyboardAvoidingView>
-      </Modal>
 
       {/* Custom Calendar Modal */}
       <TransactionDatePickerModal

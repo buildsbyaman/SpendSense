@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, StyleSheet, useWindowDimensions, LayoutChangeEvent } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, clamp, runOnJS } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useTabNavigation } from '@/context/TabNavigationContext';
 
 import IndexScreen from '@/app/(tabs)/index';
 import TransactionsScreen from '@/app/(tabs)/transactions';
@@ -49,6 +51,7 @@ interface AnimatedTabSlotProps {
 }
 
 export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
+  const { navigate } = useTabNavigation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [layoutWidth, setLayoutWidth] = useState(windowWidth);
   const [layoutHeight, setLayoutHeight] = useState(windowHeight);
@@ -63,6 +66,42 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
 
   // Horizontal row translation for main tabs
   const translateX = useSharedValue(0);
+
+  // Swipe gesture
+  const startX = useSharedValue(0);
+  const isMainTab = MAIN_TABS.includes(activeTab);
+  const currentIndex = MAIN_TABS.indexOf(activeTab);
+
+  const pan = Gesture.Pan()
+    .enabled(isMainTab)
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-12, 12])
+    .onStart(() => {
+      startX.value = translateX.value;
+    })
+    .onUpdate((e) => {
+      const max = -(MAIN_TABS.length - 1) * activeWidth;
+      translateX.value = clamp(startX.value + e.translationX, max, 0);
+    })
+    .onEnd((e) => {
+      const startIdx = Math.round(-startX.value / activeWidth);
+      const offsetTabs = -e.translationX / activeWidth;
+      let nextIndex: number;
+      if (e.velocityX < -400) {
+        nextIndex = Math.floor(startIdx + offsetTabs) + 1;
+      } else if (e.velocityX > 400) {
+        nextIndex = Math.ceil(startIdx + offsetTabs) - 1;
+      } else {
+        nextIndex = Math.round(startIdx + offsetTabs);
+      }
+      nextIndex = Math.min(MAIN_TABS.length - 1, Math.max(0, nextIndex));
+      if (nextIndex !== startIdx) {
+        translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
+        runOnJS(navigate)(MAIN_TABS[nextIndex]);
+      } else {
+        translateX.value = withSpring(-startIdx * activeWidth, SPRING_CONFIG);
+      }
+    });
 
   // Vertical overlay for sub-screens
   const overlayY = useSharedValue(activeHeight);
@@ -127,7 +166,8 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
   const SubScreen = activeSubScreen ? SUB_SCREENS[activeSubScreen] : null;
 
   return (
-    <View style={styles.container} onLayout={handleLayout}>
+    <GestureDetector gesture={pan}>
+      <View style={styles.container} onLayout={handleLayout}>
       {/* Horizontal main tab row */}
       <Animated.View
         style={[
@@ -152,6 +192,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
         </Animated.View>
       )}
     </View>
+    </GestureDetector>
   );
 }
 

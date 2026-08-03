@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, TextInput, LayoutAnimation, ScrollView, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TouchableOpacity, TextInput, LayoutAnimation, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import { useState, useEffect } from 'react';
@@ -28,8 +28,6 @@ export default function AddWalletScreen() {
   const [accountType, setAccountType] = useState('Card');
   const [errors, setErrors] = useState<{ name?: string; balance?: string }>({});
 
-  const [visible, setVisible] = useState(true);
-
   useEffect(() => {
     if (editId) {
       const wallet = accounts.find(a => a.id === editId);
@@ -43,14 +41,11 @@ export default function AddWalletScreen() {
   }, [editId, accounts]);
 
   const handleClose = () => {
-    setVisible(false);
-    setTimeout(() => {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/wallets');
-      }
-    }, 300);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/wallets');
+    }
   };
 
   const handleSave = () => {
@@ -121,8 +116,7 @@ export default function AddWalletScreen() {
 
   return (
     <View className="flex-1 bg-transparent">
-      <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
-        <KeyboardAvoidingView 
+      <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
@@ -247,7 +241,6 @@ export default function AddWalletScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 }

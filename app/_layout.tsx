@@ -67,11 +67,13 @@ import { AppProvider } from '@/context/AppContext';
 import { loadThemePreference } from '@/lib/theme-persistence';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as SystemUI from 'expo-system-ui';
 
 function ThemeInit() {
   const { setColorScheme } = useColorScheme();
 
   useEffect(() => {
+    SystemUI.setBackgroundColorAsync('transparent');
     loadThemePreference().then((scheme) => {
       setColorScheme(scheme ?? 'light');
     });
