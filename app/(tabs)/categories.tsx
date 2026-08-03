@@ -1,29 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Modal, TextInput, Platform, KeyboardAvoidingView, Alert } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { View, ScrollView, TouchableOpacity, Modal, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { Plus, Trash2, X, Tag, ChevronUp, ChevronDown } from 'lucide-react-native';
+import { Plus, Trash2, X, Tag, GripVertical } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
+import { useColorScheme } from 'nativewind';
 import { getCategoryColor, getCategoryIcon, type TransactionType, AVAILABLE_ICONS, AVAILABLE_PALETTE } from '@/utils/transaction';
 import CategoryTypeToggle from '@/components/ui/CategoryTypeToggle';
 import Toast from 'react-native-toast-message';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTabNavigation } from '@/context/TabNavigationContext';
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const scrollRef = useRef<ScrollView>(null);
-  
-  useEffect(() => {
-    return addListener((tabName) => {
-      if (tabName === 'categories') {
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
-      }
-    });
-  }, [addListener]);
+  const { colorScheme } = useColorScheme();
+
   const {
     addCustomCategory,
     deleteCustomCategory,
@@ -38,19 +33,28 @@ export default function CategoriesScreen() {
   const [selectedIconName, setSelectedIconName] = useState('Tag');
   const [selectedColor, setSelectedColor] = useState(AVAILABLE_PALETTE[0]);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  
+
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id?: string; name: string; isCustom: boolean } | null>(null);
 
   const categories = getSortedCategories(activeTab);
 
-  const moveCategory = (index: number, direction: 'up' | 'down') => {
-    const newOrder = [...categories.map((c) => c.name)];
-    const swapIndex = direction === 'up' ? index - 1 : index + 1;
-    if (swapIndex < 0 || swapIndex >= newOrder.length) return;
-    [newOrder[index], newOrder[swapIndex]] = [newOrder[swapIndex], newOrder[index]];
-    updateCategoryOrder(activeTab, newOrder);
-  };
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+
+  // Scroll to top when tab is focused
+  const flatListRef = useRef<any>(null);
+  useEffect(() => {
+    return addListener((tabName) => {
+      if (tabName === 'categories') {
+        flatListRef.current?.scrollToOffset?.({ offset: 0, animated: false });
+      }
+    });
+  }, [addListener]);
+
+  const handleDragEnd = useCallback(({ data }: { data: typeof categories }) => {
+    updateCategoryOrder(activeTabRef.current, data.map((c) => c.name));
+  }, [updateCategoryOrder]);
 
   const handleAddCategory = () => {
     if (newCategoryName.trim().length === 0) return;
@@ -83,21 +87,82 @@ export default function CategoriesScreen() {
 
   const executeDelete = async () => {
     if (!categoryToDelete) return;
-    
+
     if (categoryToDelete.isCustom && categoryToDelete.id) {
       await deleteCustomCategory(categoryToDelete.id);
     } else {
       await deleteDefaultCategory(categoryToDelete.name);
     }
-    
+
     Toast.show({
       type: 'success',
       text1: 'Category deleted',
       text2: `${categoryToDelete.name} has been removed.`,
     });
-    
+
     setDeleteDialogVisible(false);
   };
+
+  const renderItem = useCallback(({ item, drag, isActive }: { item: (typeof categories)[0]; drag: () => void; isActive: boolean }) => {
+    const isCustom = !('isDefault' in item);
+    const name = item.name;
+    const id = 'id' in item ? item.id : undefined;
+    const icon = getCategoryIcon(name, undefined, 'icon' in item ? item.icon : undefined);
+    const color = getCategoryColor(name, 'color' in item ? item.color : undefined);
+
+    const canDelete = isCustom || (name.toLowerCase() !== 'others' && name.toLowerCase() !== 'other');
+
+    return (
+      <ScaleDecorator>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onLongPress={drag}
+          disabled={isActive}
+          className="flex-row items-center justify-between px-5 py-3.5"
+          style={{ opacity: isActive ? 0.9 : 1 }}>
+          {/* Drag handle */}
+          <TouchableOpacity
+            activeOpacity={0.6}
+            onLongPress={drag}
+            hitSlop={8}
+            className="h-9 w-9 items-center justify-center mr-2">
+            <Icon as={GripVertical} size={16} className="text-muted" />
+          </TouchableOpacity>
+
+          {/* Icon + Name */}
+          <View className="flex-row items-center gap-3 flex-1">
+            <View
+              className="h-10 w-10 items-center justify-center rounded-full"
+              style={{ backgroundColor: `${color}20` }}>
+              <Icon as={icon} size={18} color={color} />
+            </View>
+            <Text className="text-base font-semibold text-foreground">{name}</Text>
+          </View>
+
+          {/* Delete button */}
+          {canDelete ? (
+            <TouchableOpacity
+              onPress={() => isCustom && id ? handleDeleteCustom(id, name) : handleDeleteDefault(name)}
+              activeOpacity={0.6}
+              hitSlop={8}
+              className="h-10 w-10 items-center justify-center rounded-full bg-red-500/15">
+              <Icon as={Trash2} size={16} color="#ef4444" />
+            </TouchableOpacity>
+          ) : (
+            <View className="w-10" />
+          )}
+        </TouchableOpacity>
+      </ScaleDecorator>
+    );
+  }, []);
+
+  const ItemSeparator = () => <View className="h-[1px] bg-divider" />;
+
+  const ListEmpty = () => (
+    <View className="p-8 items-center justify-center">
+      <Text className="text-muted text-sm">No categories found.</Text>
+    </View>
+  );
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
@@ -111,95 +176,46 @@ export default function CategoriesScreen() {
         />
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        className="flex-1"
+      <View className="mt-4 mb-2 px-5">
+        <CategoryTypeToggle type={activeTab} onChange={setActiveTab} />
+      </View>
+
+      <Text className="text-xs text-muted mb-2 text-center">
+        Hold the grip or long-press to reorder
+      </Text>
+
+      <DraggableFlatList
+        ref={flatListRef}
+        data={categories}
+        keyExtractor={(item) => item.name}
+        renderItem={renderItem}
+        onDragEnd={handleDragEnd}
+        ListEmptyComponent={ListEmpty}
+        ItemSeparatorComponent={ItemSeparator}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}>
-
-        {/* Segmented Control */}
-        <View className="mt-4 mb-6">
-          <CategoryTypeToggle type={activeTab} onChange={setActiveTab} />
-        </View>
-
-        {/* Category List */}
-        <View className="overflow-hidden rounded-[32px] border border-gray-100 bg-surface dark:border-gray-900">
-          {categories.length === 0 && (
-            <View className="p-8 items-center justify-center">
-              <Text className="text-muted text-sm">No categories found.</Text>
-            </View>
-          )}
-          {categories.map((category, index) => {
-            const isCustom = !('isDefault' in category);
-            const name = category.name;
-            const id = 'id' in category ? category.id : undefined;
-            const icon = getCategoryIcon(name, undefined, 'icon' in category ? category.icon : undefined);
-            const color = getCategoryColor(name, 'color' in category ? category.color : undefined);
-            const isFirst = index === 0;
-            const isLast = index === categories.length - 1;
-
-            return (
-              <React.Fragment key={name}>
-                <View className="flex-row items-center justify-between px-5 py-3.5">
-                  {/* Icon + Name */}
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <View
-                      className="h-10 w-10 items-center justify-center rounded-full"
-                      style={{ backgroundColor: `${color}20` }}>
-                      <Icon as={icon} size={18} color={color} />
-                    </View>
-                    <Text className="text-base font-semibold text-foreground">{name}</Text>
-                  </View>
-
-                  {/* Controls */}
-                  <View className="flex-row items-center gap-2">
-                    {/* Up button */}
-                    <TouchableOpacity
-                      onPress={() => moveCategory(index, 'up')}
-                      disabled={isFirst}
-                      activeOpacity={0.6}
-                      className={`h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 ${isFirst ? 'opacity-30' : 'opacity-100'}`}>
-                      <Icon as={ChevronUp} size={16} className="text-foreground" />
-                    </TouchableOpacity>
-
-                    {/* Down button */}
-                    <TouchableOpacity
-                      onPress={() => moveCategory(index, 'down')}
-                      disabled={isLast}
-                      activeOpacity={0.6}
-                      className={`h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 ${isLast ? 'opacity-30' : 'opacity-100'}`}>
-                      <Icon as={ChevronDown} size={16} className="text-foreground" />
-                    </TouchableOpacity>
-
-                    {/* Delete button */}
-                    {(isCustom || (name.toLowerCase() !== 'others' && name.toLowerCase() !== 'other')) && (
-                      <TouchableOpacity
-                        onPress={() => isCustom && id ? handleDeleteCustom(id, name) : handleDeleteDefault(name)}
-                        activeOpacity={0.6}
-                        className="h-10 w-10 items-center justify-center rounded-full bg-red-500/15">
-                        <Icon as={Trash2} size={16} color="#ef4444" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-                {!isLast && <View className="h-[1px] bg-divider" />}
-              </React.Fragment>
-            );
-          })}
-        </View>
-      </ScrollView>
+        contentContainerStyle={{ paddingBottom: 20 }}
+        containerStyle={{
+          overflow: 'hidden',
+          borderRadius: 32,
+          borderWidth: 1,
+          borderColor: colorScheme === 'dark' ? '#18181b' : '#f3f4f6',
+          backgroundColor: colorScheme === 'dark' ? '#0a0a0a' : '#ffffff',
+          marginHorizontal: 20,
+          flexShrink: 1,
+        }}
+      />
 
       {/* Add Category Modal */}
       <Modal visible={isModalOpen} transparent animationType="slide">
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
-          
+
           {/* Background touch area to close */}
-          <TouchableOpacity 
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
-            activeOpacity={1} 
-            onPress={() => setIsModalOpen(false)} 
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            activeOpacity={1}
+            onPress={() => setIsModalOpen(false)}
           />
 
           <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>

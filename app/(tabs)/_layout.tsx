@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { View, BackHandler } from 'react-native';
 import { TabBar } from '@/components/layout/tab-bar';
 import { AnimatedTabSlot } from '@/components/layout/animated-tab-slot';
 import { useState, useCallback, useEffect } from 'react';
@@ -6,16 +6,37 @@ import { TabNavigationProvider, useTabNavigation } from '@/context/TabNavigation
 import { useApp } from '@/context/AppContext';
 import { Redirect } from 'expo-router';
 
+const SUB_TO_PARENT: Record<string, string> = {
+  analytics: 'index',
+  budgets: 'profile',
+  subscriptions: 'profile',
+  categories: 'profile',
+  currency: 'profile',
+  export: 'profile',
+  import: 'profile',
+};
+
 function TabLayoutInner() {
   const [activeTab, setActiveTab] = useState('index');
   const { addListener, navigate } = useTabNavigation();
   const { ready, userProfile } = useApp();
 
   useEffect(() => {
-    // Listen for programmatic tab switches from any screen (e.g. categories back button)
     const remove = addListener((tabName) => setActiveTab(tabName));
     return remove;
   }, [addListener]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      const parent = SUB_TO_PARENT[activeTab];
+      if (parent) {
+        navigate(parent);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [activeTab, navigate]);
 
   const handleTabChange = useCallback((name: string) => {
     navigate(name);
