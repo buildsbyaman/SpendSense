@@ -87,14 +87,26 @@ export async function parseXlsx(bytes: Uint8Array): Promise<ParsedFile> {
 }
 
 export function parsePdf(pdfText: string): ParsedFile {
-  const payload = decodePayloadFromPdf(pdfText);
-  if (!payload)
-    throw new Error(
-      'This PDF was exported from an older version of SpendSense. Please re-export it.'
-    );
+  const result = decodePayloadFromPdf(pdfText);
+  if (!result.ok) {
+    switch (result.reason) {
+      case 'no-subject':
+        throw new Error(
+          'This file does not contain SpendSense data. Make sure it was exported using the PDF format from SpendSense.'
+        );
+      case 'decode-failed':
+        throw new Error(
+          'The PDF data could not be read. The file may have been modified or corrupted during transfer.'
+        );
+      case 'not-spendsense':
+        throw new Error(
+          'This PDF was not exported from SpendSense.'
+        );
+    }
+  }
   return {
-    meta: { app: payload.app, currency: payload.currency },
-    tables: payload.tables.map((t) => ({
+    meta: { app: result.payload.app, currency: result.payload.currency },
+    tables: result.payload.tables.map((t) => ({
       ...t,
       columns: safeColumns(t.columns),
       rows: t.rows.slice(0, MAX_ROWS_PER_TABLE),

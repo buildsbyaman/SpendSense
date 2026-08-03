@@ -1,5 +1,6 @@
 import { type ExportedTable } from './buildExportData';
 import { encodeUtf8Base64 } from '../import/base64';
+import { decodePayloadFromPdf } from '../import/pdfPayload';
 
 // ── Shared constants ──────────────────────────────────────────────────
 
@@ -137,5 +138,18 @@ export async function buildPdfBytes(
   }
 
   const buf = doc.output('arraybuffer');
+
+  // Self-check: verify the embedded payload survives a UTF-8 round-trip
+  // (same path the import screen takes via readAsStringAsync with UTF-8 encoding)
+  if (profile) {
+    const text = new TextDecoder().decode(new Uint8Array(buf));
+    const result = decodePayloadFromPdf(text);
+    if (!result.ok) {
+      throw new Error(
+        `PDF export produced an unreadable file (${result.reason}). Please try exporting again.`
+      );
+    }
+  }
+
   return new Uint8Array(buf) as Uint8Array<ArrayBuffer>;
 }
