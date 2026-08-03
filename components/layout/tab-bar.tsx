@@ -27,8 +27,8 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
   return (
     <View
       style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 10) }, { backgroundColor: barBg }]}>
-      <View style={[styles.bar]}>
-        
+      <View style={styles.bar}>
+
         {/* ── Home ── */}
         <TouchableOpacity
           style={styles.slot}
@@ -46,14 +46,14 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
         </TouchableOpacity>
 
         {/* ── Add (Floating) ── */}
-        <View style={styles.addBtnWrap} pointerEvents="box-none">
-          <TouchableOpacity
-            style={[styles.addBtn, { backgroundColor: addBg, shadowColor: addBg }]}
-            onPress={() => router.push('/add-transaction')}
-            activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.addBtnWrap}
+          onPress={() => router.push('/add-transaction')}
+          activeOpacity={0.85}>
+          <View style={[styles.addBtn, { backgroundColor: addBg, shadowColor: addBg }]}>
             <Icon as={Plus} size={28} color={addIcon} />
-          </TouchableOpacity>
-        </View>
+          </View>
+        </TouchableOpacity>
 
         {/* ── Wallets ── */}
         <TouchableOpacity
@@ -70,7 +70,7 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
           activeOpacity={0.7}>
           <Icon as={User} size={24} color={activeTab === 'profile' ? active : muted} />
         </TouchableOpacity>
-        
+
       </View>
     </View>
   );
@@ -93,21 +93,19 @@ const styles = StyleSheet.create({
   },
   bar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 32,
     paddingTop: 10,
     minHeight: 60,
   },
   slot: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1,
   },
   addBtnWrap: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 0,
     zIndex: 10,
     elevation: 10,
   },
