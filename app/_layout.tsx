@@ -73,7 +73,7 @@ function ThemeInit() {
 
   useEffect(() => {
     loadThemePreference().then((scheme) => {
-      if (scheme) setColorScheme(scheme);
+      setColorScheme(scheme ?? 'light');
     });
   }, [setColorScheme]);
 
