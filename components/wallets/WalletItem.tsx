@@ -59,7 +59,7 @@ export function WalletItem({
           </View>
         </View>
         <View className="flex-row items-center gap-3">
-          <Text className={`text-base font-bold ${balanceColorClass}`}>{displayBalance}</Text>
+          <Text className={`text-base font-bold ${balanceColorClass}`} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{displayBalance}</Text>
           <Animated.View style={chevronStyle} className="shrink-0">
             <Icon as={ChevronDown} size={20} className="text-muted" />
           </Animated.View>

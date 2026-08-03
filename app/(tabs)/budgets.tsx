@@ -43,7 +43,7 @@ export default function BudgetsScreen() {
         .filter(t => t.type === 'expense' && t.category === budget.category)
         .reduce((sum, t) => sum + t.amount, 0);
       
-      const percentage = Math.min((spent / budget.amount) * 100, 100);
+      const percentage = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
       return { ...budget, spent, percentage };
     });
   }, [budgets, currentMonthTxs]);
@@ -132,7 +132,7 @@ export default function BudgetsScreen() {
                       <View>
                         <Text className="text-base font-semibold">{bp.category}</Text>
                         <Text className="text-xs text-muted">
-                          {userProfile.currencySymbol}{formatNumber(bp.spent)} spent ({Math.round((bp.spent / bp.amount) * 100)}%)
+                          {userProfile.currencySymbol}{formatNumber(bp.spent)} spent ({bp.amount > 0 ? Math.round((bp.spent / bp.amount) * 100) : 0}%)
                         </Text>
                       </View>
                     </View>

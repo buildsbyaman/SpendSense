@@ -17,7 +17,7 @@ import {
 } from '@/utils/transaction';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { router } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, ChevronDown, Plus, Receipt } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, ChevronDown, Plus, Receipt, Wallet } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import Toast from 'react-native-toast-message';
 import TransactionFilterBar from '@/components/transactions/TransactionFilterBar';
@@ -222,13 +222,23 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
 
         {/* Transactions List */}
         {transactions.length === 0 ? (
-          <EmptyState
-            icon={Receipt}
-            title="No Transactions Yet"
-            description="Add your first transaction to start tracking your expenses and incomes."
-            buttonText="Add Your First Transaction"
-            onButtonPress={() => router.push('/add-transaction')}
-          />
+          accounts.length === 0 ? (
+            <EmptyState
+              icon={Wallet}
+              title="Create Your First Wallet"
+              description="Add a wallet to start tracking your balances and transactions."
+              buttonText="Add Wallet"
+              onButtonPress={() => router.push('/add-wallet')}
+            />
+          ) : (
+            <EmptyState
+              icon={Receipt}
+              title="No Transactions Yet"
+              description="Add your first transaction to start tracking your expenses and incomes."
+              buttonText="Add Your First Transaction"
+              onButtonPress={() => router.push('/add-transaction')}
+            />
+          )
         ) : Object.keys(grouped).length === 0 ? (
           <EmptyState
             icon={Receipt}

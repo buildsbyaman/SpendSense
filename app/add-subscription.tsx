@@ -44,6 +44,13 @@ export default function AddSubscriptionScreen() {
   const [selectedWalletId, setSelectedWalletId] = useState(
     accounts.find((a) => a.isDefault)?.id || (accounts[0]?.id ?? '')
   );
+
+  // Re-sync wallet selection if accounts load after mount or previous selection becomes stale
+  useEffect(() => {
+    if (selectedWalletId && accounts.some((a) => a.id === selectedWalletId)) return;
+    const fallback = (accounts.find((a) => a.isDefault)?.id || accounts[0]?.id) ?? '';
+    if (fallback) setSelectedWalletId(fallback);
+  }, [accounts, selectedWalletId]);
   const [category, setCategory] = useState('Subscriptions');
   const [isActive, setIsActive] = useState(true);
 
@@ -97,7 +104,7 @@ export default function AddSubscriptionScreen() {
     }, 300);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const parsedAmount = parseFloat(amount);
     if (!name.trim()) {
       Toast.show({
@@ -107,7 +114,7 @@ export default function AddSubscriptionScreen() {
       });
       return;
     }
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    if (isNaN(parsedAmount) || !isFinite(parsedAmount) || parsedAmount <= 0) {
       Toast.show({ type: 'error', text1: 'Invalid Amount', text2: 'Please enter a valid amount' });
       return;
     }
@@ -128,7 +135,7 @@ export default function AddSubscriptionScreen() {
     if (editId) {
       const sub = subscriptions.find((s) => s.id === editId);
       if (sub) {
-        updateSubscription({
+        await updateSubscription({
           ...sub,
           name: name.trim(),
           amount: parsedAmount,
@@ -141,7 +148,7 @@ export default function AddSubscriptionScreen() {
         });
       }
     } else {
-      addSubscription({
+      await addSubscription({
         name: name.trim(),
         amount: parsedAmount,
         cycle,
@@ -170,7 +177,7 @@ export default function AddSubscriptionScreen() {
     <View className="flex-1 bg-transparent">
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           <TouchableOpacity
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}

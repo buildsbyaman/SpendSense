@@ -46,15 +46,27 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
   };
 
   await db.withTransactionAsync(async () => {
-    // Replace mode: clear ALL tables unconditionally in dependency order
-    if (plan.replace) {
-      await db.runAsync('DELETE FROM subscriptions');
-      await db.runAsync('DELETE FROM transactions');
-      await db.runAsync('DELETE FROM budgets');
-      await db.runAsync('DELETE FROM deleted_default_categories');
-      await db.runAsync('DELETE FROM category_order');
-      await db.runAsync('DELETE FROM custom_categories');
-      await db.runAsync('DELETE FROM accounts');
+    // Replace mode: clear only selected tables in dependency order
+    if (plan.replace && plan.replaceTypes.length > 0) {
+      const typeToTables: Record<string, string[]> = {
+        wallets: ['accounts'],
+        transactions: ['transactions'],
+        subscriptions: ['subscriptions'],
+        budgets: ['budgets'],
+        categories: ['custom_categories', 'deleted_default_categories', 'category_order'],
+      };
+      const tablesToDelete = new Set<string>();
+      for (const t of plan.replaceTypes) {
+        for (const table of typeToTables[t] ?? []) {
+          tablesToDelete.add(table);
+        }
+      }
+      // Delete in dependency order
+      for (const table of ['subscriptions', 'transactions', 'budgets', 'deleted_default_categories', 'category_order', 'custom_categories', 'accounts']) {
+        if (tablesToDelete.has(table)) {
+          await db.runAsync(`DELETE FROM ${table}`);
+        }
+      }
     }
 
     // Profile (always restore when selected)

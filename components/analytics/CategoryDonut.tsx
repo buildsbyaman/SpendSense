@@ -30,7 +30,8 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
     );
   }
 
-  const pieData = data.map((d) => ({ value: d.amount, color: d.color, text: '' }));
+  const filteredData = data.filter((d) => d.amount > 0);
+  const pieData = filteredData.map((d) => ({ value: d.amount, color: d.color, text: '' }));
 
   const renderLegendItem = (d: any) => {
     const pct = total > 0 ? ((d.amount / total) * 100).toFixed(0) : '0';
@@ -74,7 +75,7 @@ export function CategoryDonut({ data, totalLabel }: CategoryDonutProps) {
         />
       </View>
 
-      <View className="mt-2 w-full flex-col px-2">{data.map(renderLegendItem)}</View>
+      <View className="mt-2 w-full flex-col px-2">{filteredData.map(renderLegendItem)}</View>
     </View>
   );
 }

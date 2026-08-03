@@ -81,13 +81,13 @@ export default function CategoriesScreen() {
     setDeleteDialogVisible(true);
   };
 
-  const executeDelete = () => {
+  const executeDelete = async () => {
     if (!categoryToDelete) return;
     
     if (categoryToDelete.isCustom && categoryToDelete.id) {
-      deleteCustomCategory(categoryToDelete.id);
+      await deleteCustomCategory(categoryToDelete.id);
     } else {
-      deleteDefaultCategory(categoryToDelete.name);
+      await deleteDefaultCategory(categoryToDelete.name);
     }
     
     Toast.show({
@@ -192,7 +192,7 @@ export default function CategoriesScreen() {
       {/* Add Category Modal */}
       <Modal visible={isModalOpen} transparent animationType="slide">
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
           {/* Background touch area to close */}

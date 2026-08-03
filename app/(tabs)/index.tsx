@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import { getCategoryIcon, getCategoryColor } from '@/utils/transaction';
-import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt, Wallet } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { parseBalance, formatNumber } from '@/utils/wallet';
 import { useTabNavigation } from '@/context/TabNavigationContext';
@@ -150,13 +150,23 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           </View>
 
           {recentTransactions.length === 0 ? (
-            <EmptyState
-              icon={Receipt}
-              title="No Activity Yet"
-              description="You haven't logged any transactions. Add your first transaction to get started."
-              buttonText="Add Your First Transaction"
-              onButtonPress={() => router.push('/add-transaction')}
-            />
+            accounts.length === 0 ? (
+              <EmptyState
+                icon={Wallet}
+                title="Create Your First Wallet"
+                description="Add a wallet to start tracking your balances and transactions."
+                buttonText="Add Wallet"
+                onButtonPress={() => router.push('/add-wallet')}
+              />
+            ) : (
+              <EmptyState
+                icon={Receipt}
+                title="No Activity Yet"
+                description="You haven't logged any transactions. Add your first transaction to get started."
+                buttonText="Add Your First Transaction"
+                onButtonPress={() => router.push('/add-transaction')}
+              />
+            )
           ) : (
             <View className="overflow-hidden rounded-[32px] border border-gray-100 bg-surface px-4 py-2 shadow-xs dark:border-gray-900">
               {recentTransactions.map((tx, idx) => {

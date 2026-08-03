@@ -53,10 +53,10 @@ export function Header({
       {/* Title */}
       {onTitlePress ? (
         <TouchableOpacity onPress={onTitlePress} activeOpacity={1}>
-          <Text className="text-lg font-semibold text-foreground">{title}</Text>
+          <Text className="text-xl font-semibold text-foreground">{title}</Text>
         </TouchableOpacity>
       ) : (
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
+        <Text className="text-xl font-semibold text-foreground">{title}</Text>
       )}
 
       {/* Right Action */}

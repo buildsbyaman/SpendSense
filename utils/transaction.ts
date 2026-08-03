@@ -331,10 +331,13 @@ export const filterTransactionsByDateRange = (
 
   return transactions.filter((tx) => {
     const txDate = new Date(tx.date);
-    txDate.setHours(0, 0, 0, 0); // Normalize time for comparison
+    txDate.setHours(0, 0, 0, 0);
 
-    const isAfterFrom = fromDate ? txDate >= fromDate : true;
-    const isBeforeTo = toDate ? txDate <= toDate : true;
+    const normalizedFrom = fromDate ? new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()) : null;
+    const normalizedTo = toDate ? new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999) : null;
+
+    const isAfterFrom = normalizedFrom ? txDate >= normalizedFrom : true;
+    const isBeforeTo = normalizedTo ? txDate <= normalizedTo : true;
 
     return isAfterFrom && isBeforeTo;
   });

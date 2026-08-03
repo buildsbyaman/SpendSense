@@ -97,7 +97,8 @@ export function TrendChart({ data, type }: TrendChartProps) {
           activatePointersOnLongPress: true,
           autoAdjustPointerLabelPosition: true,
           pointerLabelComponent: (items: any) => {
-            const item = items[0];
+            const item = items?.[0];
+            if (!item) return null;
             const val = item.customData?.rawValue ?? item.value;
             return (
               <View className="items-center justify-center rounded-xl border border-black/5 bg-surface px-3 py-1.5 shadow-md dark:border-white/5">

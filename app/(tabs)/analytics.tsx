@@ -4,7 +4,7 @@ import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
-import { TrendingUp, Plus } from 'lucide-react-native';
+import { TrendingUp, Plus, Wallet } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTabNavigation } from '@/context/TabNavigationContext';
@@ -31,7 +31,7 @@ import {
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { transactions } = useApp();
+  const { accounts, transactions } = useApp();
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -105,13 +105,23 @@ export default function AnalyticsScreen() {
         </View>
 
         {!hasData ? (
-          <EmptyState
-            icon={TrendingUp}
-            title="No Transactions"
-            description="Add some transactions to see your monthly analytics here."
-            buttonText="Add Transaction"
-            onButtonPress={() => router.push('/add-transaction')}
-          />
+          accounts.length === 0 ? (
+            <EmptyState
+              icon={Wallet}
+              title="Create Your First Wallet"
+              description="Add a wallet to start tracking your balances and transactions."
+              buttonText="Add Wallet"
+              onButtonPress={() => router.push('/add-wallet')}
+            />
+          ) : (
+            <EmptyState
+              icon={TrendingUp}
+              title="No Transactions"
+              description="Add some transactions to see your monthly analytics here."
+              buttonText="Add Transaction"
+              onButtonPress={() => router.push('/add-transaction')}
+            />
+          )
         ) : (
           <>
             {/* 1. Month Overview */}

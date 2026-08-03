@@ -19,6 +19,7 @@ export interface ImportPlan {
   categoryOrder: { expense: string[]; income: string[] } | null;
   hiddenCategories: string[] | null;
   replace: boolean;
+  replaceTypes: string[];
   currencyWarning: string | null;
 }
 
@@ -48,10 +49,10 @@ export function parseDisplayDate(str: string): string | null {
   const y = parseInt(m[3]);
   const d = parseInt(m[2]);
   if (y < 2000 || y > 2100 || d < 1 || d > 31) return null;
-  const ms = Date.UTC(y, month, d);
+  const ms = new Date(y, month, d).getTime();
   if (isNaN(ms)) return null;
   const result = new Date(ms);
-  if (result.getUTCFullYear() !== y || result.getUTCMonth() !== month || result.getUTCDate() !== d)
+  if (result.getFullYear() !== y || result.getMonth() !== month || result.getDate() !== d)
     return null;
   return result.toISOString();
 }
@@ -159,6 +160,7 @@ export function buildImportPlan(
     categoryOrder: null,
     hiddenCategories: null,
     replace: isReplace,
+    replaceTypes: isReplace ? selectedTypes.filter((t) => t !== 'alldata') : [],
     currencyWarning: null,
   };
 
@@ -224,7 +226,10 @@ export function buildImportPlan(
             currencyCode: map.get('Currency Code') || importedCurrency || 'USD',
             avatar: (() => {
               const v = map.get('Avatar');
-              return !v || v === '—' ? null : v;
+              if (!v || v === '—') return null;
+              // Reject remote URLs for privacy (only keep local data URIs, file URIs, or base64)
+              if (v.startsWith('http://') || v.startsWith('https://')) return null;
+              return v;
             })(),
             hasOnboarded: true,
           },

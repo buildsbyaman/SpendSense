@@ -17,7 +17,7 @@ export function EmptyState({ icon, title, description, buttonText, onButtonPress
       <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
         <Icon as={icon} size={40} className="text-muted opacity-50" />
       </View>
-      <Text variant="h3" className="mb-2 text-center">
+      <Text variant="large" className="mb-2 text-center">
         {title}
       </Text>
       <Text className="mb-8 text-center text-muted">

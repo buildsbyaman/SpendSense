@@ -41,8 +41,13 @@ const compactAbs = (absValue: number, decimals = 2): string => {
  */
 export const formatWalletBalance = (balanceInput: string | number, symbol: string = '$'): string => {
   const balanceStr = typeof balanceInput === 'number' ? balanceInput.toString() : balanceInput;
-  const cleaned = balanceStr.replace(/[^0-9.-]/g, '');
-  let parsedBalance = parseFloat(cleaned);
+  let parsedBalance: number;
+  if (/^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/.test(balanceStr.trim())) {
+    parsedBalance = parseFloat(balanceStr);
+  } else {
+    const cleaned = balanceStr.replace(/[^0-9.-]/g, '');
+    parsedBalance = parseFloat(cleaned);
+  }
 
   if (isNaN(parsedBalance)) {
     parsedBalance = 0;

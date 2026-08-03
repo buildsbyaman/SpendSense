@@ -191,7 +191,7 @@ export default function AddTransactionScreen() {
     <View className="flex-1 bg-transparent">
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           {/* Background touch area to close */}
           <TouchableOpacity
@@ -261,10 +261,7 @@ export default function AddTransactionScreen() {
                   <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet</Text>
                   {accounts.length === 0 ? (
                     <TouchableOpacity
-                      onPress={() => {
-                        if (router.canGoBack()) router.back();
-                        router.push('/(tabs)/wallets');
-                      }}
+                      onPress={() => router.push('/add-wallet')}
                       className="items-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
                       <Text className="text-sm font-semibold text-primary">
                         Create a wallet first

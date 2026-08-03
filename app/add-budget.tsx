@@ -31,7 +31,7 @@ export default function AddBudgetScreen() {
       setSelectedCategory(expenseCategories[0]?.name || '');
       setAmount('');
     }
-  }, [editId, budgets]);
+  }, [editId, budgets, expenseCategories]);
 
   const handleClose = () => {
     setVisible(false);
@@ -45,7 +45,7 @@ export default function AddBudgetScreen() {
   };
 
   const handleSave = () => {
-    if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
+    if (!amount.trim() || isNaN(Number(amount)) || !isFinite(Number(amount)) || Number(amount) <= 0) {
       setError('Please enter a valid amount');
       return;
     }
@@ -56,6 +56,13 @@ export default function AddBudgetScreen() {
 
     if (!editId) {
       const existing = budgets.find(b => b.category === selectedCategory);
+      if (existing) {
+        setError('A budget for this category already exists');
+        return;
+      }
+    } else {
+      // When editing, prevent switching to a category that already has a different budget
+      const existing = budgets.find(b => b.category === selectedCategory && b.id !== editId);
       if (existing) {
         setError('A budget for this category already exists');
         return;
@@ -90,7 +97,7 @@ export default function AddBudgetScreen() {
     <View className="flex-1 bg-transparent">
       <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
           <TouchableOpacity 
@@ -115,70 +122,72 @@ export default function AddBudgetScreen() {
               </View>
             </View>
 
-            <View className="flex-col gap-6">
-              
-              <View className="flex-row items-center gap-3 rounded-2xl bg-primary/10 p-4">
-                <Icon as={Info} size={20} className="text-primary" />
-                <Text className="flex-1 text-sm text-primary dark:text-primary">
-                  Budgets apply globally and reset automatically on the 1st of every month.
-                </Text>
-              </View>
+            <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <View className="flex-col gap-6">
+                
+                <View className="flex-row items-center gap-3 rounded-2xl bg-primary/10 p-4">
+                  <Icon as={Info} size={20} className="text-primary" />
+                  <Text className="flex-1 text-sm text-primary dark:text-primary">
+                    Budgets apply globally and reset automatically on the 1st of every month.
+                  </Text>
+                </View>
 
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
-                  className="flex-row">
-                  {expenseCategories.map((cat) => {
-                    const CatIcon = getCategoryIcon(cat.name, undefined, 'icon' in cat ? cat.icon : undefined);
-                    const color = getCategoryColor(cat.name, 'color' in cat ? cat.color : undefined);
-                    const isSelected = selectedCategory === cat.name;
-                    
-                    return (
-                      <TouchableOpacity
-                        key={cat.name}
-                        onPress={() => {
-                          setSelectedCategory(cat.name);
-                          setError('');
-                        }}
-                        className={`mr-3 items-center justify-center rounded-2xl border-2 p-4 ${
-                          isSelected ? 'border-primary bg-primary/5' : 'border-gray-100 bg-surface dark:border-gray-800'
-                        }`}
-                        style={{ minWidth: 100 }}>
-                        <View 
-                          className="mb-2 h-12 w-12 items-center justify-center rounded-full"
-                          style={{ backgroundColor: `${color}15` }}>
-                          <Icon as={CatIcon} size={24} color={color} />
-                        </View>
-                        <Text className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
-                          {cat.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    className="flex-row">
+                    {expenseCategories.map((cat) => {
+                      const CatIcon = getCategoryIcon(cat.name, undefined, 'icon' in cat ? cat.icon : undefined);
+                      const color = getCategoryColor(cat.name, 'color' in cat ? cat.color : undefined);
+                      const isSelected = selectedCategory === cat.name;
+                      
+                      return (
+                        <TouchableOpacity
+                          key={cat.name}
+                          onPress={() => {
+                            setSelectedCategory(cat.name);
+                            setError('');
+                          }}
+                          className={`mr-3 items-center justify-center rounded-2xl border-2 p-4 ${
+                            isSelected ? 'border-primary bg-primary/5' : 'border-gray-100 bg-surface dark:border-gray-800'
+                          }`}
+                          style={{ minWidth: 100 }}>
+                          <View 
+                            className="mb-2 h-12 w-12 items-center justify-center rounded-full"
+                            style={{ backgroundColor: `${color}15` }}>
+                            <Icon as={CatIcon} size={24} color={color} />
+                          </View>
+                          <Text className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                            {cat.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
 
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">Monthly Limit</Text>
-                <TextInput
-                  className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-4 text-base font-semibold dark:bg-gray-900 ${error ? 'border-red-500' : 'border-transparent'}`}
-                  placeholder={`${userProfile.currencySymbol}0.00`}
-                  placeholderTextColor="#9ca3af"
-                  keyboardType="decimal-pad"
-                  value={amount}
-                  onChangeText={(text) => {
-                    setAmount(text);
-                    setError('');
-                  }}
-                />
-                {error ? (
-                  <Text className="ml-4 mt-2 text-xs text-red-500">{error}</Text>
-                ) : null}
-              </View>
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Monthly Limit</Text>
+                  <TextInput
+                    className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-4 text-base font-semibold dark:bg-gray-900 ${error ? 'border-red-500' : 'border-transparent'}`}
+                    placeholder={`${userProfile.currencySymbol}0.00`}
+                    placeholderTextColor="#9ca3af"
+                    keyboardType="decimal-pad"
+                    value={amount}
+                    onChangeText={(text) => {
+                      setAmount(text);
+                      setError('');
+                    }}
+                  />
+                  {error ? (
+                    <Text className="ml-4 mt-2 text-xs text-red-500">{error}</Text>
+                  ) : null}
+                </View>
 
-            </View>
+              </View>
+            </ScrollView>
 
             <View className="mt-10 flex-row gap-3">
               <TouchableOpacity

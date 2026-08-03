@@ -32,11 +32,15 @@ export function SubscriptionItem({
   const icon = getCategoryIcon(subscription.category, subscription.name);
   const color = getCategoryColor(subscription.category);
 
-  const nextDateStr = new Date(subscription.next_billing_date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const nextBillingDate = subscription.next_billing_date ? new Date(subscription.next_billing_date) : null;
+  const nextDateStr =
+    nextBillingDate && !isNaN(nextBillingDate.getTime())
+      ? nextBillingDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : 'N/A';
 
   const rowView = (
     <TouchableOpacity

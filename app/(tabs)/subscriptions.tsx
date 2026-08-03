@@ -42,7 +42,7 @@ export default function SubscriptionsScreen() {
   };
 
   const filteredSubscriptions = subscriptions.filter(sub => {
-    const isExpired = sub.end_date ? new Date() > new Date(sub.end_date) : false;
+    const isExpired = sub.end_date ? new Date().getTime() >= new Date(sub.end_date).getTime() : false;
     return activeTab === 'current' ? !isExpired : isExpired;
   });
 

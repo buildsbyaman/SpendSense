@@ -6,19 +6,29 @@ export interface ParsedFile {
   tables: ExportedTable[];
 }
 
+const MAX_ROWS_PER_TABLE = 10_000;
+
+function safeColumns(keys: string[]): string[] {
+  return keys.filter((k) => k !== '__proto__' && k !== 'constructor' && k !== 'prototype');
+}
+
 export function parseJson(text: string): ParsedFile {
   const obj = JSON.parse(text);
+  if (obj.app !== 'SpendSense') {
+    throw new Error('This JSON file was not exported from SpendSense.');
+  }
   const meta = { app: obj.app, currency: obj.currency, user: obj.user };
   const tables: ExportedTable[] = [];
   if (obj.data && typeof obj.data === 'object') {
     for (const [title, rows] of Object.entries(obj.data)) {
       if (!Array.isArray(rows) || rows.length === 0) continue;
       const firstRow = rows[0] as Record<string, unknown>;
-      const columns = Object.keys(firstRow);
+      const columns = safeColumns(Object.keys(firstRow));
+      const limitedRows = rows.slice(0, MAX_ROWS_PER_TABLE);
       tables.push({
         title: title.charAt(0).toUpperCase() + title.slice(1),
         columns,
-        rows: rows as Record<string, string | number>[],
+        rows: limitedRows as Record<string, string | number>[],
       });
     }
   }
@@ -51,9 +61,11 @@ export async function parseXlsx(bytes: Uint8Array): Promise<ParsedFile> {
       continue;
     }
 
-    const columns = (aoa[0] as string[]).map(String);
+    const rawColumns = (aoa[0] as string[]).map(String);
+    const columns = safeColumns(rawColumns).map((c, i) => c.trim() || `Column ${i + 1}`);
+    if (columns.length === 0) continue;
     const rows: Record<string, string | number>[] = [];
-    for (let i = 1; i < aoa.length; i++) {
+    for (let i = 1; i < Math.min(aoa.length, MAX_ROWS_PER_TABLE + 1); i++) {
       const row = aoa[i];
       if (!Array.isArray(row) || row.every((c) => c === '' || c == null)) continue;
       const obj: Record<string, string | number> = {};
@@ -82,6 +94,10 @@ export function parsePdf(pdfText: string): ParsedFile {
     );
   return {
     meta: { app: payload.app, currency: payload.currency },
-    tables: payload.tables,
+    tables: payload.tables.map((t) => ({
+      ...t,
+      columns: safeColumns(t.columns),
+      rows: t.rows.slice(0, MAX_ROWS_PER_TABLE),
+    })),
   };
 }

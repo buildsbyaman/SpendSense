@@ -98,7 +98,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
         avatarUri = asset.uri;
       }
       if (avatarUri) {
-        updateUserProfile({ ...userProfile, avatar: avatarUri });
+        await updateUserProfile({ ...userProfile, avatar: avatarUri });
         Toast.show({
           type: 'success',
           text1: 'Photo Updated',
@@ -108,7 +108,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
     }
   }, [userProfile, updateUserProfile]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
       setError('Name cannot be empty');
@@ -120,7 +120,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       return;
     }
 
-    updateUserProfile({ ...userProfile, name: trimmed });
+    await updateUserProfile({ ...userProfile, name: trimmed });
     setError(null);
     setIsEditing(false);
     Toast.show({

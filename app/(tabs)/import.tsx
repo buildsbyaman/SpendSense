@@ -203,6 +203,18 @@ export default function ImportScreen() {
       if (result.canceled || !result.assets?.length) return;
 
       const asset = result.assets[0];
+
+      // Reject files larger than 5MB to prevent memory exhaustion / DoS
+      const MAX_SIZE = 5 * 1024 * 1024;
+      if (asset.size && asset.size > MAX_SIZE) {
+        Toast.show({
+          type: 'error',
+          text1: 'File Too Large',
+          text2: 'Please select a file under 5MB.',
+        });
+        return;
+      }
+
       setSelectedFile(asset);
       setParsing(true);
       setParsedData(null);

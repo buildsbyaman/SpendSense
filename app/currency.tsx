@@ -101,6 +101,15 @@ export default function CurrencySettings() {
       return;
     }
 
+    if (shouldConvert === 'yes' && effectiveNewCurrency.code === userProfile.currencyCode) {
+      Toast.show({
+        type: 'info',
+        text1: 'Same Currency',
+        text2: 'Amounts are already in this currency. Use "Swap symbol only" instead.',
+      });
+      return;
+    }
+
     try {
       setIsSaving(true);
       await updateCurrencyAndConvert(

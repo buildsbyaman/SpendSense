@@ -286,9 +286,9 @@ export async function convertCurrencyInDB(rate: number, symbol?: string): Promis
   const db = await getDatabase();
 
   await db.withTransactionAsync(async () => {
-    await db.runAsync('UPDATE transactions SET amount = amount * ?', rate);
-    await db.runAsync('UPDATE budgets SET amount = amount * ?', rate);
-    await db.runAsync('UPDATE subscriptions SET amount = amount * ?', rate);
+    await db.runAsync('UPDATE transactions SET amount = ROUND(amount * ?, 2)', rate);
+    await db.runAsync('UPDATE budgets SET amount = ROUND(amount * ?, 2)', rate);
+    await db.runAsync('UPDATE subscriptions SET amount = ROUND(amount * ?, 2)', rate);
 
     const accounts = await db.getAllAsync<{ id: string; balance: string }>(
       'SELECT id, balance FROM accounts'
@@ -298,7 +298,12 @@ export async function convertCurrencyInDB(rate: number, symbol?: string): Promis
       let parsed = parseFloat(cleaned);
       if (isNaN(parsed)) parsed = 0;
 
-      const newBalance = parsed * rate;
+      let newBalance = parsed * rate;
+
+      // Clamp to same bounds as formatWalletBalance to prevent data corruption
+      if (newBalance > 999999999) newBalance = 999999999;
+      else if (newBalance < -999999999) newBalance = -999999999;
+
       const formattedNumber = Math.abs(newBalance).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,

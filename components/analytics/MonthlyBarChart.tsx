@@ -29,6 +29,7 @@ export function MonthlyBarChart({ data }: MonthlyBarChartProps) {
   }));
 
   const maxVal = niceCeil(Math.max(...data.map((d) => d.expense), 1));
+  const hasNegativeNet = data.some((d) => d.income - d.expense < 0);
 
   return (
     <View>
@@ -46,7 +47,7 @@ export function MonthlyBarChart({ data }: MonthlyBarChartProps) {
         hideRules
         scrollAnimation={false}
         roundedTop
-        noOfSectionsBelowXAxis={0}
+        noOfSectionsBelowXAxis={hasNegativeNet ? 2 : 0}
         lineData={netData}
         lineConfig={{
           color: colors.income,

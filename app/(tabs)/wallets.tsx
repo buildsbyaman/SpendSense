@@ -71,9 +71,9 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
     toggleWalletExpand(id);
   };
 
-  const executeDelete = () => {
+  const executeDelete = async () => {
     if (walletToDelete) {
-      const result = deleteWallet(walletToDelete);
+      const result = await deleteWallet(walletToDelete);
       setWalletToDelete(null);
       setExpandedWalletId(null); // collapse accordion after delete
       if (result.blocked) return;

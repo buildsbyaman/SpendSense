@@ -97,9 +97,9 @@ export default function AddWalletScreen() {
     handleClose();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (editId) {
-      const result = deleteWallet(editId);
+      const result = await deleteWallet(editId);
       if (!result.blocked) {
         if (result.newDefaultName) {
           Toast.show({ type: 'success', text1: 'Wallet Deleted', text2: `"${result.newDefaultName}" is now your default wallet.` });
@@ -123,7 +123,7 @@ export default function AddWalletScreen() {
     <View className="flex-1 bg-transparent">
       <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
           <TouchableOpacity 
@@ -149,7 +149,8 @@ export default function AddWalletScreen() {
               </View>
             </View>
 
-            <View className="flex-col gap-5">
+            <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <View className="flex-col gap-5">
               <View>
                 <Text className="mb-2 ml-1 text-sm text-muted">Wallet Name</Text>
                 <TextInput
@@ -225,7 +226,8 @@ export default function AddWalletScreen() {
                   <Text className="ml-4 mt-1 text-xs text-red-500">{errors.balance}</Text>
                 )}
               </View>
-            </View>
+              </View>
+            </ScrollView>
 
             <View className="mt-8 flex-row gap-3">
               {editId && !accounts.find(a => a.id === editId)?.isDefault && (

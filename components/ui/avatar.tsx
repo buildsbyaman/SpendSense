@@ -32,12 +32,25 @@ export function Avatar({ name, avatar, size = 48 }: AvatarProps) {
   const textColor = isDark ? '#e8e8ec' : '#1a1c1b';
 
   if (avatar) {
-    return (
-      <Image
-        source={{ uri: avatar.startsWith('data:') ? avatar : `data:image/jpeg;base64,${avatar}` }}
-        style={{ width: size, height: size, borderRadius: size / 2 }}
-      />
-    );
+    const isDataUri = avatar.startsWith('data:');
+    const isFileUri = avatar.startsWith('file://') || avatar.startsWith('ph://');
+    if (isDataUri || isFileUri) {
+      return (
+        <Image
+          source={{ uri: avatar }}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+        />
+      );
+    }
+    // Treat as base64 (reject remote http/https URLs for privacy)
+    if (!avatar.startsWith('http://') && !avatar.startsWith('https://')) {
+      return (
+        <Image
+          source={{ uri: `data:image/jpeg;base64,${avatar}` }}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+        />
+      );
+    }
   }
 
   return (

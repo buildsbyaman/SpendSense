@@ -68,8 +68,15 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
   const overlayY = useSharedValue(activeHeight);
   const [activeSubScreen, setActiveSubScreen] = useState<string | null>(null);
   const prevActiveTab = useRef(activeTab);
+  const clearSubScreenTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // Clean up any pending timeout from previous effect
+    if (clearSubScreenTimeout.current) {
+      clearTimeout(clearSubScreenTimeout.current);
+      clearSubScreenTimeout.current = null;
+    }
+
     const isMainTab = MAIN_TABS.includes(activeTab);
     const wasSubScreen = !MAIN_TABS.includes(prevActiveTab.current);
     prevActiveTab.current = activeTab;
@@ -85,8 +92,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
           ...SPRING_CONFIG,
           damping: 32,
         });
-        // Delay clearing the sub-screen until animation completes
-        setTimeout(() => setActiveSubScreen(null), 400);
+        clearSubScreenTimeout.current = setTimeout(() => setActiveSubScreen(null), 400);
       }
     } else {
       // Sub-screen — show overlay sliding up from bottom
@@ -94,6 +100,12 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
       overlayY.value = activeHeight;
       overlayY.value = withSpring(0, SPRING_CONFIG);
     }
+
+    return () => {
+      if (clearSubScreenTimeout.current) {
+        clearTimeout(clearSubScreenTimeout.current);
+      }
+    };
   }, [activeTab, activeWidth, activeHeight]);
 
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
