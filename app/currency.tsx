@@ -163,7 +163,7 @@ export default function CurrencySettings() {
                   key={c.code}
                   onPress={() => handleSelectPreset(c.code)}
                   activeOpacity={0.75}
-                  className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2 ${
+                  className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2.5 ${
                     isSelected
                       ? 'border-primary bg-primary'
                       : 'border-gray-200 bg-transparent dark:border-gray-800'
@@ -187,7 +187,7 @@ export default function CurrencySettings() {
                 setSelectedCode(CUSTOM_KEY);
               }}
               activeOpacity={0.75}
-              className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2 ${
+              className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2.5 ${
                 isCustom
                   ? 'border-primary bg-primary'
                   : 'border-dashed border-gray-300 bg-transparent dark:border-gray-700'

@@ -8,8 +8,6 @@ import { formatNumber } from '@/utils/wallet';
 import AnimatedSegment from '@/components/ui/animated-segment';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
-  getCategoryIcon,
-  getCategoryColor,
   type Transaction,
   searchTransactions,
   filterTransactionsByDateRange,
@@ -254,8 +252,6 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                 </Text>
                 <View>
                   {txs.map((tx, idx) => {
-                    const icon = getCategoryIcon(tx.category, tx.title);
-                    const color = getCategoryColor(tx.category);
                     const isLast = idx === txs.length - 1;
 
                     return (

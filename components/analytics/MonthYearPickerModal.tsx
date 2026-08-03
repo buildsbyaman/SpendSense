@@ -61,7 +61,7 @@ export function MonthYearPickerModal({
               {/* Header */}
               <View className="mb-6 flex-row items-center justify-between">
                 <Text className="text-xl font-bold text-foreground">Select Month</Text>
-                <TouchableOpacity onPress={onClose} className="rounded-full bg-gray-50 dark:bg-gray-900 p-2">
+                <TouchableOpacity onPress={onClose} className="rounded-full bg-gray-50 dark:bg-gray-900 p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
                   <Icon as={X} size={20} className="text-foreground" />
                 </TouchableOpacity>
               </View>

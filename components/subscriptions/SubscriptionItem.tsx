@@ -3,7 +3,7 @@ import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ChevronDown } from 'lucide-react-native';
-import { getCategoryIcon, getCategoryColor } from '@/utils/transaction';
+import { getCategoryDetails } from '@/utils/transaction';
 import { type Subscription } from '@/utils/subscription';
 import { formatNumber } from '@/utils/wallet';
 import { router } from 'expo-router';
@@ -24,13 +24,12 @@ export function SubscriptionItem({
   onToggleExpand,
   onDelete,
 }: SubscriptionItemProps) {
-  const { accounts, userProfile } = useApp();
+  const { accounts, userProfile, customCategories } = useApp();
   const wallet = accounts.find((a) => a.id === subscription.wallet_id);
 
   const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);
 
-  const icon = getCategoryIcon(subscription.category, subscription.name);
-  const color = getCategoryColor(subscription.category);
+  const { icon, color } = getCategoryDetails(subscription.category, subscription.name, customCategories);
 
   const nextBillingDate = subscription.next_billing_date ? new Date(subscription.next_billing_date) : null;
   const nextDateStr =

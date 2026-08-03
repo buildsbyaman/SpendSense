@@ -212,6 +212,18 @@ export const getCategoryIcon = (categoryName: string, title?: string, customIcon
   return Tag;
 };
 
+export const getCategoryDetails = (
+  categoryName: string,
+  title: string | undefined,
+  customCategories: CustomCategory[]
+): { icon: LucideIcon; color: string } => {
+  const custom = customCategories.find((c) => c.name === categoryName);
+  return {
+    icon: getCategoryIcon(categoryName, title, custom?.icon),
+    color: getCategoryColor(categoryName, custom?.color),
+  };
+};
+
 // Golden ratio conjugate for generating distinct random hues
 const GOLDEN_RATIO_CONJUGATE = 0.618033988749895;
 let currentHue = Math.random();

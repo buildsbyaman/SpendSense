@@ -109,13 +109,13 @@ export default function TransactionDatePickerModal({
           <View className="bg-surface rounded-3xl w-full p-6 gap-4 max-w-[340px]">
           {/* Calendar Header */}
           <View className="flex-row justify-between items-center pb-2">
-            <TouchableOpacity onPress={() => onNavigateMonth('prev')} className="p-2">
+            <TouchableOpacity onPress={() => onNavigateMonth('prev')} className="p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
               <Icon as={ChevronLeft} size={20} className="text-foreground" />
             </TouchableOpacity>
             <Text className="font-bold text-base text-foreground">
               {calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
             </Text>
-            <TouchableOpacity onPress={() => onNavigateMonth('next')} className="p-2">
+            <TouchableOpacity onPress={() => onNavigateMonth('next')} className="p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
               <Icon as={ChevronRight} size={20} className="text-foreground" />
             </TouchableOpacity>
           </View>
@@ -191,7 +191,7 @@ export default function TransactionDatePickerModal({
                     setRangeFrom(new Date(currentYear, currentMonth, 1));
                     setRangeTo(new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
                   }}
-                  className={`py-1 px-3 rounded-full ${isWholeMonth ? 'bg-primary/20' : ''}`}
+                  className={`py-2 px-4 rounded-full ${isWholeMonth ? 'bg-primary/20' : ''}`}
                 >
                   <Text className={`text-xs ${isWholeMonth ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Month</Text>
                 </TouchableOpacity>
@@ -201,7 +201,7 @@ export default function TransactionDatePickerModal({
                     setRangeFrom(new Date(currentYear, 0, 1));
                     setRangeTo(new Date(currentYear, 11, 31, 23, 59, 59, 999));
                   }}
-                  className={`py-1 px-3 rounded-full ${isWholeYear ? 'bg-primary/20' : ''}`}
+                  className={`py-2 px-4 rounded-full ${isWholeYear ? 'bg-primary/20' : ''}`}
                 >
                   <Text className={`text-xs ${isWholeYear ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Year</Text>
                 </TouchableOpacity>

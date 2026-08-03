@@ -39,7 +39,7 @@ export default function TransactionFilterBar({
           className="text-foreground h-[20px] flex-1 p-0 text-sm font-medium"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => onSearchChange('')} className="ml-2 p-1">
+          <TouchableOpacity onPress={() => onSearchChange('')} className="ml-2 p-2.5" hitSlop={{top:2,bottom:2,left:2,right:2}}>
             <Icon as={X} size={14} className="text-muted" />
           </TouchableOpacity>
         )}

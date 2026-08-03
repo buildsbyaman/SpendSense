@@ -6,12 +6,12 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { X, Calendar } from 'lucide-react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { formatNumber } from '@/utils/wallet';
 import {
@@ -21,6 +21,8 @@ import {
   sanitizeAmountInput,
   validateTransaction,
   formatDatePickerDate,
+  getCategoryIcon,
+  getCategoryColor,
 } from '@/utils/transaction';
 import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
@@ -28,6 +30,7 @@ import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import TransactionTypeToggle from '@/components/transactions/TransactionTypeToggle';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
 
 export default function AddTransactionScreen() {
   const insets = useSafeAreaInsets();
@@ -39,6 +42,7 @@ export default function AddTransactionScreen() {
     budgets,
     transactions,
     userProfile,
+    customCategories,
   } = useApp();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { colorScheme } = useColorScheme();
@@ -59,6 +63,7 @@ export default function AddTransactionScreen() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const sheetRef = useRef<SlideSheetHandle>(null);
 
   useEffect(() => {
     if (editId) {
@@ -75,12 +80,16 @@ export default function AddTransactionScreen() {
     }
   }, [editId]);
 
-  const handleClose = () => {
+  const handleNavigateBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/');
     }
+  };
+
+  const handleClose = () => {
+    sheetRef.current?.close();
   };
 
   const handleTypeChange = (newType: TransactionType) => {
@@ -181,7 +190,8 @@ export default function AddTransactionScreen() {
 
   return (
     <View className="flex-1 bg-transparent">
-      <KeyboardAvoidingView
+      <SlideSheet ref={sheetRef} onClosed={handleNavigateBack}>
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           {/* Background touch area to close */}
@@ -195,7 +205,7 @@ export default function AddTransactionScreen() {
             {/* Header */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Transaction' : 'Add Transaction'}</Text>
-              <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2">
+              <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
                 <Icon as={X} size={20} className="text-foreground" />
               </TouchableOpacity>
             </View>
@@ -301,11 +311,18 @@ export default function AddTransactionScreen() {
                       <View className="flex-row gap-2.5 py-1">
                         {categoriesList.map((cat) => {
                           const isSelected = category === cat.name;
+                          const CatIcon = getCategoryIcon(cat.name, undefined, 'icon' in cat ? cat.icon : undefined);
+                          const color = getCategoryColor(cat.name, 'color' in cat ? cat.color : undefined);
                           return (
                             <TouchableOpacity
                               key={cat.name}
                               onPress={() => setCategory(cat.name)}
-                              className={`flex-row items-center gap-2 rounded-full border px-3 py-1.5 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                              className={`flex-row items-center gap-2 rounded-full border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                              <View
+                                className="h-7 w-7 items-center justify-center rounded-full"
+                                style={{ backgroundColor: `${color}15` }}>
+                                <Icon as={CatIcon} size={12} color={color} />
+                              </View>
                               <Text
                                 className={`text-sm font-medium ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
                                 {cat.name}
@@ -324,7 +341,7 @@ export default function AddTransactionScreen() {
                   <View className="flex-row gap-3">
                     <TouchableOpacity
                       onPress={() => setDate(new Date())}
-                      className={`flex-1 items-center rounded-full border py-2.5 ${date.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 items-center rounded-full border py-3 ${date.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
                       <Text
                         className={`text-xs font-semibold ${date.toDateString() === new Date().toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
                         Today
@@ -336,7 +353,7 @@ export default function AddTransactionScreen() {
                         yesterday.setDate(yesterday.getDate() - 1);
                         setDate(yesterday);
                       }}
-                      className={`flex-1 items-center rounded-full border py-2.5 ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 items-center rounded-full border py-3 ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
                       <Text
                         className={`text-xs font-semibold ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
                         Yesterday
@@ -347,7 +364,7 @@ export default function AddTransactionScreen() {
                         setCalendarMonth(new Date(date));
                         setIsDatePickerOpen(true);
                       }}
-                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-full border px-3 py-2.5 ${date.toDateString() !== new Date().toDateString() && date.toDateString() !== new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-full border px-3 py-3 ${date.toDateString() !== new Date().toDateString() && date.toDateString() !== new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
                       <Icon
                         as={Calendar}
                         size={12}
@@ -383,6 +400,7 @@ export default function AddTransactionScreen() {
             <View style={{ height: insets.bottom }} />
           </View>
         </KeyboardAvoidingView>
+      </SlideSheet>
 
       {/* Custom Calendar Modal */}
       <TransactionDatePickerModal

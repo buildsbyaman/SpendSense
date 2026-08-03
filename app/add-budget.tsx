@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -7,6 +7,7 @@ import { useApp } from '@/context/AppContext';
 import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
 import Toast from 'react-native-toast-message';
 import { router, useLocalSearchParams } from 'expo-router';
+import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
 
 export default function AddBudgetScreen() {
   const { budgets, addBudget, updateBudget, deleteBudget, getSortedCategories, userProfile } = useApp();
@@ -15,6 +16,7 @@ export default function AddBudgetScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const sheetRef = useRef<SlideSheetHandle>(null);
 
   const expenseCategories = getSortedCategories('expense');
 
@@ -31,12 +33,16 @@ export default function AddBudgetScreen() {
     }
   }, [editId, budgets, expenseCategories]);
 
-  const handleClose = () => {
+  const handleNavigateBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/budgets');
     }
+  };
+
+  const handleClose = () => {
+    sheetRef.current?.close();
   };
 
   const handleSave = () => {
@@ -90,7 +96,8 @@ export default function AddBudgetScreen() {
 
   return (
     <View className="flex-1 bg-transparent">
-      <KeyboardAvoidingView
+      <SlideSheet ref={sheetRef} onClosed={handleNavigateBack}>
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
@@ -106,11 +113,11 @@ export default function AddBudgetScreen() {
               <Text variant="h2">{editId ? 'Edit Budget' : 'Add Budget'}</Text>
               <View className="flex-row items-center gap-2">
                 {editId && (
-                  <TouchableOpacity onPress={handleDelete} className="rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+                  <TouchableOpacity onPress={handleDelete} className="rounded-full bg-red-100 p-2.5 dark:bg-red-900/30">
                     <Icon as={Trash2} size={20} className="text-red-500" />
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2">
+                <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
                   <Icon as={X} size={20} className="text-foreground" />
                 </TouchableOpacity>
               </View>
@@ -199,6 +206,7 @@ export default function AddBudgetScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
+      </SlideSheet>
     </View>
   );
 }

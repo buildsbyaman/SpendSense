@@ -1,7 +1,7 @@
 import { View, TouchableOpacity, TextInput, LayoutAnimation, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 
 import { Text } from '@/components/ui/text';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { formatWalletBalance, formatAccountNumber } from '@/utils/wallet';
 import { useApp } from '@/context/AppContext';
 import { useColorScheme } from 'nativewind';
@@ -11,6 +11,7 @@ import { X, Trash2, Landmark, CreditCard, Smartphone, Wallet } from 'lucide-reac
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
 
 const ACCOUNT_TYPES = ['Bank', 'Card', 'Digital', 'Cash'];
 
@@ -27,6 +28,7 @@ export default function AddWalletScreen() {
   const [newBalance, setNewBalance] = useState('');
   const [accountType, setAccountType] = useState('Card');
   const [errors, setErrors] = useState<{ name?: string; balance?: string }>({});
+  const sheetRef = useRef<SlideSheetHandle>(null);
 
   useEffect(() => {
     if (editId) {
@@ -40,12 +42,16 @@ export default function AddWalletScreen() {
     }
   }, [editId, accounts]);
 
-  const handleClose = () => {
+  const handleNavigateBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/wallets');
     }
+  };
+
+  const handleClose = () => {
+    sheetRef.current?.close();
   };
 
   const handleSave = () => {
@@ -116,7 +122,8 @@ export default function AddWalletScreen() {
 
   return (
     <View className="flex-1 bg-transparent">
-      <KeyboardAvoidingView
+      <SlideSheet ref={sheetRef} onClosed={handleNavigateBack}>
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           
@@ -133,11 +140,11 @@ export default function AddWalletScreen() {
                 {editId && !accounts.find(a => a.id === editId)?.isDefault && (
                   <TouchableOpacity 
                     onPress={handleDelete} 
-                    className="rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+                    className="rounded-full bg-red-100 p-2.5 dark:bg-red-900/30">
                     <Icon as={Trash2} size={20} className="text-red-500" />
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2">
+                <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
                   <Icon as={X} size={20} className="text-foreground" />
                 </TouchableOpacity>
               </View>
@@ -172,7 +179,7 @@ export default function AddWalletScreen() {
                   {ACCOUNT_TYPES.map((type) => (
                     <TouchableOpacity
                       key={type}
-                      className={`mr-2 rounded-full border px-3 py-1.5 ${accountType === type ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}
+                      className={`mr-2 rounded-full border px-3 py-2.5 ${accountType === type ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}
                       onPress={() => setAccountType(type)}>
                       <Text
                         className={`text-sm font-medium ${accountType === type ? 'text-white dark:text-black' : 'text-foreground'}`}>
@@ -241,6 +248,7 @@ export default function AddWalletScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
+      </SlideSheet>
     </View>
   );
 }

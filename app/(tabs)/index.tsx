@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
-import { getCategoryIcon, getCategoryColor } from '@/utils/transaction';
+import { getCategoryDetails } from '@/utils/transaction';
 import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt, Wallet } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { parseBalance, formatNumber } from '@/utils/wallet';
@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 export default function HomeScreen(_props: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { accounts, transactions, userProfile } = useApp();
+  const { accounts, transactions, userProfile, customCategories } = useApp();
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -170,8 +170,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           ) : (
             <View className="overflow-hidden rounded-[32px] border border-gray-100 bg-surface px-4 py-2 shadow-xs dark:border-gray-900">
               {recentTransactions.map((tx, idx) => {
-                const icon = getCategoryIcon(tx.category, tx.title);
-                const color = getCategoryColor(tx.category);
+                const { icon, color } = getCategoryDetails(tx.category, tx.title, customCategories);
                 const isLast = idx === recentTransactions.length - 1;
 
                 return (

@@ -6,8 +6,7 @@ import { ChevronDown, ChevronUp, ArrowDownLeft, ArrowUpRight } from 'lucide-reac
 import {
   type Transaction,
   type TransactionType,
-  getCategoryIcon,
-  getCategoryColor,
+  getCategoryDetails,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   sanitizeAmountInput,
@@ -43,12 +42,11 @@ export function TransactionItem({
   getWalletName,
 }: TransactionItemProps) {
   const { colorScheme } = useColorScheme();
-  const { userProfile } = useApp();
+  const { userProfile, customCategories } = useApp();
 
   const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);
 
-  const icon = getCategoryIcon(transaction.category, transaction.title);
-  const color = getCategoryColor(transaction.category);
+  const { icon, color } = getCategoryDetails(transaction.category, transaction.title, customCategories);
 
   // --- Normal row view ---
   const rowView = (

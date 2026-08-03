@@ -158,7 +158,7 @@ export default function CategoriesScreen() {
                       onPress={() => moveCategory(index, 'up')}
                       disabled={isFirst}
                       activeOpacity={0.6}
-                      className={`h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 ${isFirst ? 'opacity-30' : 'opacity-100'}`}>
+                      className={`h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 ${isFirst ? 'opacity-30' : 'opacity-100'}`}>
                       <Icon as={ChevronUp} size={16} className="text-foreground" />
                     </TouchableOpacity>
 
@@ -167,7 +167,7 @@ export default function CategoriesScreen() {
                       onPress={() => moveCategory(index, 'down')}
                       disabled={isLast}
                       activeOpacity={0.6}
-                      className={`h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 ${isLast ? 'opacity-30' : 'opacity-100'}`}>
+                      className={`h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 ${isLast ? 'opacity-30' : 'opacity-100'}`}>
                       <Icon as={ChevronDown} size={16} className="text-foreground" />
                     </TouchableOpacity>
 
@@ -176,7 +176,7 @@ export default function CategoriesScreen() {
                       <TouchableOpacity
                         onPress={() => isCustom && id ? handleDeleteCustom(id, name) : handleDeleteDefault(name)}
                         activeOpacity={0.6}
-                        className="h-8 w-8 items-center justify-center rounded-full bg-red-500/15">
+                        className="h-10 w-10 items-center justify-center rounded-full bg-red-500/15">
                         <Icon as={Trash2} size={16} color="#ef4444" />
                       </TouchableOpacity>
                     )}
@@ -207,7 +207,7 @@ export default function CategoriesScreen() {
               <Text variant="h2">New {activeTab === 'expense' ? 'Expense' : 'Income'} Category</Text>
               <TouchableOpacity
                 onPress={() => setIsModalOpen(false)}
-                className="rounded-full bg-secondary p-2">
+                className="rounded-full bg-secondary p-2.5">
                 <Icon as={X} size={20} className="text-foreground" />
               </TouchableOpacity>
             </View>

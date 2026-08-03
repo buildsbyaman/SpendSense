@@ -11,7 +11,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { X, Calendar } from 'lucide-react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { sanitizeAmountInput, formatDatePickerDate } from '@/utils/transaction';
 import { type SubscriptionCycle } from '@/utils/subscription';
@@ -21,6 +21,7 @@ import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AnimatedSegment from '@/components/ui/animated-segment';
+import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
 
 export default function AddSubscriptionScreen() {
   const insets = useSafeAreaInsets();
@@ -64,6 +65,7 @@ export default function AddSubscriptionScreen() {
   const [endCalendarMonth, setEndCalendarMonth] = useState(new Date());
 
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const sheetRef = useRef<SlideSheetHandle>(null);
 
   useEffect(() => {
     if (editId) {
@@ -88,12 +90,16 @@ export default function AddSubscriptionScreen() {
     }
   }, [editId]);
 
-  const handleClose = () => {
+  const handleNavigateBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/(tabs)/subscriptions');
     }
+  };
+
+  const handleClose = () => {
+    sheetRef.current?.close();
   };
 
   const handleSave = async () => {
@@ -167,7 +173,8 @@ export default function AddSubscriptionScreen() {
 
   return (
     <View className="flex-1 bg-transparent">
-      <KeyboardAvoidingView
+      <SlideSheet ref={sheetRef} onClosed={handleNavigateBack}>
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
           <TouchableOpacity
@@ -180,7 +187,7 @@ export default function AddSubscriptionScreen() {
             {/* Header */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Subscription' : 'Add Subscription'}</Text>
-              <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2">
+              <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
                 <Icon as={X} size={20} className="text-foreground" />
               </TouchableOpacity>
             </View>
@@ -315,7 +322,7 @@ export default function AddSubscriptionScreen() {
                           <TouchableOpacity
                             key={cat.name}
                             onPress={() => setCategory(cat.name)}
-                            className={`flex-row items-center gap-2 rounded-full border px-3 py-1.5 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                            className={`flex-row items-center gap-2 rounded-full border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
                             <Text
                               className={`text-sm font-medium ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
                               {cat.name}
@@ -333,7 +340,7 @@ export default function AddSubscriptionScreen() {
                   <View className="flex-row gap-3">
                     <TouchableOpacity
                       onPress={() => setNextDate(new Date())}
-                      className={`flex-1 items-center rounded-full border py-2.5 ${nextDate.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 items-center rounded-full border py-3 ${nextDate.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
                       <Text
                         className={`text-xs font-semibold ${nextDate.toDateString() === new Date().toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
                         Today
@@ -344,7 +351,7 @@ export default function AddSubscriptionScreen() {
                         setCalendarMonth(new Date(nextDate));
                         setIsDatePickerOpen(true);
                       }}
-                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-full border px-3 py-2.5 ${nextDate.toDateString() !== new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-full border px-3 py-3 ${nextDate.toDateString() !== new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
                       <Icon
                         as={Calendar}
                         size={12}
@@ -416,6 +423,7 @@ export default function AddSubscriptionScreen() {
             <View style={{ height: insets.bottom }} />
           </View>
         </KeyboardAvoidingView>
+      </SlideSheet>
 
       <TransactionDatePickerModal
         visible={isDatePickerOpen}

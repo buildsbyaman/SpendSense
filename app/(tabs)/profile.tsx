@@ -177,6 +177,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
                 <Text className="text-sm font-medium text-muted">Dark Mode</Text>
                 <TouchableOpacity
                   activeOpacity={0.8}
+                  hitSlop={{top:8,bottom:8,left:8,right:8}}
                   onPress={() => {
                     const next = isDark ? 'light' : 'dark';
                     setColorScheme(next);
