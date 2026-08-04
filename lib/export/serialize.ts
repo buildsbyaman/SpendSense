@@ -146,7 +146,7 @@ export async function buildPdfBytes(
 
   // Embed hidden payload for import round-trip (visible output unchanged). The
   // payload is capped to the same limits the import screen enforces so a large
-  // export can never produce a PDF that its own import would reject (>5MB).
+  // export can never produce a PDF that its own import would reject (>20MB).
   if (profile) {
     const payloadTables = tables.map((t) => ({
       title: t.title,

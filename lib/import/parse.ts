@@ -6,16 +6,16 @@ export interface ParsedFile {
   tables: ExportedTable[];
 }
 
-export const MAX_ROWS_PER_TABLE = 10_000;
-export const MAX_SHEETS = 25;
-export const MAX_TOTAL_ROWS = 50_000;
-const MAX_COLUMNS = 100;
+export const MAX_ROWS_PER_TABLE = 100_000;
+export const MAX_SHEETS = 100;
+export const MAX_TOTAL_ROWS = 500_000;
+const MAX_COLUMNS = 200;
 
 // Upper bound on total decompressed size of an XLSX archive. The import screen
-// caps the file at ~5MB of *compressed* bytes, which does not bound how much a
+// caps the file at ~20MB of *compressed* bytes, which does not bound how much a
 // crafted zip can inflate to (zip-bomb). SheetJS decompresses the whole archive
 // before any row cap applies, so we pre-validate the central directory.
-const MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 500 * 1024 * 1024;
 
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 

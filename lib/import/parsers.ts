@@ -42,7 +42,7 @@ export function parseDisplayDate(str: string): string | null {
   return result.toISOString();
 }
 
-const MAX_IMPORT_AMOUNT = 1e12;
+const MAX_IMPORT_AMOUNT = 1e13;
 
 export function parseDisplayAmount(str: string): number | null {
   const cleaned = str.replace(/[^0-9.\-]/g, '');

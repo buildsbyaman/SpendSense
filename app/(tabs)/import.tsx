@@ -133,12 +133,12 @@ export default function ImportScreen() {
 
       const asset = result.assets[0];
 
-      // Reject files larger than 5MB to prevent memory exhaustion / DoS
+      // Reject files larger than 20MB to prevent memory exhaustion / DoS
       if (asset.size && asset.size > MAX_IMPORT_FILE_SIZE) {
         Toast.show({
           type: 'error',
           text1: 'File Too Large',
-          text2: 'Please select a file under 5MB.',
+          text2: 'Please select a file under 20MB.',
         });
         return;
       }
@@ -155,7 +155,7 @@ export default function ImportScreen() {
           Toast.show({
             type: 'info',
             text1: 'Large File',
-            text2: 'Rows were limited to 10,000 per table / 50,000 total. Extra rows were skipped.',
+            text2: 'Rows were limited to 100,000 per table / 500,000 total. Extra rows were skipped.',
           });
         }
       } catch (err) {

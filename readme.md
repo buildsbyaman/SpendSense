@@ -169,9 +169,10 @@ The database uses a 12-version forward-only migration system tracked via `PRAGMA
 
 The import subsystem includes several protections against crafted or malicious files:
 
-- **ZIP bomb protection** -- Uncompressed data is capped at 200 MB
+- **ZIP bomb protection** -- Uncompressed data is capped at 500 MB
 - **Prototype pollution guards** -- Input is sanitized before processing
-- **Row and column caps** -- 10,000 rows per table, 25 sheets max, 50,000 total rows
+- **Row and column caps** -- 100,000 rows per table, 100 sheets max, 500,000 total rows
+- **File size cap** -- Files up to 20 MB accepted
 - **File type validation** -- Only JSON, Excel (.xlsx), and SpendSense PDF formats accepted
 
 ### Data Privacy

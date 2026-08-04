@@ -2,7 +2,7 @@
   "expo": {
     "name": "SpendSense",
     "slug": "SpendSense",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/favicon.png",
     "scheme": "SpendSense",
@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "com.buildsbyaman.spendsense",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/favicon.png",
         "backgroundColor": "#ffffff"
