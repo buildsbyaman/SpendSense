@@ -11,7 +11,7 @@ interface SectionCardProps {
 export function SectionCard({ title, headerRight, children, className = '' }: SectionCardProps) {
   return (
     <View
-      className={`mb-4 rounded-xl border border-border bg-surface p-5 shadow-xs ${className}`}>
+      className={`mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs ${className}`}>
       {title || headerRight ? (
         <>
           <View className="mb-3 flex-row items-center justify-between">

@@ -15,11 +15,18 @@ import { getCategoryColor, getCategoryIcon, sanitizeAmountInput } from '@/utils/
 import Toast from 'react-native-toast-message';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useColorScheme } from 'nativewind';
+import { PLACEHOLDER_COLORS } from '@/lib/theme';
 
 export default function AddBudgetScreen() {
+  const { colorScheme } = useColorScheme();
   const { budgets, addBudget, updateBudget, deleteBudget, getSortedCategories, userProfile } =
     useApp();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
+
+  const placeholderColor =
+    colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
 
   const [selectedCategory, setSelectedCategory] = useState<string>(
     () => getSortedCategories('expense')[0]?.name || ''
@@ -27,6 +34,7 @@ export default function AddBudgetScreen() {
   const [amount, setAmount] = useState<string>('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const sheetRef = useRef<SlideSheetHandle>(null);
 
   const expenseCategories = getSortedCategories('expense');
@@ -117,6 +125,10 @@ export default function AddBudgetScreen() {
   };
 
   const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
     if (editId) {
       deleteBudget(editId);
       Toast.show({
@@ -124,6 +136,7 @@ export default function AddBudgetScreen() {
         text1: 'Budget Deleted',
         text2: 'Your budget has been removed',
       });
+      setShowDeleteConfirm(false);
       handleClose();
     }
   };
@@ -232,7 +245,7 @@ export default function AddBudgetScreen() {
                       className={`rounded-xl border bg-surface py-3.5 pl-10 pr-5 text-base font-semibold text-foreground ${error ? 'border-red-500' : focusedInput === 'amount' ? 'border-primary' : 'border-border'}`}
                       placeholder="0.00"
                       keyboardType="decimal-pad"
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={placeholderColor}
                       onFocus={() => setFocusedInput('amount')}
                       onBlur={() => setFocusedInput(null)}
                     />
@@ -261,6 +274,16 @@ export default function AddBudgetScreen() {
           </View>
         </KeyboardAvoidingView>
       </SlideSheet>
+
+      <ConfirmDialog
+        visible={showDeleteConfirm}
+        title="Delete Budget"
+        message="Are you sure you want to delete this budget? This cannot be undone."
+        confirmText="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </View>
   );
 }

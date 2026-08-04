@@ -29,7 +29,7 @@ export function TrendChart({ data, type }: TrendChartProps) {
     1
   );
   const maxVal = niceCeil(maxRaw);
-  const visualOffset = maxVal * 0.05; // 5% floor lift
+  const visualOffset = maxVal * 0.02; // 2% floor lift
 
   const chartColor = showExpense ? colors.expense : colors.income;
 
@@ -63,11 +63,10 @@ export function TrendChart({ data, type }: TrendChartProps) {
       width={fitWidth}
       hideDataPoints
       spacing={spacing}
-      scrollToEnd={isScrollable}
       scrollAnimation={false}
       showScrollIndicator={false}
       curved
-      curvature={0}
+      curvature={0.0}
       color={chartColor}
       thickness={2}
       startFillColor={chartColor}

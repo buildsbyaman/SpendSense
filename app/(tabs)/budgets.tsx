@@ -80,7 +80,8 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
         contentContainerStyle={{
           paddingBottom: 120,
           paddingHorizontal: 20,
-        }}>
+        }}
+        keyboardDismissMode="on-drag">
         
         {budgets.length === 0 ? (
           <EmptyState
@@ -120,7 +121,7 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
                   key={bp.id}
                   activeOpacity={0.7}
                   onPress={() => handleEdit(bp.id)}
-                  className="mb-4 rounded-xl bg-surface p-5 border border-border shadow-xs">
+                  className="mb-4 rounded-xl bg-surface p-6 border border-border shadow-xs">
                   
                   <View className="mb-4 flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3">

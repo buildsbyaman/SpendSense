@@ -93,8 +93,9 @@ Additional screens are reachable from the Profile tab (Manage section):
 | Cross-platform framework | React Native 0.85 via Expo SDK 56                         |
 | Routing                  | Expo Router (file-based, typed routes)                    |
 | Styling                  | Tailwind CSS 3.4 via NativeWind 4 (CSS custom properties) |
+| UI primitives            | shadcn/ui style (new-york variant) via @rn-primitives     |
 | Icons                    | Lucide React Native                                       |
-| Local database           | SQLite via expo-sqlite                                    |
+| Local database           | SQLite via expo-sqlite (async API, WAL mode)              |
 | Charts                   | react-native-gifted-charts, react-native-svg              |
 | PDF generation           | jspdf + jspdf-autotable                                   |
 | Excel handling           | xlsx (SheetJS)                                            |
@@ -102,7 +103,84 @@ Additional screens are reachable from the Profile tab (Manage section):
 | Toasts                   | react-native-toast-message                                |
 | File picking             | expo-document-picker, expo-image-picker, expo-sharing     |
 | Animations               | React Native Reanimated 4                                 |
+| Blur effects             | expo-blur                                                 |
+| Persistence              | @react-native-async-storage/async-storage                 |
+| React                    | React 19 + React Native Web                               |
 | Language                 | TypeScript 6 (strict mode)                                |
+| Formatting               | Prettier with Tailwind CSS plugin                         |
+
+---
+
+## Architecture
+
+SpendSense follows a **local-first, offline-only** pattern with no backend, no API, and no cloud dependency.
+
+### State Management
+
+A layered React Context architecture split by domain:
+
+1. **`useAppCore`** (`context/state/core.ts`) -- Owns all `useState` hooks and refs for every data collection (accounts, transactions, categories, budgets, subscriptions, profile). Refs are re-synced on every render to avoid stale closures.
+
+2. **Domain state hooks** (`context/state/useWalletsState.ts`, `useTransactionsState.ts`, etc.) -- Each receives the core and adds mutation callbacks (add/update/delete) that persist to SQLite and update state atomically.
+
+3. **Higher-level hooks** (`context/hooks/useProfileState.ts`, `useDataManagement.ts`) -- Compose multiple domain hooks for operations like "update currency and convert all amounts" or "clear all data."
+
+4. **`AppProvider`** (`context/AppContext.tsx`) -- Composes everything into a single React Context. On mount, it calls `loadInitialData()` which reads all tables, runs subscription auto-billing, and hydrates state in one pass.
+
+### Data Access
+
+- **`lib/database.ts`** -- Singleton database initialization with WAL mode and a sequential migration system (12 versions via `PRAGMA user_version`).
+- **`lib/db/*`** -- Split by entity (account, transaction, category, profile, budget, subscription, reset). Each module exports async CRUD functions.
+- **`lib/repository.ts`** -- Barrel re-export for clean imports.
+
+### Theming
+
+All colors, radii, shadows, and font tokens are defined as CSS custom properties in `global.css` with light/dark variants. `tailwind.config.js` maps every CSS variable to a Tailwind utility class. Theme is toggled via NativeWind's `useColorScheme()` and persisted to AsyncStorage.
+
+---
+
+## Database
+
+SpendSense uses **SQLite** via `expo-sqlite` with an async API and WAL mode enabled for concurrent read performance.
+
+### Tables
+
+| Table | Purpose |
+| --- | --- |
+| `accounts` | Wallets (bank, card, digital) with balance, type, default flag |
+| `transactions` | Income/expense records with amount, category, date, wallet FK |
+| `profile` | Singleton row: name, currency symbol/code, avatar, onboarding state |
+| `custom_categories` | User-created categories with icon and color |
+| `deleted_default_categories` | Tracks removed default category names |
+| `category_order` | JSON array of category names per type (expense/income) |
+| `wallet_order` | JSON array of wallet IDs for drag-to-reorder |
+| `budgets` | Per-category spending limits |
+| `subscriptions` | Recurring bills with cycle, next billing date, optional end date |
+
+### Migrations
+
+The database uses a 12-version forward-only migration system tracked via `PRAGMA user_version`. New installations start at version 12. Existing installations migrate incrementally on launch. All migrations are idempotent.
+
+---
+
+## Security
+
+### Import Hardening
+
+The import subsystem includes several protections against crafted or malicious files:
+
+- **ZIP bomb protection** -- Uncompressed data is capped at 200 MB
+- **Prototype pollution guards** -- Input is sanitized before processing
+- **Row and column caps** -- 10,000 rows per table, 25 sheets max, 50,000 total rows
+- **File type validation** -- Only JSON, Excel (.xlsx), and SpendSense PDF formats accepted
+
+### Data Privacy
+
+- All data is stored on-device only
+- No accounts, no login, no registration
+- No analytics SDKs or tracking
+- No network requests (entirely offline)
+- Exports are generated locally and shared via the OS share sheet
 
 ---
 
@@ -139,65 +217,166 @@ Press `i` for iOS, `a` for Android, or `w` for web.
 
 ---
 
+## Environment Variables
+
+| Variable | Purpose | Required |
+| --- | --- | --- |
+| `EXPO_PUBLIC_DEV_MODE` | Set to `'1'` to enable developer tools (hidden demo data loading). Must be combined with `__DEV__` being true. | No (dev only) |
+
+No API keys, backend URLs, or secrets are used. The app is fully offline.
+
+---
+
+## Dev Tools
+
+A hidden developer tools menu is available behind a **5-tap gesture** on the profile screen. It is guarded by both the `__DEV__` build flag and the `EXPO_PUBLIC_DEV_MODE` environment variable, so it never appears in production builds.
+
+---
+
+## Deployment
+
+### iOS
+
+```bash
+npx expo prebuild -p ios
+# Then build via Xcode or EAS Build
+```
+
+### Android
+
+```bash
+npx expo prebuild -p android
+# Then build via Android Studio or EAS Build
+```
+
+Package name: `com.buildsbyaman.spendsense`
+
+### Web
+
+```bash
+npx expo export
+```
+
+Produces a static site suitable for any static host (Netlify, Vercel, GitHub Pages). The Metro config sets `output: "static"` and adds COOP/COEP headers required by jsPDF's `SharedArrayBuffer` usage. These headers must be configured at the hosting level.
+
+---
+
 ## Project Structure
 
 ```
-app/
-  _layout.tsx                  Root stack layout + theme provider
-  +html.tsx                    Web HTML shell
-  +not-found.tsx               404 screen
-  onboarding.tsx               First-run setup flow
-  currency.tsx                 Currency settings + conversion
-  add-transaction.tsx          Bottom-sheet modal for new/edit transaction
-  add-wallet.tsx               Bottom-sheet modal for new wallet
-  add-budget.tsx               Bottom-sheet modal for new budget
-  add-subscription.tsx         Bottom-sheet modal for new subscription
-  (tabs)/
-    _layout.tsx                Animated tab slot + bottom bar
-    index.tsx                  Home -- net balance, income/expense summary
-    transactions.tsx           Transaction list, search, filter, sort
-    wallets.tsx                Wallet management
-    profile.tsx                Settings hub
-    analytics.tsx              Charts and breakdowns
-    subscriptions.tsx          Recurring bill tracking
-    budgets.tsx                Per-category budget limits
-    categories.tsx             Custom category management
-    import.tsx                 Import from JSON, Excel, or PDF
-    export.tsx                 Export to PDF, JSON, or Excel
+app/                              Expo Router file-based screens
+  _layout.tsx                       Root stack layout (providers, theme, toast)
+  +html.tsx                         Web HTML shell
+  +not-found.tsx                    404 screen
+  onboarding.tsx                    First-run setup flow
+  currency.tsx                      Currency settings + conversion
+  add-transaction.tsx               Bottom-sheet modal (create/edit transaction)
+  add-wallet.tsx                    Bottom-sheet modal (new wallet)
+  add-budget.tsx                    Bottom-sheet modal (new budget)
+  add-subscription.tsx              Bottom-sheet modal (new subscription)
+  (tabs)/                           Tab-navigated screens
+    _layout.tsx                       Animated tab slot + glassmorphic bottom bar
+    index.tsx                         Home -- net balance, income/expense summary
+    transactions.tsx                  Transaction list with search, filter, sort
+    wallets.tsx                       Wallet management
+    profile.tsx                       Settings hub
+    analytics.tsx                     Charts and breakdowns
+    subscriptions.tsx                 Recurring bill tracking
+    budgets.tsx                       Per-category budget limits
+    categories.tsx                    Custom category management
+    import.tsx                        Import from JSON, Excel, or PDF
+    export.tsx                        Export to PDF, JSON, or Excel
 
-components/
-  layout/
-    tab-bar.tsx                Bottom navigation bar
-    animated-tab-slot.tsx      Tab screen transitions
-  ui/                          Button, text, icon, header, avatar, etc.
-  transactions/                TransactionItem, type toggle, date picker, filter bar
-  wallets/                     WalletItem, WalletList, delete modal, options menu
-  subscriptions/               SubscriptionItem
-  analytics/                   CategoryDonut, MonthlyBarChart, TrendChart, SummaryCards
-  profile/                     ManageSection, SettingsOptionsMenu
+components/                       UI components organized by domain
+  layout/                           tab-bar.tsx, animated-tab-slot.tsx
+  ui/                               15 shared primitives (Button, Text, Icon, Avatar, etc.)
+  analytics/                        CategoryDonut, TrendChart, SummaryCards
+  budgets/                          Budget item/list components
+  categories/                       Category management components
+  currency/                         Currency preset grid, custom form, conversion
+  import/                           Import wizard components
+  profile/                          ProfileCard, ManageSection, SettingsMenu, DevTools
+  subscriptions/                    SubscriptionItem
+  transactions/                     TransactionItem, type toggle, date picker, filter bar
+  wallets/                          WalletItem, WalletList, delete modal, options menu
 
-lib/
-  database.ts                  SQLite setup, migrations, seed data
-  repository.ts                Data access layer (CRUD for all tables)
-  balance.ts                   Balance adjustment helpers
-  id.ts                        Shared ID generator
-  seed-data.ts                 Demo data generation
-  theme.ts                     Light/dark theme definitions
-  theme-persistence.ts         AsyncStorage-backed theme preference
-  chart-theme.ts               Chart color scheme
-  utils.ts                     cn() utility
-  export/                      buildExportData, serialize, formatters, download, share
-  import/                      parse, merge, apply
+lib/                              Core business logic and data layer
+  database.ts                       SQLite setup, WAL mode, 12-version migration system
+  db/                               Split data-access modules (9 files)
+    index.ts                          Barrel re-export
+    types.ts                          DB type alias
+    account.ts                        CRUD for accounts (wallets)
+    transaction.ts                    CRUD for transactions + reassignment helpers
+    category.ts                       CRUD for custom categories, deleted defaults
+    profile.ts                        Profile CRUD + currency conversion logic
+    budget.ts                         CRUD for budgets
+    subscription.ts                   CRUD for subscriptions
+    reset.ts                          Full data wipe + demo data seeding
+  repository.ts                     Barrel re-export of lib/db/*
+  balance.ts                        Balance adjustment helpers
+  billing.ts                        Subscription auto-billing engine (up to 24 charges)
+  id.ts                             Unique ID generator (timestamp + counter + crypto)
+  seed-data.ts                      Deterministic demo data generator (PRNG, seed=42)
+  theme.ts                          Light/dark theme color definitions
+  theme-persistence.ts              AsyncStorage-backed theme preference
+  chart-theme.ts                    Chart color scheme
+  dev-tools.ts                      Dev-only features (guarded by __DEV__ + env var)
+  utils.ts                          cn() utility (clsx + tailwind-merge)
+  export/                           Export subsystem (8 files + tables/)
+    constants.ts                      Data type and format definitions
+    formatters.ts                     Main export dispatcher (JSON/XLSX/PDF)
+    formatters.web.ts                 Web-specific export path
+    serialize.ts                      Serialization to JSON, XLSX bytes, PDF bytes
+    share.native.ts                   OS share sheet integration (native)
+    download.ts                       Download helpers
+    tables/                           Table-specific export builders (9 files)
+  import/                           Import subsystem (12 files + plans/)
+    parse.ts                          JSON/XLSX/PDF parsers with security guards
+    parseFile.ts                      File reading coordinator
+    parsers.ts                        Parser dispatch
+    readFile.ts                       File system reading
+    merge.ts                          Import plan builder (merge/replace modes)
+    apply.ts                          Import execution engine
+    base64.ts                         Base64 utilities
+    constants.ts                      Import constants
+    pdfPayload.ts                     PDF payload encoding/decoding
+    planStats.ts                      Import statistics calculation
+    table-kind.ts                     Table type detection
+    plans/                            Per-entity import plans (7 files)
 
-utils/
-  transaction.ts               Transaction types, categories, validation
-  wallet.ts                    Wallet types and helpers
-  subscription.ts              Subscription types and helpers
-  analytics.ts                 Savings rate and other calculations
+utils/                            Domain types, helpers, and calculations
+  transaction.ts                    Transaction interface, validation, search
+  categories.ts                     Category icons, colors, keyword mapping (60+)
+  wallet.ts                         Account interface, balance formatting
+  subscription.ts                   Subscription interface, billing cycle math
+  date.ts                           Date formatting helpers
+  avatar.ts                         Avatar URI sanitization
+  analytics/                        Analytics calculations (4 files)
+    index.ts                          Barrel export
+    filters.ts                        Transaction filtering (by month, year, type)
+    format.ts                         Number/currency formatting
+    series.ts                         Time series (daily, weekly, monthly, yearly)
 
-context/
-  AppContext.tsx                Central data store (all state + persistence)
-  TabNavigationContext.tsx      Programmatic tab navigation
+context/                          React Context state management
+  AppContext.tsx                     Central data store (all state + persistence)
+  TabNavigationContext.tsx           Programmatic tab navigation
+  types.ts                          AppContextType and UserProfile interfaces
+  initSnapshot.ts                   Initial data loading + auto-billing on launch
+  state/                            State management hooks (6 files)
+    core.ts                             useAppCore -- all useState hooks + refs
+    useCategoriesState.ts
+    useWalletsState.ts
+    useTransactionsState.ts
+    useSubscriptionsState.ts
+    useBudgetsState.ts
+  hooks/                            Higher-level hooks (2 files)
+    useProfileState.ts                  Profile update + currency conversion
+    useDataManagement.ts                Refresh all, clear all, seed demo data
+
+hooks/                            Shared custom hooks
+  useBudgetWarning.ts               Budget over-spend detection
+  useExpandAnimation.ts             Expand/collapse animation
+  useModalAnimation.ts              Modal animation helpers
 ```
 
 ---
@@ -208,15 +387,7 @@ The app uses CSS custom properties defined in `global.css`. Both light and dark 
 
 Dark mode is toggled from Settings and persisted locally via AsyncStorage. On launch the app reads the saved preference and applies it before the first render. The system color scheme is used as the default for new installations.
 
----
-
-## Data Privacy
-
-- All data is stored on-device only
-- No accounts, no login, no registration
-- No analytics SDKs or tracking
-- Exports are generated locally and shared via the OS share sheet
-- You control when and where your data leaves the device
+For the full UI/UX design system, see [`design.md`](design.md).
 
 ---
 
@@ -225,6 +396,12 @@ Dark mode is toggled from Settings and persisted locally via AsyncStorage. On la
 - iOS (requires Xcode)
 - Android (requires Android Studio)
 - Web (any modern browser)
+
+---
+
+## Testing
+
+There is no testing infrastructure in the codebase. No test runner, test files, or testing libraries are configured. Code formatting is handled by Prettier with the Tailwind CSS plugin.
 
 ---
 

@@ -1,34 +1,20 @@
-import {
-  View,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Switch,
-} from 'react-native';
+import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { X } from 'lucide-react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
-import { sanitizeAmountInput, formatDatePickerDate } from '@/utils/transaction';
 import { type SubscriptionCycle } from '@/utils/subscription';
 import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
-import { QuickDatePicker } from '@/components/transactions/QuickDatePicker';
-import { CycleSelector } from '@/components/subscriptions/CycleSelector';
-import { EndDateSelector } from '@/components/subscriptions/EndDateSelector';
-import { WalletSelector } from '@/components/wallets/WalletSelector';
-import { CategorySelector } from '@/components/categories/CategorySelector';
 import { usePrefillSubscriptionForm } from '@/components/subscriptions/usePrefillSubscriptionForm';
 import { validateSubscriptionForm } from '@/lib/subscriptionForm';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AnimatedSegment from '@/components/ui/animated-segment';
 import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
+import { SubscriptionFormFields } from '@/components/subscriptions/SubscriptionFormFields';
 
 export default function AddSubscriptionScreen() {
   const insets = useSafeAreaInsets();
@@ -190,114 +176,41 @@ export default function AddSubscriptionScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <View className="gap-5">
-                {/* Name Input */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Subscription Name</Text>
-                  <TextInput
-                    value={name}
-                    onChangeText={setName}
-                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
-                    placeholder="Netflix, Spotify, Gym, etc."
-                    placeholderTextColor={placeholderColor}
-                    onFocus={() => setFocusedInput('name')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+              <SubscriptionFormFields
+                name={name}
+                setName={setName}
+                amount={amount}
+                setAmount={setAmount}
+                cycle={cycle}
+                setCycle={setCycle}
+                isActive={isActive}
+                setIsActive={setIsActive}
+                selectedWalletId={selectedWalletId}
+                setSelectedWalletId={setSelectedWalletId}
+                category={category}
+                setCategory={setCategory}
+                nextDate={nextDate}
+                setNextDate={setNextDate}
+                hasEndDate={hasEndDate}
+                endDate={endDate}
+                onChangeHasEndDate={setHasEndDate}
+                onChangeEndDate={setEndDate}
+                onOpenEndDatePicker={() => setIsEndDatePickerOpen(true)}
+                onOpenDatePicker={() => {
+                  setCalendarMonth(new Date(nextDate));
+                  setIsDatePickerOpen(true);
+                }}
+                accounts={accounts}
+                sortedAccounts={getSortedAccounts()}
+                categoriesList={categoriesList}
+                placeholderColor={placeholderColor}
+                focusedInput={focusedInput}
+                setFocusedInput={setFocusedInput}
+                userProfile={userProfile}
+              />
 
-                {/* Amount Input */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Amount</Text>
-                  <View className="relative justify-center">
-                    <Text className="absolute left-5 z-10 text-base font-semibold text-foreground">
-                      {userProfile.currencySymbol}
-                    </Text>
-                    <TextInput
-                      value={amount}
-                      onChangeText={(text) => setAmount(sanitizeAmountInput(text))}
-                      className={`rounded-xl border bg-surface py-3.5 pl-10 pr-5 text-base font-semibold text-foreground ${focusedInput === 'amount' ? 'border-primary' : 'border-border'}`}
-                      placeholder="0.00"
-                      keyboardType="decimal-pad"
-                      placeholderTextColor={placeholderColor}
-                      onFocus={() => setFocusedInput('amount')}
-                      onBlur={() => setFocusedInput(null)}
-                    />
-                  </View>
-                </View>
-
-                {/* Cycle Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Billing Cycle</Text>
-                  <CycleSelector value={cycle} onChange={setCycle} />
-                </View>
-
-                {/* Active Toggle */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Status</Text>
-                  <AnimatedSegment<'active' | 'paused'>
-                    options={[
-                      { label: 'Active', value: 'active' },
-                      { label: 'Paused', value: 'paused' },
-                    ]}
-                    selectedValue={isActive ? 'active' : 'paused'}
-                    onChange={(val) => setIsActive(val === 'active')}
-                  />
-                  <Text className="mt-2 text-center text-xs text-muted">
-                    {isActive ? 'Auto-billing is enabled.' : 'Auto-billing is paused.'}
-                  </Text>
-                </View>
-
-                {/* Wallet Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet for Auto-Pay</Text>
-                  <WalletSelector
-                    accounts={accounts}
-                    sortedAccounts={getSortedAccounts()}
-                    selectedWalletId={selectedWalletId}
-                    onSelect={setSelectedWalletId}
-                    emptyMessage="Create a wallet first"
-                    onEmptyAction={() => {
-                      if (router.canGoBack()) router.back();
-                      router.push('/(tabs)/wallets');
-                    }}
-                  />
-                </View>
-
-                {/* Category Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
-                  <CategorySelector
-                    categories={categoriesList as Array<{ name: string; icon?: string; color?: string }>}
-                    selected={category}
-                    onSelect={setCategory}
-                  />
-                </View>
-
-                {/* Quick Date Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Next Billing Date</Text>
-                  <QuickDatePicker
-                    date={nextDate}
-                    onSelectToday={() => setNextDate(new Date())}
-                    onOpenCalendar={() => {
-                      setCalendarMonth(new Date(nextDate));
-                      setIsDatePickerOpen(true);
-                    }}
-                  />
-                </View>
-
-                {/* End Date Selector */}
-                <EndDateSelector
-                  hasEndDate={hasEndDate}
-                  endDate={endDate}
-                  nextDate={nextDate}
-                  onChangeHasEndDate={setHasEndDate}
-                  onChangeEndDate={setEndDate}
-                  onOpenPicker={() => setIsEndDatePickerOpen(true)}
-                />
-
-                <TouchableOpacity
+              <TouchableOpacity
                   onPress={handleSave}
                   disabled={
                     !amount.trim() ||
@@ -305,13 +218,12 @@ export default function AddSubscriptionScreen() {
                     parseFloat(amount) === 0 ||
                     !name.trim()
                   }
-                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
+                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-4 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
                   activeOpacity={0.7}>
                   <Text className="text-base font-medium text-white dark:text-black">
                     {editId ? 'Save Changes' : 'Save Subscription'}
                   </Text>
                 </TouchableOpacity>
-              </View>
             </ScrollView>
 
             <View style={{ height: insets.bottom }} />

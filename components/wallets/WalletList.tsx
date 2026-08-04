@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, FlatList } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Wallet, Plus } from 'lucide-react-native';
@@ -53,6 +53,45 @@ export function WalletList({
 
   const ItemSeparator = () => <View className="h-[1px] bg-divider" />;
 
+  const renderItem = ({ item }: { item: Account }) => (
+    <WalletItem
+      account={item}
+      isExpanded={!reorderMode && expandedWalletId === item.id}
+      onToggleExpand={() => onToggleExpand(item.id)}
+      onSetDefault={() => onSetDefault(item.id)}
+      onDelete={() => onDeleteClick(item.id)}
+      onEditClick={() => onEditClick(item.id)}
+      reorderMode={reorderMode}
+    />
+  );
+
+  const renderDragItem = ({ item, drag, isActive }: { item: Account; drag: () => void; isActive: boolean }) => (
+    <ScaleDecorator>
+      <WalletItem
+        account={item}
+        isExpanded={false}
+        onToggleExpand={() => onToggleExpand(item.id)}
+        onSetDefault={() => onSetDefault(item.id)}
+        onDelete={() => onDeleteClick(item.id)}
+        onEditClick={() => onEditClick(item.id)}
+        drag={drag}
+        isDragging={isActive}
+        reorderMode={reorderMode}
+      />
+    </ScaleDecorator>
+  );
+
+  const commonProps = {
+    ref: listRef,
+    data: accounts,
+    keyExtractor: (item: Account) => item.id,
+    ListHeaderComponent: listHeader,
+    ItemSeparatorComponent: ItemSeparator,
+    showsVerticalScrollIndicator: false,
+    style: maxHeight && maxHeight > 0 ? { maxHeight } : undefined,
+    containerStyle: { flexShrink: 1 } as any,
+  };
+
   return (
     <View
       className="overflow-hidden rounded-xl border border-border bg-surface"
@@ -61,34 +100,18 @@ export function WalletList({
         flexShrink: 1,
         ...(maxHeight && maxHeight > 0 ? { maxHeight } : {}),
       }}>
-      <DraggableFlatList
-        ref={listRef}
-        data={accounts}
-        keyExtractor={(item) => item.id}
-        onDragEnd={({ data }) => onReorderEnd?.(data)}
-        renderItem={({ item, drag, isActive }) => {
-          return (
-            <ScaleDecorator>
-              <WalletItem
-                account={item}
-                isExpanded={!reorderMode && expandedWalletId === item.id}
-                onToggleExpand={() => onToggleExpand(item.id)}
-                onSetDefault={() => onSetDefault(item.id)}
-                onDelete={() => onDeleteClick(item.id)}
-                onEditClick={() => onEditClick(item.id)}
-                drag={reorderMode ? drag : undefined}
-                isDragging={isActive}
-                reorderMode={reorderMode}
-              />
-            </ScaleDecorator>
-          );
-        }}
-        ListHeaderComponent={listHeader}
-        ItemSeparatorComponent={ItemSeparator}
-        showsVerticalScrollIndicator={false}
-        style={maxHeight && maxHeight > 0 ? { maxHeight } : undefined}
-        containerStyle={{ flexShrink: 1 }}
-      />
+      {reorderMode ? (
+        <DraggableFlatList
+          {...commonProps}
+          renderItem={renderDragItem}
+          onDragEnd={({ data }) => onReorderEnd?.(data)}
+        />
+      ) : (
+        <FlatList
+          {...commonProps}
+          renderItem={renderItem}
+        />
+      )}
     </View>
   );
 }

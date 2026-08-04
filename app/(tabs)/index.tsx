@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import { getCategoryDetails } from '@/utils/transaction';
-import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt, Wallet, Tag, Target, Calendar, TrendingUp } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt, Wallet, Tags, PiggyBank, Repeat, TrendingUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { parseBalance, formatNumber } from '@/utils/wallet';
 import { useTabNavigation } from '@/context/TabNavigationContext';
@@ -120,13 +120,13 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           <View className="mb-4 h-[1px] bg-divider" />
           <View className="flex-row px-6 pb-2">
             {/* Column 1 */}
-            <View className="flex-1 gap-3 pr-4">
+            <View className="flex-1 gap-3">
               <TouchableOpacity
                 onPress={() => navigateTab('categories', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
                 <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
-                  <Icon as={Tag} size={14} className="text-primary" />
+                  <Icon as={Tags} size={14} className="text-primary" />
                 </View>
                 <Text className="text-sm font-semibold text-foreground">Categories</Text>
               </TouchableOpacity>
@@ -136,7 +136,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
                 <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
-                  <Icon as={Target} size={14} className="text-primary" />
+                  <Icon as={PiggyBank} size={14} className="text-primary" />
                 </View>
                 <Text className="text-sm font-semibold text-foreground">Budgets</Text>
               </TouchableOpacity>
@@ -146,7 +146,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
             <View className="mx-4 w-[1px] bg-divider" />
 
             {/* Column 2 */}
-            <View className="flex-1 gap-3 pl-6">
+            <View className="flex-1 gap-3">
               <TouchableOpacity
                 onPress={() => navigateTab('analytics', { referrer: 'home' })}
                 activeOpacity={0.7}
@@ -162,7 +162,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
                 <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
-                  <Icon as={Calendar} size={14} className="text-primary" />
+                  <Icon as={Repeat} size={14} className="text-primary" />
                 </View>
                 <Text className="text-sm font-semibold text-foreground">Subscriptions</Text>
               </TouchableOpacity>
@@ -193,7 +193,8 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           flexGrow: 1,
           paddingBottom: 120,
           paddingHorizontal: 20,
-        }}>
+        }}
+        keyboardDismissMode="on-drag">
         {/* Recent Transactions Section */}
         <View className="gap-4">
 
@@ -206,6 +207,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                   description="Add a wallet to start tracking your balances and transactions."
                   buttonText="Add Wallet"
                   onButtonPress={() => router.push('/add-wallet')}
+                  className="mt-6 items-center justify-center px-6"
                 />
               </View>
             ) : (
@@ -216,6 +218,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                   description="You haven't logged any transactions. Add your first transaction to get started."
                   buttonText="Add Your First Transaction"
                   onButtonPress={() => router.push('/add-transaction')}
+                  className="mt-6 items-center justify-center px-6"
                 />
               </View>
             )

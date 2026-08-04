@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import AnimatedSegment from '@/components/ui/animated-segment';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
+import Toast from 'react-native-toast-message';
 
 export default function SubscriptionsScreen({ referrer }: { referrer?: string }) {
   const insets = useSafeAreaInsets();
@@ -49,6 +50,11 @@ export default function SubscriptionsScreen({ referrer }: { referrer?: string })
   const confirmDelete = () => {
     if (subscriptionToDelete) {
       deleteSubscription(subscriptionToDelete);
+      Toast.show({
+        type: 'success',
+        text1: 'Subscription Deleted',
+        text2: 'Subscription has been removed.',
+      });
       setSubscriptionToDelete(null);
       setExpandedId(null);
     }
@@ -84,7 +90,8 @@ export default function SubscriptionsScreen({ referrer }: { referrer?: string })
           paddingBottom: 120,
           paddingHorizontal: 20,
           paddingTop: 16,
-        }}>
+        }}
+        keyboardDismissMode="on-drag">
         {filteredSubscriptions.length === 0 ? (
           <EmptyState
             icon={Repeat}

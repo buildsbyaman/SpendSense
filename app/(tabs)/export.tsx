@@ -191,7 +191,8 @@ export default function ExportScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">
         {/* ── What to export ── */}
         <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">What to export</Text>
@@ -241,7 +242,7 @@ export default function ExportScreen() {
             }
           />
           <Text
-            className={`text-base font-semibold ${
+            className={`text-base font-medium ${
               exporting || selectedTypes.length === 0 ? 'text-muted' : 'text-white dark:text-black'
             }`}>
             {exporting ? 'Exporting…' : 'Export'}

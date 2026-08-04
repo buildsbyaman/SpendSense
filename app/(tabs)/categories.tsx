@@ -84,21 +84,29 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   const executeDelete = async () => {
     if (!categoryToDelete) return;
 
-    if (categoryToDelete.isCustom && categoryToDelete.id) {
-      await deleteCustomCategory(categoryToDelete.id);
-    } else {
-      await deleteDefaultCategory(categoryToDelete.name);
+    try {
+      if (categoryToDelete.isCustom && categoryToDelete.id) {
+        await deleteCustomCategory(categoryToDelete.id);
+      } else {
+        await deleteDefaultCategory(categoryToDelete.name);
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Category Deleted',
+        text2: `"${categoryToDelete.name}" has been removed.`,
+      });
+    } catch {
+      Toast.show({
+        type: 'error',
+        text1: 'Delete Failed',
+        text2: 'Could not delete the category.',
+      });
+    } finally {
+      setDeleteDialogVisible(false);
+      setCategoryToDelete(null);
+      setExpandedCategoryId(null);
     }
-
-    Toast.show({
-      type: 'success',
-      text1: 'Category Deleted',
-      text2: `"${categoryToDelete.name}" has been removed.`,
-    });
-
-    setDeleteDialogVisible(false);
-    setCategoryToDelete(null);
-    setExpandedCategoryId(null);
   };
 
   const enterReorderMode = () => {

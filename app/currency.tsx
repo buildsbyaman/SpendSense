@@ -3,7 +3,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   LayoutAnimation,
@@ -11,31 +10,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
-import { Icon } from '@/components/ui/icon';
-import { Info, Check, Plus } from 'lucide-react-native';
-
 import { useApp } from '@/context/AppContext';
-import { formatNumber } from '@/utils/wallet';
-import AnimatedSegment from '@/components/ui/animated-segment';
 import Toast from 'react-native-toast-message';
-import { PLACEHOLDER_COLORS } from '@/lib/theme';
-import { useColorScheme } from 'nativewind';
 import { useTabNavigation } from '@/context/TabNavigationContext';
-
-const PRESET_CURRENCIES = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-  { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
-  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-];
-
-const CUSTOM_KEY = '__CUSTOM__';
+import { CurrencyPresetGrid, CUSTOM_KEY, PRESET_CURRENCIES } from '@/components/currency/CurrencyPresetGrid';
+import { CustomCurrencyForm } from '@/components/currency/CustomCurrencyForm';
+import { ConversionSection } from '@/components/currency/ConversionSection';
+import { useColorScheme } from 'nativewind';
+import { PLACEHOLDER_COLORS } from '@/lib/theme';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function CurrencySettings() {
   const insets = useSafeAreaInsets();
@@ -58,6 +41,7 @@ export default function CurrencySettings() {
   const [conversionRate, setConversionRate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [showConvertConfirm, setShowConvertConfirm] = useState(false);
 
   const placeholderColor =
     colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
@@ -77,7 +61,6 @@ export default function CurrencySettings() {
   const isSameCurrency = effectiveNewCurrency?.code === userProfile.currencyCode;
 
   const parsedRate = parseFloat(conversionRate);
-  const previewAmount = formatNumber(10 * (parsedRate || 1));
 
   const handleSelectPreset = (code: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -111,6 +94,18 @@ export default function CurrencySettings() {
       });
       return;
     }
+
+    if (shouldConvert === 'yes') {
+      setShowConvertConfirm(true);
+      return;
+    }
+
+    await executeSave();
+  };
+
+  const executeSave = async () => {
+    if (!effectiveNewCurrency) return;
+    setShowConvertConfirm(false);
 
     try {
       setIsSaving(true);
@@ -146,179 +141,44 @@ export default function CurrencySettings() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">
         {/* ── Section 1: Select Currency ── */}
-        <View className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
-          <Text className="mb-1 text-sm font-medium text-muted">Active Currency</Text>
-          <Text className="mb-4 text-lg font-bold text-foreground">
-            {userProfile.currencyCode} · {userProfile.currencySymbol}
-          </Text>
-
-          <Text className="mb-3 text-sm font-medium text-muted">Switch to</Text>
-
-          {/* Pill chips grid */}
-          <View className="flex-row flex-wrap gap-2">
-            {PRESET_CURRENCIES.map((c) => {
-              const isSelected = selectedCode === c.code;
-              return (
-                <TouchableOpacity
-                  key={c.code}
-                  onPress={() => handleSelectPreset(c.code)}
-                  activeOpacity={0.75}
-                  className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
-                    isSelected
-                      ? 'border-primary bg-primary/10 dark:bg-primary/15'
-                      : 'border-border bg-surface'
-                  }`}>
-                  <Text
-                    className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
-                    {c.symbol}
-                  </Text>
-                  <Text
-                    className={`text-xs font-semibold ${isSelected ? 'text-primary opacity-80' : 'text-muted'}`}>
-                    {c.code}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-
-            {/* + Custom chip */}
-            <TouchableOpacity
-              onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setSelectedCode(CUSTOM_KEY);
-              }}
-              activeOpacity={0.75}
-              className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
-                isCustom
-                  ? 'border-primary bg-primary/10 dark:bg-primary/15'
-                  : 'border-dashed border-border bg-surface'
-              }`}>
-              <Icon
-                as={isCustom ? Check : Plus}
-                size={13}
-                className={isCustom ? 'text-primary' : 'text-muted'}
-              />
-              <Text
-                className={`text-xs font-semibold ${isCustom ? 'text-primary' : 'text-muted'}`}>
-                Custom
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Selected preview row */}
-          {!isCustom && selectedPreset && (
-            <View className="mt-4 flex-row items-center gap-3">
-              <View className={`h-[1px] flex-1 bg-divider`} />
-              <Text className="text-xs text-muted">{selectedPreset.name}</Text>
-              <View className={`h-[1px] flex-1 bg-divider`} />
-            </View>
-          )}
-        </View>
+        <CurrencyPresetGrid
+          selectedCode={selectedCode}
+          onSelect={handleSelectPreset}
+          isCustom={isCustom}
+          currencyCode={userProfile.currencyCode}
+          currencySymbol={userProfile.currencySymbol}
+        />
 
         {/* ── Section 2: Custom Currency Form ── */}
         {isCustom && (
-          <View className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
-            <Text className="mb-4 text-sm font-medium text-muted">Custom Currency Details</Text>
-
-            <View className="gap-4">
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">Full Name</Text>
-                <TextInput
-                  className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'cn' ? 'border-primary' : 'border-border'}`}
-                  placeholder="e.g. Bitcoin"
-                  placeholderTextColor={placeholderColor}
-                  value={customName}
-                  onChangeText={setCustomName}
-                  onFocus={() => setFocusedInput('cn')}
-                  onBlur={() => setFocusedInput(null)}
-                />
-              </View>
-
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Text className="mb-2 ml-1 text-sm text-muted">Short Code</Text>
-                  <TextInput
-                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'cc' ? 'border-primary' : 'border-border'}`}
-                    placeholder="BTC"
-                    placeholderTextColor={placeholderColor}
-                    autoCapitalize="characters"
-                    maxLength={6}
-                    value={customCode}
-                    onChangeText={setCustomCode}
-                    onFocus={() => setFocusedInput('cc')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Text className="mb-2 ml-1 text-sm text-muted">Symbol</Text>
-                  <TextInput
-                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'cs' ? 'border-primary' : 'border-border'}`}
-                    placeholder="₿"
-                    placeholderTextColor={placeholderColor}
-                    maxLength={5}
-                    value={customSymbol}
-                    onChangeText={setCustomSymbol}
-                    onFocus={() => setFocusedInput('cs')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
+          <CustomCurrencyForm
+            customName={customName}
+            setCustomName={setCustomName}
+            customCode={customCode}
+            setCustomCode={setCustomCode}
+            customSymbol={customSymbol}
+            setCustomSymbol={setCustomSymbol}
+            placeholderColor={placeholderColor}
+            focusedInput={focusedInput}
+            setFocusedInput={setFocusedInput}
+          />
         )}
 
         {/* ── Section 3: Conversion ── */}
-        <View className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
-          <Text className="mb-2 ml-1 text-sm text-muted">Conversion Strategy</Text>
-
-          <AnimatedSegment<'no' | 'yes'>
-            options={[
-              { label: 'Swap symbol only', value: 'no' },
-              { label: 'Convert amounts', value: 'yes' },
-            ]}
-            selectedValue={shouldConvert}
-            onChange={(val) => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setShouldConvert(val);
-            }}
-          />
-
-          {shouldConvert === 'yes' && (
-            <View className="mt-5 gap-4">
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">
-                  1 {userProfile.currencyCode} = ? {effectiveNewCurrency?.code ?? '—'}
-                </Text>
-                <TextInput
-                  className={`rounded-xl border bg-surface px-4 py-3 text-base font-semibold text-foreground ${focusedInput === 'rate' ? 'border-primary' : 'border-border'}`}
-                  placeholder="e.g. 83.50"
-                  placeholderTextColor={placeholderColor}
-                  keyboardType="decimal-pad"
-                  value={conversionRate}
-                  onChangeText={setConversionRate}
-                  onFocus={() => setFocusedInput('rate')}
-                  onBlur={() => setFocusedInput(null)}
-                />
-              </View>
-
-              {conversionRate.trim() !== '' && parsedRate > 0 && effectiveNewCurrency && (
-                <Text className="text-center text-xs text-muted">
-                  {userProfile.currencySymbol}10.00 → {effectiveNewCurrency.symbol}
-                  {previewAmount}
-                </Text>
-              )}
-
-              <View className="flex-row items-start gap-2.5 rounded-xl bg-secondary p-4">
-                <Icon as={Info} size={14} className="mt-0.5 text-muted" />
-                <Text className="flex-1 text-xs leading-4 text-muted">
-                  All wallets, transactions, budgets and subscriptions will be permanently
-                  multiplied by this rate.
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
+        <ConversionSection
+          shouldConvert={shouldConvert}
+          setShouldConvert={setShouldConvert}
+          conversionRate={conversionRate}
+          setConversionRate={setConversionRate}
+          placeholderColor={placeholderColor}
+          focusedInput={focusedInput}
+          setFocusedInput={setFocusedInput}
+          userProfile={userProfile}
+          effectiveNewCurrency={effectiveNewCurrency}
+        />
 
         {/* ── Save Button (inside scroll, same as add-subscription) ── */}
         <TouchableOpacity
@@ -331,6 +191,16 @@ export default function CurrencySettings() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={showConvertConfirm}
+        title="Convert All Amounts"
+        message={`This will multiply all wallet balances, transactions, budgets and subscriptions by ${parsedRate}. This action cannot be undone.`}
+        confirmText="Convert"
+        destructive
+        onConfirm={executeSave}
+        onCancel={() => setShowConvertConfirm(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

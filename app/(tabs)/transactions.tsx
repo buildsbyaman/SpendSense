@@ -6,7 +6,6 @@ import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import { formatNumber } from '@/utils/wallet';
 import AnimatedSegment from '@/components/ui/animated-segment';
-import { EmptyState } from '@/components/ui/EmptyState';
 import {
   type Transaction,
   searchTransactions,
@@ -15,13 +14,14 @@ import {
 } from '@/utils/transaction';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, ChevronDown, Plus, Receipt, Wallet } from 'lucide-react-native';
+import { ChevronDown, Plus } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import Toast from 'react-native-toast-message';
 import TransactionFilterBar from '@/components/transactions/TransactionFilterBar';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
-import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { QuickStatsCards } from '@/components/transactions/QuickStatsCards';
+import { TransactionListSection } from '@/components/transactions/TransactionListSection';
 
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -173,7 +173,8 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
         contentContainerStyle={{
           paddingBottom: 120,
           paddingHorizontal: 20,
-        }}>
+        }}
+        keyboardDismissMode="on-drag">
         {transactions.length > 0 && (
           <>
             <TransactionFilterBar
@@ -201,94 +202,23 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
 
         {/* Quick Stats Cards */}
         {filter === 'all' && transactions.length > 0 && (
-          <View className="mb-6 flex-row gap-4">
-            <View className="flex-1 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs">
-              <View className="bg-income/10 dark:bg-income/20 h-10 w-10 items-center justify-center rounded-full">
-                <Icon as={ArrowDownLeft} size={20} className="text-income" />
-              </View>
-              <View>
-                <Text className="text-[10px] font-bold uppercase tracking-widest text-muted">
-                  Income
-                </Text>
-                <Text className="text-base font-bold text-income">
-                  {userProfile.currencySymbol}
-                  {formatNumber(totalIncome)}
-                </Text>
-              </View>
-            </View>
-            <View className="flex-1 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs">
-              <View className="bg-expense/10 dark:bg-expense/20 h-10 w-10 items-center justify-center rounded-full">
-                <Icon as={ArrowUpRight} size={20} className="text-expense" />
-              </View>
-              <View>
-                <Text className="text-[10px] font-bold uppercase tracking-widest text-muted">
-                  Expenses
-                </Text>
-                <Text className="text-base font-bold text-expense">
-                  {userProfile.currencySymbol}
-                  {formatNumber(totalExpense)}
-                </Text>
-              </View>
-            </View>
-          </View>
+          <QuickStatsCards
+            income={totalIncome}
+            expense={totalExpense}
+            currencySymbol={userProfile.currencySymbol}
+          />
         )}
 
         {/* Transactions List */}
-        {transactions.length === 0 ? (
-          accounts.length === 0 ? (
-            <EmptyState
-              icon={Wallet}
-              title="Create Your First Wallet"
-              description="Add a wallet to start tracking your balances and transactions."
-              buttonText="Add Wallet"
-              onButtonPress={() => router.push('/add-wallet')}
-            />
-          ) : (
-            <EmptyState
-              icon={Receipt}
-              title="No Transactions Yet"
-              description="Add your first transaction to start tracking your expenses and incomes."
-              buttonText="Add Your First Transaction"
-              onButtonPress={() => router.push('/add-transaction')}
-            />
-          )
-        ) : Object.keys(grouped).length === 0 ? (
-          <EmptyState
-            icon={Receipt}
-            title="No Results Found"
-            description="We couldn't find any transactions matching your filters. Try clearing them or using different keywords."
-          />
-        ) : (
-          <View className="gap-6">
-            {Object.entries(grouped).map(([date, txs]) => (
-              <View key={date} className="gap-2.5">
-                <Text className="ml-1 text-xs font-bold uppercase tracking-widest text-muted">
-                  {date}
-                </Text>
-                <View className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
-                  {txs.map((tx, idx) => {
-                    const isLast = idx === txs.length - 1;
-
-                    return (
-                      <View key={tx.id}>
-                        <TransactionItem
-                          transaction={tx}
-                          isExpanded={expandedTransactionId === tx.id}
-                          isLast={isLast}
-                          onToggleExpand={() => toggleTransactionExpand(tx.id)}
-                          onDelete={() => handleDelete(tx.id, tx.title)}
-                          accounts={accounts}
-                          getWalletName={getWalletName}
-                        />
-                        {!isLast && <View className="h-[1px] bg-divider" />}
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+        <TransactionListSection
+          transactions={transactions}
+          accounts={accounts}
+          grouped={grouped}
+          expandedTransactionId={expandedTransactionId}
+          onToggleExpand={toggleTransactionExpand}
+          onDelete={handleDelete}
+          getWalletName={getWalletName}
+        />
       </ScrollView>
 
       <TransactionDatePickerModal

@@ -218,7 +218,7 @@ export default function TransactionDatePickerModal({
               onPress={handleConfirm}
               className="flex-1 py-3 bg-primary rounded-[6px] items-center"
             >
-              <Text className="font-bold text-xs text-white dark:text-black">Confirm</Text>
+              <Text className="font-medium text-xs text-white dark:text-black">Confirm</Text>
             </TouchableOpacity>
           </View>
           </View>

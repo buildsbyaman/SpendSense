@@ -1,40 +1,31 @@
 import {
   View,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import Animated from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { X, Calendar } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { formatNumber } from '@/utils/wallet';
 import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
   type TransactionType,
-  sanitizeAmountInput,
   validateTransaction,
   formatDatePickerDate,
-  getCategoryIcon,
-  getCategoryColor,
 } from '@/utils/transaction';
 import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
-import TransactionTypeToggle from '@/components/transactions/TransactionTypeToggle';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
-import { QuickDatePicker } from '@/components/transactions/QuickDatePicker';
 import { usePrefillTransactionForm } from '@/components/transactions/usePrefillTransactionForm';
-import { WalletSelector } from '@/components/wallets/WalletSelector';
-import { CategorySelector } from '@/components/categories/CategorySelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
+import { TransactionFormFields } from '@/components/transactions/TransactionFormFields';
+import { checkBudgetWarning } from '@/hooks/useBudgetWarning';
 
 export default function AddTransactionScreen() {
   const insets = useSafeAreaInsets();
@@ -143,29 +134,15 @@ export default function AddTransactionScreen() {
       }
 
       // Check if the transaction exceeds the category budget
-      const budget = budgets.find((b) => b.category === category);
-      let isOverBudget = false;
-      let totalSpent = 0;
-
-      if (type === 'expense' && budget) {
-        const txDate = new Date(date);
-        const txYear = txDate.getFullYear();
-        const txMonth = txDate.getMonth();
-
-        const currentMonthTxs = transactions.filter((t) => {
-          const d = new Date(t.date);
-          return d.getFullYear() === txYear && d.getMonth() === txMonth;
-        });
-
-        const spent = currentMonthTxs
-          .filter((t) => t.type === 'expense' && t.category === category && t.id !== editId)
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        totalSpent = spent + parsedAmount!;
-        if (totalSpent > budget.amount) {
-          isOverBudget = true;
-        }
-      }
+      const { isOverBudget, totalSpent, budget } = checkBudgetWarning(
+        budgets,
+        transactions,
+        category,
+        type,
+        date,
+        parsedAmount!,
+        editId
+      );
 
       if (isOverBudget && budget) {
         Toast.show({
@@ -221,105 +198,42 @@ export default function AddTransactionScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <View className="gap-5">
-                {/* Income / Expense Toggle */}
-                <TransactionTypeToggle type={type} onChange={handleTypeChange} />
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+              <TransactionFormFields
+                type={type}
+                onTypeChange={handleTypeChange}
+                amount={amount}
+                setAmount={setAmount}
+                title={title}
+                setTitle={setTitle}
+                selectedWalletId={selectedWalletId}
+                setSelectedWalletId={setSelectedWalletId}
+                category={category}
+                setCategory={setCategory}
+                date={date}
+                setDate={setDate}
+                onOpenDatePicker={() => {
+                  setCalendarMonth(new Date(date));
+                  setIsDatePickerOpen(true);
+                }}
+                accounts={accounts}
+                sortedAccounts={getSortedAccounts()}
+                categoriesList={categoriesList}
+                placeholderColor={placeholderColor}
+                focusedInput={focusedInput}
+                setFocusedInput={setFocusedInput}
+                userProfile={userProfile}
+              />
 
-                {/* Amount Input */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Amount</Text>
-                  <View className="relative justify-center">
-                    <Text className="absolute left-5 z-10 text-base font-semibold text-foreground">
-                      {userProfile.currencySymbol}
-                    </Text>
-                    <TextInput
-                      value={amount}
-                      onChangeText={(text) => {
-                        setAmount(sanitizeAmountInput(text));
-                      }}
-                      className={`rounded-xl border bg-surface py-3.5 pl-10 pr-5 text-base font-semibold text-foreground ${focusedInput === 'amount' ? 'border-primary' : 'border-border'}`}
-                      placeholder="0.00"
-                      keyboardType="decimal-pad"
-                      placeholderTextColor={placeholderColor}
-                      onFocus={() => setFocusedInput('amount')}
-                      onBlur={() => setFocusedInput(null)}
-                    />
-                  </View>
-                </View>
-
-                {/* Title */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">
-                    {type === 'expense'
-                      ? 'What was this for? (Optional)'
-                      : 'Source / Description (Optional)'}
-                  </Text>
-                  <TextInput
-                    value={title}
-                    onChangeText={setTitle}
-                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'title' ? 'border-primary' : 'border-border'}`}
-                    placeholder={
-                      type === 'expense' ? 'e.g. Starbucks Coffee' : 'e.g. Freelance project, Bonus'
-                    }
-                    placeholderTextColor={placeholderColor}
-                    onFocus={() => setFocusedInput('title')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
-
-                {/* Wallet Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet</Text>
-                  <WalletSelector
-                    accounts={accounts}
-                    sortedAccounts={getSortedAccounts()}
-                    selectedWalletId={selectedWalletId}
-                    onSelect={setSelectedWalletId}
-                    emptyMessage="Create a wallet first"
-                    onEmptyAction={() => router.push('/add-wallet')}
-                  />
-                </View>
-
-                {/* Category Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
-                  <CategorySelector
-                    categories={categoriesList as Array<{ name: string; icon?: string; color?: string }>}
-                    selected={category}
-                    onSelect={setCategory}
-                    withMeta
-                  />
-                </View>
-
-                {/* Quick Date Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Date</Text>
-                  <QuickDatePicker
-                    date={date}
-                    onSelectToday={() => setDate(new Date())}
-                    onSelectYesterday={() => {
-                      const yesterday = new Date();
-                      yesterday.setDate(yesterday.getDate() - 1);
-                      setDate(yesterday);
-                    }}
-                    onOpenCalendar={() => {
-                      setCalendarMonth(new Date(date));
-                      setIsDatePickerOpen(true);
-                    }}
-                  />
-                </View>
-
-                <TouchableOpacity
+              <TouchableOpacity
                   onPress={handleSave}
                   disabled={!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0}
-                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 ? 'opacity-40' : 'opacity-100'}`}
+                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-4 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 ? 'opacity-40' : 'opacity-100'}`}
                   activeOpacity={0.7}>
                   <Text className="text-base font-medium text-white dark:text-black">
                     {editId ? 'Save Changes' : 'Save Transaction'}
                   </Text>
                 </TouchableOpacity>
-              </View>
             </ScrollView>
 
             {/* Safe area spacing for iOS */}

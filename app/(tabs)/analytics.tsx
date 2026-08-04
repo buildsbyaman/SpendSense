@@ -94,7 +94,8 @@ export default function AnalyticsScreen() {
         contentContainerStyle={{
           paddingBottom: 120,
           paddingHorizontal: 20,
-        }}>
+        }}
+        keyboardDismissMode="on-drag">
         <View className="mb-6 flex-row items-center justify-between gap-3">
           <View className="flex-1">
             <TypeFilterToggle value={type} onChange={setType} />

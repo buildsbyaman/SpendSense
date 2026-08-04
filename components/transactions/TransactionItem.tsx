@@ -58,7 +58,7 @@ export function TransactionItem({
           <Icon as={icon} size={22} color={color} />
         </View>
         <View className="flex-1">
-          <Text className="text-base font-medium text-foreground" numberOfLines={1}>
+          <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
             {transaction.title}
           </Text>
           <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>

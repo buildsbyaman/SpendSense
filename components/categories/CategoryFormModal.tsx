@@ -16,6 +16,8 @@ import { useApp } from '@/context/AppContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type TransactionType, AVAILABLE_ICONS, AVAILABLE_PALETTE } from '@/utils/transaction';
 import { type CategoryItemData } from '@/components/categories/CategoryItem';
+import { useColorScheme } from 'nativewind';
+import { PLACEHOLDER_COLORS } from '@/lib/theme';
 
 interface Props {
   visible: boolean;
@@ -31,7 +33,11 @@ export function CategoryFormModal({
   onRequestClose,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
   const { addCustomCategory, updateCustomCategory, getSortedCategories } = useApp();
+
+  const placeholderColor =
+    colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
 
   const [categoryName, setCategoryName] = useState('');
   const [selectedIconName, setSelectedIconName] = useState('Tag');
@@ -155,7 +161,7 @@ export function CategoryFormModal({
                   value={categoryName}
                   onChangeText={setCategoryName}
                   placeholder="e.g. Dog Food, Water Bill"
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={placeholderColor}
                   className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${
                     focusedInput === 'name' ? 'border-primary' : 'border-transparent'
                   }`}
@@ -212,7 +218,7 @@ export function CategoryFormModal({
               <TouchableOpacity
                 onPress={handleSaveCategory}
                 disabled={categoryName.trim().length === 0}
-                className={`mt-8 items-center justify-center rounded-full bg-primary py-3.5 ${
+                className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-4 ${
                   categoryName.trim().length > 0 ? 'opacity-100' : 'opacity-40'
                 }`}
                 activeOpacity={0.7}>

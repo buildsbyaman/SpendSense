@@ -105,7 +105,8 @@ export default function OnboardingScreen() {
           paddingHorizontal: 24,
           paddingBottom: insets.bottom + 24,
         }}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">
         <View className="mb-8 mt-12">
           <Text className="text-4xl font-extrabold tracking-tight text-foreground">Welcome.</Text>
           <Text className="mt-3 text-lg leading-7 text-muted">

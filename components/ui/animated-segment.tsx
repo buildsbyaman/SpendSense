@@ -19,6 +19,8 @@ interface AnimatedSegmentProps<T extends string> {
   selectedValue: T;
   onChange: (value: T) => void;
   borderRadius?: number;
+  paddingVertical?: number;
+  fontSize?: number;
 }
 
 export default function AnimatedSegment<T extends string>({
@@ -26,6 +28,8 @@ export default function AnimatedSegment<T extends string>({
   selectedValue,
   onChange,
   borderRadius = 12,
+  paddingVertical = 10,
+  fontSize = 13,
 }: AnimatedSegmentProps<T>) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -119,12 +123,12 @@ export default function AnimatedSegment<T extends string>({
             <TouchableOpacity
               key={option.value}
               onPress={() => handleSelect(index)}
-              style={{ flex: 1, alignItems: 'center', paddingVertical: 10, zIndex: 1 }}
+              style={{ flex: 1, alignItems: 'center', paddingVertical: paddingVertical, zIndex: 1 }}
               activeOpacity={0.9}>
               <Text
                 style={{
                   fontWeight: '600',
-                  fontSize: 13,
+                  fontSize: fontSize,
                   color:
                     selectedValue === option.value
                       ? isDark

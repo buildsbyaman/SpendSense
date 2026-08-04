@@ -125,22 +125,30 @@ export default function AddWalletScreen() {
 
   const handleDelete = async () => {
     if (editId) {
-      const result = await deleteWallet(editId);
-      if (!result.blocked) {
-        if (result.newDefaultName) {
-          Toast.show({
-            type: 'success',
-            text1: 'Wallet Deleted',
-            text2: `"${result.newDefaultName}" is now your default wallet.`,
-          });
-        } else {
-          Toast.show({
-            type: 'success',
-            text1: 'Wallet Deleted',
-            text2: 'Transactions have been moved to your default wallet.',
-          });
+      try {
+        const result = await deleteWallet(editId);
+        if (!result.blocked) {
+          if (result.newDefaultName) {
+            Toast.show({
+              type: 'success',
+              text1: 'Wallet Deleted',
+              text2: `"${result.newDefaultName}" is now your default wallet.`,
+            });
+          } else {
+            Toast.show({
+              type: 'success',
+              text1: 'Wallet Deleted',
+              text2: 'Transactions have been moved to your default wallet.',
+            });
+          }
+          handleClose();
         }
-        handleClose();
+      } catch {
+        Toast.show({
+          type: 'error',
+          text1: 'Delete Failed',
+          text2: 'Could not delete the wallet.',
+        });
       }
     }
   };
@@ -290,7 +298,7 @@ export default function AddWalletScreen() {
                 </TouchableOpacity>
               )}
               <TouchableOpacity
-                className={`items-center justify-center rounded-[6px] bg-primary py-3.5 flex-1 ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
+                className={`items-center justify-center rounded-[6px] bg-primary py-4 flex-1 ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
                 onPress={handleSave}
                 activeOpacity={0.7}>
                 <Text className="text-base font-medium text-white dark:text-black">

@@ -48,8 +48,12 @@ export function processSubscriptionBilling(
   }
 
   // Fast-forward past now if still overdue after capped loop
-  while (nextDate <= now) {
-    nextDate = getNextBillingDate(nextDate, sub.cycle);
+  let ffIterations = 0;
+  while (nextDate <= now && ffIterations < 24) {
+    const advanced = getNextBillingDate(nextDate, sub.cycle);
+    if (advanced.getTime() === nextDate.getTime()) break;
+    nextDate = advanced;
+    ffIterations++;
   }
 
   return { txs, updatedAccount: acc, nextDate: nextDate.toISOString() };

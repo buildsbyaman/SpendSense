@@ -251,7 +251,8 @@ export default function ImportScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">
         {/* ── What to import ── */}
         <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">What to import</Text>

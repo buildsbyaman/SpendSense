@@ -58,7 +58,7 @@ export function SummaryCards({
   const { userProfile } = useApp();
 
   return (
-    <View className="mb-4 rounded-xl border border-border bg-surface p-5 shadow-xs">
+    <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
       {/* Income row */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2.5">

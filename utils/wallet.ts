@@ -77,6 +77,7 @@ export const formatWalletDisplay = (value: number, symbol: string = '$'): string
 };
 
 export const formatNumber = (value: number, decimals = 2): string => {
+  if (!Number.isFinite(value)) return '0';
   const isNegative = value < 0;
   const formatted = compactAbs(Math.abs(value), decimals);
   return isNegative ? `-${formatted}` : formatted;
