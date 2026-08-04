@@ -10,7 +10,6 @@ import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 interface WalletItemProps {
   account: Account;
   isExpanded: boolean;
-  isLast: boolean;
   onToggleExpand: () => void;
   onSetDefault: () => void;
   onDelete: () => void;
@@ -23,7 +22,6 @@ interface WalletItemProps {
 export function WalletItem({
   account,
   isExpanded,
-  isLast,
   onToggleExpand,
   onSetDefault,
   onDelete,
@@ -71,7 +69,7 @@ export function WalletItem({
         <Animated.View style={[dragStyle, { overflow: 'hidden', justifyContent: 'center' }]}>
           <TouchableOpacity
             activeOpacity={0.6}
-            onLongPress={drag}
+            onPressIn={drag}
             hitSlop={8}
             className="h-9 w-9 items-center justify-center">
             <Icon as={GripVertical} size={16} className="text-muted" />

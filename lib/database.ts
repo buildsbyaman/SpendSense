@@ -1,6 +1,7 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
 let db: SQLiteDatabase | null = null;
+let migrationPromise: Promise<SQLiteDatabase> | null = null;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS accounts (
@@ -30,87 +31,83 @@ CREATE TABLE IF NOT EXISTS profile (
 );
 `;
 
-export async function getDatabase(): Promise<SQLiteDatabase> {
-  if (db) return db;
-  db = await openDatabaseAsync('spendsense.db');
-  await db.execAsync('PRAGMA journal_mode = WAL');
-  await db.withTransactionAsync(async () => {
-    const version = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    if (!version || version.user_version === 0) {
-      await db!.execAsync(SCHEMA);
-      await db!.execAsync('PRAGMA user_version = 1');
+async function tableColumns(db: SQLiteDatabase, table: string): Promise<string[]> {
+  const rows = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
+  return rows.map((c) => c.name);
+}
+
+async function runMigrations(instance: SQLiteDatabase): Promise<void> {
+  await instance.withTransactionAsync(async () => {
+    // Read the version once and keep it updated as we step; never re-read a
+    // stale value or fall back to a guess that could skip a migration.
+    let currentVersion =
+      (await instance.getFirstAsync<{ user_version: number }>('PRAGMA user_version'))
+        ?.user_version ?? 0;
+
+    if (currentVersion < 1) {
+      await instance.execAsync(SCHEMA);
+      currentVersion = 1;
     }
 
-    const currentVersion = version?.user_version || (version === undefined ? 1 : 0);
     if (currentVersion < 2) {
-      await db!.execAsync(`
+      await instance.execAsync(`
         CREATE TABLE IF NOT EXISTS custom_categories (
           id TEXT PRIMARY KEY NOT NULL,
           name TEXT NOT NULL,
           type TEXT NOT NULL
         );
       `);
-      await db!.execAsync('PRAGMA user_version = 2');
+      currentVersion = 2;
     }
 
-    const versionAfter2 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    const currentVersionAfter2 = versionAfter2?.user_version || 2;
-    if (currentVersionAfter2 < 3) {
-      await db!.execAsync(`
-        ALTER TABLE custom_categories ADD COLUMN icon TEXT;
-      `);
-      await db!.execAsync('PRAGMA user_version = 3');
+    if (currentVersion < 3) {
+      const cols = await tableColumns(instance, 'custom_categories');
+      if (!cols.includes('icon')) {
+        await instance.execAsync(`ALTER TABLE custom_categories ADD COLUMN icon TEXT`);
+      }
+      currentVersion = 3;
     }
 
-    const versionAfter3 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    const currentVersionAfter3 = versionAfter3?.user_version || 3;
-    if (currentVersionAfter3 < 4) {
-      await db!.execAsync(`
-        ALTER TABLE custom_categories ADD COLUMN color TEXT;
-      `);
-      await db!.execAsync('PRAGMA user_version = 4');
+    if (currentVersion < 4) {
+      const cols = await tableColumns(instance, 'custom_categories');
+      if (!cols.includes('color')) {
+        await instance.execAsync(`ALTER TABLE custom_categories ADD COLUMN color TEXT`);
+      }
+      currentVersion = 4;
     }
 
-    const versionAfter4 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    const currentVersionAfter4 = versionAfter4?.user_version || 4;
-    if (currentVersionAfter4 < 5) {
-      await db!.execAsync(`
+    if (currentVersion < 5) {
+      await instance.execAsync(`
         CREATE TABLE IF NOT EXISTS deleted_default_categories (
           name TEXT PRIMARY KEY
         );
       `);
-      await db!.execAsync('PRAGMA user_version = 5');
+      currentVersion = 5;
     }
 
-    const versionAfter5 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    const currentVersionAfter5 = versionAfter5?.user_version || 5;
-    if (currentVersionAfter5 < 6) {
-      await db!.execAsync(`
+    if (currentVersion < 6) {
+      await instance.execAsync(`
         CREATE TABLE IF NOT EXISTS category_order (
           type TEXT PRIMARY KEY,
           sort_order TEXT NOT NULL
         );
       `);
-      await db!.execAsync('PRAGMA user_version = 6');
+      currentVersion = 6;
     }
 
-    const versionAfter6 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    const currentVersionAfter6 = versionAfter6?.user_version || 6;
-    if (currentVersionAfter6 < 7) {
-      await db!.execAsync(`
+    if (currentVersion < 7) {
+      await instance.execAsync(`
         CREATE TABLE IF NOT EXISTS budgets (
           id TEXT PRIMARY KEY NOT NULL,
           category TEXT NOT NULL,
           amount REAL NOT NULL
         );
       `);
-      await db!.execAsync('PRAGMA user_version = 7');
+      currentVersion = 7;
     }
 
-    const versionAfter7 = await db!.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    const currentVersionAfter7 = versionAfter7?.user_version || 7;
-    if (currentVersionAfter7 < 8) {
-      await db!.execAsync(`
+    if (currentVersion < 8) {
+      await instance.execAsync(`
         CREATE TABLE IF NOT EXISTS subscriptions (
           id TEXT PRIMARY KEY NOT NULL,
           name TEXT NOT NULL,
@@ -122,67 +119,73 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
           is_active INTEGER NOT NULL DEFAULT 1
         );
       `);
-      await db!.execAsync('PRAGMA user_version = 8');
+      currentVersion = 8;
     }
 
-    const { user_version: currentVersionAfter8 } = (await db!.getFirstAsync<{
-      user_version: number;
-    }>('PRAGMA user_version')) ?? { user_version: 0 };
-
-    if (currentVersionAfter8 < 9) {
-      await db!.execAsync(`
-        ALTER TABLE subscriptions ADD COLUMN end_date TEXT;
-      `);
-      await db!.execAsync('PRAGMA user_version = 9');
+    if (currentVersion < 9) {
+      const cols = await tableColumns(instance, 'subscriptions');
+      if (!cols.includes('end_date')) {
+        await instance.execAsync(`ALTER TABLE subscriptions ADD COLUMN end_date TEXT`);
+      }
+      currentVersion = 9;
     }
 
-    const { user_version: currentVersionAfter9 } = (await db!.getFirstAsync<{
-      user_version: number;
-    }>('PRAGMA user_version')) ?? { user_version: 0 };
-
-    if (currentVersionAfter9 < 10) {
-      const cols9 = await db!.getAllAsync<{ name: string }>('PRAGMA table_info(profile)');
-      const colNames9 = cols9.map((c) => c.name);
-      if (!colNames9.includes('currency_symbol')) {
-        await db!.runAsync("ALTER TABLE profile ADD COLUMN currency_symbol TEXT DEFAULT '$'");
+    if (currentVersion < 10) {
+      const cols = await tableColumns(instance, 'profile');
+      if (!cols.includes('currency_symbol')) {
+        await instance.runAsync("ALTER TABLE profile ADD COLUMN currency_symbol TEXT DEFAULT '$'");
       }
-      if (!colNames9.includes('currency_code')) {
-        await db!.runAsync("ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'USD'");
+      if (!cols.includes('currency_code')) {
+        await instance.runAsync("ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'USD'");
       }
-      await db!.execAsync('PRAGMA user_version = 10');
+      currentVersion = 10;
     }
 
-    const { user_version: currentVersionAfter10 } = (await db!.getFirstAsync<{
-      user_version: number;
-    }>('PRAGMA user_version')) ?? { user_version: 0 };
-
-    if (currentVersionAfter10 < 11) {
-      const cols10 = await db!.getAllAsync<{ name: string }>('PRAGMA table_info(profile)');
-      const colNames10 = cols10.map((c) => c.name);
-      if (!colNames10.includes('avatar')) {
-        await db!.runAsync('ALTER TABLE profile ADD COLUMN avatar TEXT');
+    if (currentVersion < 11) {
+      const cols = await tableColumns(instance, 'profile');
+      if (!cols.includes('avatar')) {
+        await instance.runAsync('ALTER TABLE profile ADD COLUMN avatar TEXT');
       }
-      if (!colNames10.includes('has_onboarded')) {
-        await db!.runAsync(
+      if (!cols.includes('has_onboarded')) {
+        await instance.runAsync(
           'ALTER TABLE profile ADD COLUMN has_onboarded INTEGER NOT NULL DEFAULT 0'
         );
       }
-      await db!.execAsync('PRAGMA user_version = 11');
+      currentVersion = 11;
     }
 
-    const { user_version: currentVersionAfter11 } = (await db!.getFirstAsync<{
-      user_version: number;
-    }>('PRAGMA user_version')) ?? { user_version: 0 };
-
-    if (currentVersionAfter11 < 12) {
-      await db!.execAsync(`
+    if (currentVersion < 12) {
+      await instance.execAsync(`
         CREATE TABLE IF NOT EXISTS wallet_order (
           id TEXT PRIMARY KEY NOT NULL,
           sort_order TEXT NOT NULL
         );
       `);
-      await db!.execAsync('PRAGMA user_version = 12');
+      currentVersion = 12;
+    }
+
+    if (currentVersion > 0) {
+      await instance.execAsync(`PRAGMA user_version = ${currentVersion}`);
     }
   });
-  return db;
+}
+
+export async function getDatabase(): Promise<SQLiteDatabase> {
+  if (db) return db;
+
+  if (!migrationPromise) {
+    migrationPromise = openDatabaseAsync('spendsense.db').then(async (instance) => {
+      await instance.execAsync('PRAGMA journal_mode = WAL');
+      await runMigrations(instance);
+      db = instance;
+      return instance;
+    });
+    // On failure, drop the cached promise so a later call retries migrations
+    // (and never returns a half-migrated handle).
+    migrationPromise.catch(() => {
+      migrationPromise = null;
+    });
+  }
+
+  return migrationPromise;
 }

@@ -47,7 +47,7 @@ export function CategoryList({
           Add your first custom category to organize your spending.
         </Text>
         <TouchableOpacity
-          className="bg-primary px-6 py-3.5 rounded-xl flex-row items-center gap-2"
+          className="bg-primary px-6 py-3.5 rounded-[6px] flex-row items-center gap-2"
           onPress={onAddFirstCategory}
           activeOpacity={0.7}>
           <Icon as={Plus} size={20} className="text-white dark:text-black" />

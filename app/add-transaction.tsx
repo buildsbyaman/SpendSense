@@ -29,6 +29,10 @@ import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import TransactionTypeToggle from '@/components/transactions/TransactionTypeToggle';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
+import { QuickDatePicker } from '@/components/transactions/QuickDatePicker';
+import { usePrefillTransactionForm } from '@/components/transactions/usePrefillTransactionForm';
+import { WalletSelector } from '@/components/wallets/WalletSelector';
+import { CategorySelector } from '@/components/categories/CategorySelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
 
@@ -66,20 +70,15 @@ export default function AddTransactionScreen() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const sheetRef = useRef<SlideSheetHandle>(null);
 
-  useEffect(() => {
-    if (editId) {
-      const tx = transactions.find((t) => t.id === editId);
-      if (tx) {
-        setType(tx.type);
-        setAmount(tx.amount.toString());
-        setTitle(tx.title === tx.category ? '' : tx.title);
-        setCategory(tx.category);
-        setSelectedWalletId(tx.walletId);
-        setDate(new Date(tx.date));
-        setCalendarMonth(new Date(tx.date));
-      }
-    }
-  }, [editId]);
+  usePrefillTransactionForm(editId, transactions, {
+    setType,
+    setAmount,
+    setTitle,
+    setCategory,
+    setSelectedWalletId,
+    setDate,
+    setCalendarMonth,
+  });
 
   const handleNavigateBack = () => {
     if (router.canGoBack()) {
@@ -98,7 +97,11 @@ export default function AddTransactionScreen() {
     setCategory(newType === 'expense' ? 'Food' : 'Salary');
   };
 
+  const savingRef = useRef(false);
+
   const handleSave = () => {
+    if (savingRef.current) return;
+
     const { isValid, errorTitle, errorMessage, parsedAmount } = validateTransaction(
       amount,
       selectedWalletId
@@ -113,11 +116,23 @@ export default function AddTransactionScreen() {
       return;
     }
 
-    if (editId) {
-      const tx = transactions.find((t) => t.id === editId);
-      if (tx) {
-        updateTransaction({
-          ...tx,
+    savingRef.current = true;
+    try {
+      if (editId) {
+        const tx = transactions.find((t) => t.id === editId);
+        if (tx) {
+          updateTransaction({
+            ...tx,
+            title: title.trim() || category,
+            amount: parsedAmount!,
+            type,
+            category,
+            date: date.toISOString(),
+            walletId: selectedWalletId,
+          });
+        }
+      } else {
+        addTransaction({
           title: title.trim() || category,
           amount: parsedAmount!,
           type,
@@ -126,59 +141,52 @@ export default function AddTransactionScreen() {
           walletId: selectedWalletId,
         });
       }
-    } else {
-      addTransaction({
-        title: title.trim() || category,
-        amount: parsedAmount!,
-        type,
-        category,
-        date: date.toISOString(),
-        walletId: selectedWalletId,
-      });
-    }
 
-    // Check if the transaction exceeds the category budget
-    const budget = budgets.find((b) => b.category === category);
-    let isOverBudget = false;
-    let totalSpent = 0;
+      // Check if the transaction exceeds the category budget
+      const budget = budgets.find((b) => b.category === category);
+      let isOverBudget = false;
+      let totalSpent = 0;
 
-    if (type === 'expense' && budget) {
-      const txDate = new Date(date);
-      const txYear = txDate.getFullYear();
-      const txMonth = txDate.getMonth();
+      if (type === 'expense' && budget) {
+        const txDate = new Date(date);
+        const txYear = txDate.getFullYear();
+        const txMonth = txDate.getMonth();
 
-      const currentMonthTxs = transactions.filter((t) => {
-        const d = new Date(t.date);
-        return d.getFullYear() === txYear && d.getMonth() === txMonth;
-      });
+        const currentMonthTxs = transactions.filter((t) => {
+          const d = new Date(t.date);
+          return d.getFullYear() === txYear && d.getMonth() === txMonth;
+        });
 
-      const spent = currentMonthTxs
-        .filter((t) => t.type === 'expense' && t.category === category && t.id !== editId)
-        .reduce((sum, t) => sum + t.amount, 0);
+        const spent = currentMonthTxs
+          .filter((t) => t.type === 'expense' && t.category === category && t.id !== editId)
+          .reduce((sum, t) => sum + t.amount, 0);
 
-      totalSpent = spent + parsedAmount!;
-      if (totalSpent > budget.amount) {
-        isOverBudget = true;
+        totalSpent = spent + parsedAmount!;
+        if (totalSpent > budget.amount) {
+          isOverBudget = true;
+        }
       }
-    }
 
-    if (isOverBudget && budget) {
-      Toast.show({
-        type: 'error',
-        text1: 'Budget Exceeded Warning',
-        text2: `Transaction ${editId ? 'updated' : 'added'}, but "${category}" is over budget! (${userProfile.currencySymbol}${formatNumber(totalSpent)} / ${userProfile.currencySymbol}${formatNumber(budget.amount)} spent)`,
-      });
-    } else {
-      Toast.show({
-        type: 'success',
-        text1: editId ? 'Transaction Updated' : 'Transaction Added',
-        text2: editId
-          ? 'Transaction details saved successfully.'
-          : `Successfully added ${type === 'income' ? 'income' : 'expense'}!`,
-      });
-    }
+      if (isOverBudget && budget) {
+        Toast.show({
+          type: 'error',
+          text1: 'Budget Exceeded Warning',
+          text2: `Transaction ${editId ? 'updated' : 'added'}, but "${category}" is over budget! (${userProfile.currencySymbol}${formatNumber(totalSpent)} / ${userProfile.currencySymbol}${formatNumber(budget.amount)} spent)`,
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: editId ? 'Transaction Updated' : 'Transaction Added',
+          text2: editId
+            ? 'Transaction details saved successfully.'
+            : `Successfully added ${type === 'income' ? 'income' : 'expense'}!`,
+        });
+      }
 
-    handleClose();
+      handleClose();
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -202,11 +210,13 @@ export default function AddTransactionScreen() {
             onPress={handleClose}
           />
 
-          <View className="rounded-t-2xl border-t border-border bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+          <View
+            className="rounded-t-2xl border-t border-border bg-background p-6 pb-12"
+            style={{ maxHeight: '90%' }}>
             {/* Header */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Transaction' : 'Add Transaction'}</Text>
-              <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
+              <TouchableOpacity onPress={handleClose} className="rounded-[6px] bg-secondary p-2.5">
                 <Icon as={X} size={20} className="text-foreground" />
               </TouchableOpacity>
             </View>
@@ -261,134 +271,49 @@ export default function AddTransactionScreen() {
                 {/* Wallet Selector */}
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet</Text>
-                  {accounts.length === 0 ? (
-                    <TouchableOpacity
-                      onPress={() => router.push('/add-wallet')}
-                      className="items-center rounded-xl border border-dashed border-border bg-surface p-4">
-                      <Text className="text-sm font-semibold text-primary">
-                        Create a wallet first
-                      </Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View className="flex-row gap-3 py-1">
-                        {getSortedAccounts().map((wallet) => {
-                          const isSelected = selectedWalletId === wallet.id;
-                          return (
-                            <TouchableOpacity
-                              key={wallet.id}
-                              onPress={() => setSelectedWalletId(wallet.id)}
-                              className={`flex-row items-center gap-2.5 rounded-xl border px-4 py-3 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                              <Icon
-                                as={wallet.icon}
-                                size={16}
-                                className={
-                                  isSelected ? 'text-white dark:text-black' : 'text-foreground'
-                                }
-                              />
-                              <View>
-                                <Text
-                                  className={`text-sm font-semibold ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                                  {wallet.name}
-                                </Text>
-                                <Text
-                                  className={`text-[10px] ${isSelected ? 'text-white/80 dark:text-black/60' : 'text-muted'}`}>
-                                  {wallet.balance}
-                                </Text>
-                              </View>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </ScrollView>
-                  )}
+                  <WalletSelector
+                    accounts={accounts}
+                    sortedAccounts={getSortedAccounts()}
+                    selectedWalletId={selectedWalletId}
+                    onSelect={setSelectedWalletId}
+                    emptyMessage="Create a wallet first"
+                    onEmptyAction={() => router.push('/add-wallet')}
+                  />
                 </View>
 
                 {/* Category Selector */}
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
-                  <View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View className="flex-row gap-2.5 py-1">
-                        {categoriesList.map((cat) => {
-                          const isSelected = category === cat.name;
-                          const CatIcon = getCategoryIcon(cat.name, undefined, 'icon' in cat ? cat.icon : undefined);
-                          const color = getCategoryColor(cat.name, 'color' in cat ? cat.color : undefined);
-                          return (
-                            <TouchableOpacity
-                              key={cat.name}
-                              onPress={() => setCategory(cat.name)}
-                              className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                              <View
-                                className="h-7 w-7 items-center justify-center rounded-full"
-                                style={{ backgroundColor: `${color}15` }}>
-                                <Icon as={CatIcon} size={12} color={color} />
-                              </View>
-                              <Text
-                                className={`text-sm font-medium ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                                {cat.name}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </ScrollView>
-                  </View>
+                  <CategorySelector
+                    categories={categoriesList as Array<{ name: string; icon?: string; color?: string }>}
+                    selected={category}
+                    onSelect={setCategory}
+                    withMeta
+                  />
                 </View>
 
                 {/* Quick Date Selector */}
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Date</Text>
-                  <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      onPress={() => setDate(new Date())}
-                      className={`flex-1 items-center rounded-xl border py-3 ${date.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                      <Text
-                        className={`text-xs font-semibold ${date.toDateString() === new Date().toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                        Today
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const yesterday = new Date();
-                        yesterday.setDate(yesterday.getDate() - 1);
-                        setDate(yesterday);
-                      }}
-                      className={`flex-1 items-center rounded-xl border py-3 ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                      <Text
-                        className={`text-xs font-semibold ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                        Yesterday
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setCalendarMonth(new Date(date));
-                        setIsDatePickerOpen(true);
-                      }}
-                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border px-3 py-3 ${date.toDateString() !== new Date().toDateString() && date.toDateString() !== new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                      <Icon
-                        as={Calendar}
-                        size={12}
-                        className={
-                          date.toDateString() !== new Date().toDateString() &&
-                          date.toDateString() !== new Date(Date.now() - 3600000 * 24).toDateString()
-                            ? 'text-white dark:text-black'
-                            : 'text-foreground'
-                        }
-                      />
-                      <Text
-                        className={`text-xs font-semibold ${date.toDateString() !== new Date().toDateString() && date.toDateString() !== new Date(Date.now() - 3600000 * 24).toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}
-                        numberOfLines={1}>
-                        {formatDatePickerDate(date)}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <QuickDatePicker
+                    date={date}
+                    onSelectToday={() => setDate(new Date())}
+                    onSelectYesterday={() => {
+                      const yesterday = new Date();
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      setDate(yesterday);
+                    }}
+                    onOpenCalendar={() => {
+                      setCalendarMonth(new Date(date));
+                      setIsDatePickerOpen(true);
+                    }}
+                  />
                 </View>
 
                 <TouchableOpacity
                   onPress={handleSave}
                   disabled={!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0}
-                  className={`mt-8 items-center justify-center rounded-xl bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 ? 'opacity-40' : 'opacity-100'}`}
+                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 ? 'opacity-40' : 'opacity-100'}`}
                   activeOpacity={0.7}>
                   <Text className="text-base font-medium text-white dark:text-black">
                     {editId ? 'Save Changes' : 'Save Transaction'}

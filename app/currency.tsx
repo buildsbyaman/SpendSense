@@ -74,6 +74,8 @@ export default function CurrencySettings() {
       : null
     : (selectedPreset ?? null);
 
+  const isSameCurrency = effectiveNewCurrency?.code === userProfile.currencyCode;
+
   const parsedRate = parseFloat(conversionRate);
   const previewAmount = formatNumber(10 * (parsedRate || 1));
 
@@ -165,15 +167,15 @@ export default function CurrencySettings() {
                   activeOpacity={0.75}
                   className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
                     isSelected
-                      ? 'border-primary bg-primary'
+                      ? 'border-primary bg-primary/10 dark:bg-primary/15'
                       : 'border-border bg-surface'
                   }`}>
                   <Text
-                    className={`text-sm font-bold ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
+                    className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                     {c.symbol}
                   </Text>
                   <Text
-                    className={`text-xs font-semibold ${isSelected ? 'text-white dark:text-black' : 'text-muted'}`}>
+                    className={`text-xs font-semibold ${isSelected ? 'text-primary opacity-80' : 'text-muted'}`}>
                     {c.code}
                   </Text>
                 </TouchableOpacity>
@@ -189,16 +191,16 @@ export default function CurrencySettings() {
               activeOpacity={0.75}
               className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
                 isCustom
-                  ? 'border-primary bg-primary'
+                  ? 'border-primary bg-primary/10 dark:bg-primary/15'
                   : 'border-dashed border-border bg-surface'
               }`}>
               <Icon
                 as={isCustom ? Check : Plus}
                 size={13}
-                className={isCustom ? 'text-white dark:text-black' : 'text-muted'}
+                className={isCustom ? 'text-primary' : 'text-muted'}
               />
               <Text
-                className={`text-xs font-semibold ${isCustom ? 'text-white dark:text-black' : 'text-muted'}`}>
+                className={`text-xs font-semibold ${isCustom ? 'text-primary' : 'text-muted'}`}>
                 Custom
               </Text>
             </TouchableOpacity>
@@ -321,9 +323,9 @@ export default function CurrencySettings() {
         {/* ── Save Button (inside scroll, same as add-subscription) ── */}
         <TouchableOpacity
           onPress={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || isSameCurrency}
           activeOpacity={0.8}
-          className={`items-center justify-center rounded-xl bg-primary py-4 ${isSaving ? 'opacity-50' : ''}`}>
+          className={`items-center justify-center rounded-[6px] bg-primary py-4 ${isSaving || isSameCurrency ? 'opacity-40' : ''}`}>
           <Text className="text-base font-medium text-white dark:text-black">
             {isSaving ? 'Applying...' : 'Apply Currency'}
           </Text>

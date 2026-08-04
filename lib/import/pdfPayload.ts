@@ -3,6 +3,7 @@ import { decodeUtf8Base64 } from './base64';
 export interface PdfPayload {
   app: string;
   currency: string;
+  truncated?: boolean;
   tables: { title: string; columns: string[]; rows: Record<string, string | number>[] }[];
 }
 
@@ -11,7 +12,8 @@ export type PdfDecodeFailure =
   | { reason: 'decode-failed'; detail: string }
   | { reason: 'not-spendsense' };
 
-export type PdfDecodeResult = { ok: true; payload: PdfPayload } | { ok: false } & PdfDecodeFailure;
+export type PdfDecodeResult =
+  { ok: true; payload: PdfPayload } | ({ ok: false } & PdfDecodeFailure);
 
 export function decodePayloadFromPdf(pdfText: string): PdfDecodeResult {
   // Try literal string: /Subject (base64...)
@@ -38,10 +40,13 @@ export function decodePayloadFromPdf(pdfText: string): PdfDecodeResult {
     }
     const json = decodeUtf8Base64(b64);
     const obj = JSON.parse(json);
-    if (obj.app === 'SpendSense' && Array.isArray(obj.tables))
-      return { ok: true, payload: obj };
+    if (obj.app === 'SpendSense' && Array.isArray(obj.tables)) return { ok: true, payload: obj };
     return { ok: false, reason: 'not-spendsense' };
   } catch (e) {
-    return { ok: false, reason: 'decode-failed', detail: e instanceof Error ? e.message : String(e) };
+    return {
+      ok: false,
+      reason: 'decode-failed',
+      detail: e instanceof Error ? e.message : String(e),
+    };
   }
 }

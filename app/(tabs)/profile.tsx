@@ -25,6 +25,7 @@ import { useTabNavigation } from '@/context/TabNavigationContext';
 import { useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/avatar';
+import { sanitizeAvatarUri } from '@/utils/avatar';
 
 export default function ProfileScreen(_props: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -53,6 +54,13 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       }
     });
   }, [addListener]);
+
+  // Keep the local draft in sync with the source of truth whenever the name
+  // changes elsewhere (onboarding, demo-data reset), but never while the user
+  // is mid-edit.
+  useEffect(() => {
+    if (!isEditing) setName(userProfile.name);
+  }, [userProfile.name, isEditing]);
 
   const handleTitlePress = useCallback(() => {
     if (!DEV_MODE) return;
@@ -93,9 +101,10 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       const asset = result.assets[0];
       let avatarUri: string | null = null;
       if (asset.base64) {
-        avatarUri = `data:image/jpeg;base64,${asset.base64}`;
-      } else if (asset.uri) {
-        avatarUri = asset.uri;
+        avatarUri = sanitizeAvatarUri(`data:image/jpeg;base64,${asset.base64}`);
+      }
+      if (!avatarUri && asset.uri) {
+        avatarUri = sanitizeAvatarUri(asset.uri);
       }
       if (avatarUri) {
         await updateUserProfile({ ...userProfile, avatar: avatarUri });
@@ -108,7 +117,11 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
     }
   }, [userProfile, updateUserProfile]);
 
+  const savingRef = useRef(false);
+
   const handleSave = async () => {
+    if (savingRef.current) return;
+
     const trimmed = name.trim();
     if (!trimmed) {
       setError('Name cannot be empty');
@@ -120,14 +133,19 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       return;
     }
 
-    await updateUserProfile({ ...userProfile, name: trimmed });
-    setError(null);
-    setIsEditing(false);
-    Toast.show({
-      type: 'success',
-      text1: 'Profile Updated',
-      text2: 'Your name has been updated successfully.',
-    });
+    savingRef.current = true;
+    try {
+      await updateUserProfile({ ...userProfile, name: trimmed });
+      setError(null);
+      setIsEditing(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Profile Updated',
+        text2: 'Your name has been updated successfully.',
+      });
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   return (
@@ -136,7 +154,12 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       className="flex-1 bg-background"
       style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header title="Settings" showBack={false} onRightPress={() => setIsMenuOpen(true)} onTitlePress={DEV_MODE ? handleTitlePress : undefined} />
+        <Header
+          title="Settings"
+          showBack={false}
+          onRightPress={() => setIsMenuOpen(true)}
+          onTitlePress={DEV_MODE ? handleTitlePress : undefined}
+        />
       </View>
       <ScrollView
         ref={scrollRef}
@@ -149,7 +172,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
         keyboardShouldPersistTaps="handled">
         <View className="rounded-xl border border-border bg-surface py-5 shadow-xs">
           {/* Avatar Section */}
-          <View className="flex-row items-center gap-4 py-2 px-6">
+          <View className="flex-row items-center gap-4 px-6 py-2">
             <TouchableOpacity activeOpacity={0.7} onPress={handlePickImage}>
               <Avatar name={userProfile.name} avatar={userProfile.avatar} size={56} />
             </TouchableOpacity>
@@ -163,77 +186,78 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
 
           <View className="my-4 h-[1px] bg-divider" />
 
-          {!isEditing ? (
-            /* Read-Only Details Mode */
-            <View className="gap-4">
+          <View className="gap-4">
+            {!isEditing ? (
+              /* Read-Only Name */
               <View className="flex-row items-center justify-between px-6">
                 <Text className="text-sm font-medium text-muted">Name</Text>
                 <Text className="text-sm font-semibold text-foreground">{userProfile.name}</Text>
               </View>
+            ) : (
+              /* Inline Edit Form Mode */
+              <View className="gap-4 px-6">
+                <View className="gap-2">
+                  <Text className="ml-1 text-sm font-medium text-muted">Profile Name</Text>
+                  <TextInput
+                    value={name}
+                    onChangeText={(text) => {
+                      setName(text);
+                      if (error) setError(null);
+                    }}
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${error ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
+                    placeholder="Enter your name"
+                    placeholderTextColor={placeholderColor}
+                    onFocus={() => setFocusedInput('name')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                  {error && <Text className="ml-4 mt-1 text-xs text-red-500">{error}</Text>}
+                </View>
 
-              <View className="h-[1px] bg-divider" />
+                {/* Save / Cancel Buttons */}
+                <View className="mt-2 flex-row gap-3">
+                  <TouchableOpacity
+                    onPress={() => {
+                      setName(userProfile.name);
+                      setError(null);
+                      setIsEditing(false);
+                    }}
+                    className="flex-1 items-center justify-center rounded-[6px] bg-secondary py-3"
+                    activeOpacity={0.8}>
+                    <Text className="text-sm font-semibold text-foreground">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSave}
+                    className="flex-1 flex-row items-center justify-center gap-2 rounded-[6px] bg-primary py-3"
+                    activeOpacity={0.8}>
+                    <Icon as={Check} size={16} className="text-white dark:text-black" />
+                    <Text className="text-sm font-semibold text-white dark:text-black">Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
-              <View className="flex-row items-center justify-between px-6">
-                <Text className="text-sm font-medium text-muted">Dark Mode</Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  hitSlop={{top:8,bottom:8,left:8,right:8}}
-                  onPress={() => {
-                    const next = isDark ? 'light' : 'dark';
-                    setColorScheme(next);
-                    saveThemePreference(next);
-                  }}>
+            <View className="h-[1px] bg-divider" />
+
+            {/* Dark Mode */}
+            <View className="flex-row items-center justify-between px-6">
+              <Text className="text-sm font-medium text-muted">Dark Mode</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                onPress={() => {
+                  const next = isDark ? 'light' : 'dark';
+                  setColorScheme(next);
+                  saveThemePreference(next);
+                }}>
+                <View
+                  className={`h-5 w-9 justify-center rounded-full p-0.5 transition-colors duration-200 ${isDark ? 'bg-income' : 'bg-gray-200 dark:bg-gray-800'}`}>
                   <View
-                    className={`h-5 w-9 justify-center rounded-full p-0.5 transition-colors duration-200 ${isDark ? 'bg-income' : 'bg-gray-200 dark:bg-gray-800'}`}>
-                    <View
-                      className={`h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 dark:bg-black ${isDark ? 'translate-x-4' : 'translate-x-0'}`}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
+                    className={`h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 dark:bg-black ${isDark ? 'translate-x-4' : 'translate-x-0'}`}
+                  />
+                </View>
+              </TouchableOpacity>
             </View>
-          ) : (
-            /* Inline Edit Form Mode */
-            <View className="gap-4 px-6">
-              <View className="gap-2">
-                <Text className="ml-1 text-sm font-medium text-muted">Profile Name</Text>
-                <TextInput
-                  value={name}
-                  onChangeText={(text) => {
-                    setName(text);
-                    if (error) setError(null);
-                  }}
-                  className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${error ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
-                  placeholder="Enter your name"
-                  placeholderTextColor={placeholderColor}
-                  onFocus={() => setFocusedInput('name')}
-                  onBlur={() => setFocusedInput(null)}
-                />
-                {error && <Text className="ml-4 mt-1 text-xs text-red-500">{error}</Text>}
-              </View>
-
-              {/* Save / Cancel Buttons */}
-              <View className="mt-2 flex-row gap-3">
-                <TouchableOpacity
-                  onPress={() => {
-                    setName(userProfile.name);
-                    setError(null);
-                    setIsEditing(false);
-                  }}
-                  className="flex-1 items-center justify-center rounded-xl bg-secondary py-3"
-                  activeOpacity={0.8}>
-                  <Text className="text-sm font-semibold text-foreground">Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSave}
-                  className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3"
-                  activeOpacity={0.8}>
-                  <Icon as={Check} size={16} className="text-white dark:text-black" />
-                  <Text className="text-sm font-semibold text-white dark:text-black">Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+          </View>
         </View>
 
         <ManageSection />

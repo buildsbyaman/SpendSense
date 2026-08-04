@@ -29,7 +29,7 @@ const MAIN_SCREENS: Record<string, React.ComponentType<{ isActive?: boolean }>> 
 };
 
 // Sub-screens that appear as vertical slide-up overlays
-const SUB_SCREENS: Record<string, React.ComponentType> = {
+const SUB_SCREENS: Record<string, React.ComponentType<{ referrer?: string }>> = {
   analytics: AnalyticsScreen,
   budgets: BudgetsScreen,
   subscriptions: SubscriptionsScreen,
@@ -51,7 +51,9 @@ interface AnimatedTabSlotProps {
 }
 
 export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
-  const { navigate } = useTabNavigation();
+  const { navigate, lastParams } = useTabNavigation();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [layoutWidth, setLayoutWidth] = useState(windowWidth);
   const [layoutHeight, setLayoutHeight] = useState(windowHeight);
@@ -96,7 +98,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
       }
       nextIndex = Math.min(MAIN_TABS.length - 1, Math.max(0, nextIndex));
       translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
-      runOnJS(navigate)(MAIN_TABS[nextIndex]);
+      runOnJS(navigateRef.current)(MAIN_TABS[nextIndex]);
     });
 
   // Vertical overlay for sub-screens
@@ -185,7 +187,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
       {/* Sub-screen overlay */}
       {SubScreen && (
         <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]}>
-          <SubScreen />
+          <SubScreen referrer={lastParams.current.referrer} />
         </Animated.View>
       )}
     </View>

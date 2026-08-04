@@ -13,7 +13,6 @@ import {
   saveCategoryOrder,
   saveWalletOrder,
   fetchAccounts,
-  replaceDeletedDefaultCategories,
 } from '@/lib/repository';
 import { type ImportPlan } from './merge';
 
@@ -51,7 +50,9 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
     // Replace mode: clear only selected tables in dependency order
     if (plan.replace && plan.replaceTypes.length > 0) {
       const typeToTables: Record<string, string[]> = {
-        wallets: ['accounts', 'wallet_order'],
+        // Replacing wallets also clears dependent tables: any surviving
+        // transaction/subscription would otherwise reference deleted wallets.
+        wallets: ['accounts', 'wallet_order', 'transactions', 'subscriptions'],
         transactions: ['transactions'],
         subscriptions: ['subscriptions'],
         budgets: ['budgets'],
@@ -63,9 +64,21 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
           tablesToDelete.add(table);
         }
       }
+      // Defense-in-depth: never interpolate an unverified table name into SQL,
+      // even though every entry above comes from this hardcoded map.
+      const ALLOWED_TABLES = new Set<string>(Object.values(typeToTables).flat());
       // Delete in dependency order
-      for (const table of ['subscriptions', 'transactions', 'budgets', 'deleted_default_categories', 'category_order', 'custom_categories', 'accounts', 'wallet_order']) {
-        if (tablesToDelete.has(table)) {
+      for (const table of [
+        'subscriptions',
+        'transactions',
+        'budgets',
+        'deleted_default_categories',
+        'category_order',
+        'custom_categories',
+        'accounts',
+        'wallet_order',
+      ]) {
+        if (tablesToDelete.has(table) && ALLOWED_TABLES.has(table)) {
           await db.runAsync(`DELETE FROM ${table}`);
         }
       }
@@ -155,9 +168,18 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
       }
     }
 
-    // Hidden default categories
+    // Hidden default categories. Inlined instead of
+    // replaceDeletedDefaultCategories(): that helper opens its own transaction
+    // and expo-sqlite throws on nested transactions, which would roll back the
+    // entire import whenever any default category was hidden.
     if (plan.hiddenCategories && plan.hiddenCategories.length > 0) {
-      await replaceDeletedDefaultCategories(plan.hiddenCategories);
+      await db.runAsync('DELETE FROM deleted_default_categories');
+      for (const name of plan.hiddenCategories) {
+        await db.runAsync(
+          'INSERT OR IGNORE INTO deleted_default_categories (name) VALUES (?)',
+          name
+        );
+      }
     }
   });
 

@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, Modal } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -6,6 +6,9 @@ import { Wallet } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
 import { useState, useEffect } from 'react';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { InAppModal } from '@/components/ui/InAppModal';
+
+import { type Account } from '@/utils/wallet';
 
 interface DeleteWalletModalProps {
   visible: boolean;
@@ -20,7 +23,7 @@ interface ModalContent {
   isLastWallet: boolean;
 }
 
-function computeContent(walletId: string, accounts: any[]): ModalContent {
+function computeContent(walletId: string, accounts: Account[]): ModalContent {
   const id = String(walletId);
   const wallet = accounts.find((a) => String(a.id) === id);
   if (!wallet) {
@@ -87,10 +90,8 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
   });
 
   return (
-    <Modal
+    <InAppModal
       visible={isRendered}
-      transparent={true}
-      animationType="none"
       onRequestClose={onCancel}>
       <View style={{ zIndex: 9999, elevation: 99 }} className="flex-1 justify-center items-center px-6">
         <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
@@ -105,7 +106,7 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
 
           <View className="flex-row gap-3 w-full">
             <TouchableOpacity
-              className="flex-1 py-3.5 items-center justify-center bg-secondary rounded-xl"
+              className="flex-1 py-3.5 items-center justify-center bg-secondary rounded-[6px]"
               onPress={onCancel}
               activeOpacity={0.7}>
               <Text className="text-foreground font-semibold">
@@ -114,7 +115,7 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
             </TouchableOpacity>
             {!isLastWallet && (
               <TouchableOpacity
-                className="flex-1 py-3.5 items-center justify-center bg-red-500 rounded-xl"
+                className="flex-1 py-3.5 items-center justify-center bg-destructive rounded-[6px]"
                 onPress={onConfirm}
                 activeOpacity={0.7}>
                 <Text className="text-white font-semibold">Delete</Text>
@@ -124,6 +125,6 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
           </View>
         </Animated.View>
       </View>
-    </Modal>
+    </InAppModal>
   );
 }

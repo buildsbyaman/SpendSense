@@ -13,7 +13,7 @@ import AnimatedSegment from '@/components/ui/animated-segment';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-export default function SubscriptionsScreen() {
+export default function SubscriptionsScreen({ referrer }: { referrer?: string }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
   const { subscriptions, deleteSubscription } = useApp();
@@ -60,7 +60,7 @@ export default function SubscriptionsScreen() {
         <Header 
           title="Subscriptions" 
           showBack={true} 
-          onLeftPress={() => navigateTab('profile')} 
+          onLeftPress={() => navigateTab(referrer === 'home' ? 'index' : 'profile')} 
           rightIcon={Plus}
           onRightPress={() => router.push('/add-subscription')}
         />

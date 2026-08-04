@@ -7,6 +7,8 @@ import { WalletItem } from './WalletItem';
 import { type Account } from '@/utils/wallet';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
+import { EmptyState } from '@/components/ui/EmptyState';
+
 interface WalletListProps {
   accounts: Account[];
   expandedWalletId: string | null;
@@ -39,25 +41,13 @@ export function WalletList({
 
   if (accounts.length === 0) {
     return (
-      <View className="items-center justify-center mt-20 px-6">
-        <View className="w-24 h-24 bg-secondary rounded-full items-center justify-center mb-6">
-          <Icon as={Wallet} size={40} className="text-muted opacity-50" />
-        </View>
-        <Text variant="h3" className="text-center mb-2 text-foreground">No Wallets Yet</Text>
-        <Text className="text-muted text-center mb-8">
-          Add your first wallet to start tracking your balances and transactions.
-        </Text>
-        <TouchableOpacity 
-          className="bg-primary px-6 py-3.5 rounded-xl flex-row items-center gap-2"
-          onPress={onAddFirstWallet}
-          activeOpacity={0.7}
-        >
-          <Icon as={Plus} size={20} className="text-white dark:text-black" />
-          <Text className="text-white dark:text-black font-semibold text-base">
-            Add Your First Wallet
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <EmptyState
+        icon={Wallet}
+        title="No Wallets Yet"
+        description="Add your first wallet to start tracking your balances and transactions."
+        buttonText="Add Your First Wallet"
+        onButtonPress={onAddFirstWallet}
+      />
     );
   }
 
@@ -82,7 +72,6 @@ export function WalletList({
               <WalletItem
                 account={item}
                 isExpanded={!reorderMode && expandedWalletId === item.id}
-                isLast={false}
                 onToggleExpand={() => onToggleExpand(item.id)}
                 onSetDefault={() => onSetDefault(item.id)}
                 onDelete={() => onDeleteClick(item.id)}

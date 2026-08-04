@@ -5,29 +5,12 @@ import { useState, useMemo, useCallback } from 'react';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import {
-  Check,
-  Wallet,
-  Repeat,
-  ArrowUpDown,
-  PiggyBank,
-  Tags,
-  FileDown,
-  Download,
-  CircleDashed,
-  Calendar,
-  ChevronDown,
-  FileJson,
-  FileSpreadsheet,
-  File,
-  UserRound,
-} from 'lucide-react-native';
-import AnimatedSegment from '@/components/ui/animated-segment';
+import { Calendar, ChevronDown, Download } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { useApp } from '@/context/AppContext';
-import { MonthYearPickerModal } from '@/components/analytics/MonthYearPickerModal';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
 import { useTabNavigation } from '@/context/TabNavigationContext';
+import { ChipSelector } from '@/components/ui/ChipSelector';
 
 import {
   type ExportType,
@@ -38,24 +21,8 @@ import {
 } from '@/lib/export/buildExportData';
 import { buildFilename, type ExportFormat } from '@/lib/export/download';
 import { exportData } from '@/lib/export/formatters';
-
-const DATA_TYPES: { key: ExportType; label: string; icon: any }[] = [
-  { key: 'transactions', label: 'Transactions', icon: ArrowUpDown },
-  { key: 'subscriptions', label: 'Subscriptions', icon: Repeat },
-  { key: 'wallets', label: 'Wallets', icon: Wallet },
-  { key: 'balances', label: 'Balances', icon: CircleDashed },
-  { key: 'budgets', label: 'Budgets', icon: PiggyBank },
-  { key: 'categories', label: 'Categories', icon: Tags },
-  { key: 'profile', label: 'Profile', icon: UserRound },
-  { key: 'alldata', label: 'All Data', icon: FileDown },
-];
-
-const FORMATS: { key: ExportFormat; label: string; ext: string; icon: any }[] = [
-  { key: 'pdf', label: 'PDF', ext: '.pdf', icon: File },
-  { key: 'json', label: 'JSON', ext: '.json', icon: FileJson },
-  { key: 'xlsx', label: 'Excel', ext: '.xlsx', icon: FileSpreadsheet },
-];
-
+import { DATA_TYPES, FORMATS } from '@/lib/export/constants';
+import { MAX_TOTAL_ROWS } from '@/lib/import/parse';
 import { formatDatePickerDate } from '@/utils/transaction';
 
 export default function ExportScreen() {
@@ -127,16 +94,17 @@ export default function ExportScreen() {
 
   const totalRows = useMemo(() => tables.reduce((sum, t) => sum + t.rows.length, 0), [tables]);
 
-  const toggleType = useCallback((t: ExportType) => {
+  const toggleType = useCallback((t: string) => {
     setSelectedTypes((prev) => {
       if (t === 'alldata') {
         return prev.includes('alldata') ? [] : DATA_TYPES.map((d) => d.key);
       }
+      const key = t as Exclude<ExportType, 'alldata'>;
       const next = prev.filter((v) => v !== 'alldata');
-      if (next.includes(t)) {
-        return next.filter((v) => v !== t);
+      if (next.includes(key)) {
+        return next.filter((v) => v !== key);
       }
-      return [...next, t];
+      return [...next, key];
     });
   }, []);
 
@@ -167,6 +135,14 @@ export default function ExportScreen() {
         type: 'error',
         text1: 'No Data',
         text2: 'No data available for the selected types.',
+      });
+      return;
+    }
+    if (totalRows > MAX_TOTAL_ROWS) {
+      Toast.show({
+        type: 'warning',
+        text1: 'Large Export',
+        text2: `This export has ${totalRows.toLocaleString()} rows. Importing it back will truncate to the ${MAX_TOTAL_ROWS.toLocaleString()}-row limit.`,
       });
       return;
     }
@@ -219,36 +195,7 @@ export default function ExportScreen() {
         {/* ── What to export ── */}
         <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">What to export</Text>
-          <View>
-            {DATA_TYPES.map((dt, idx) => {
-              const active = selectedTypes.includes(dt.key);
-              const isLast = idx === DATA_TYPES.length - 1;
-              return (
-                <View key={dt.key}>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => toggleType(dt.key)}
-                    className="flex-row items-center gap-3 py-3">
-                    <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
-                      <Icon as={dt.icon} size={18} className="text-foreground" />
-                    </View>
-                    <Text className="flex-1 text-base font-medium text-foreground">{dt.label}</Text>
-                    <View
-                      className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
-                        active
-                          ? 'border-primary bg-primary'
-                          : 'border-border'
-                      }`}>
-                      {active && (
-                        <Icon as={Check} size={12} className="text-white dark:text-black" />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                  {!isLast && <View className="ml-12 h-[1px] bg-divider" />}
-                </View>
-              );
-            })}
-          </View>
+          <ChipSelector items={DATA_TYPES} selected={selectedTypes} onToggle={toggleType} />
         </View>
 
         {/* ── Time period ── */}
@@ -271,34 +218,11 @@ export default function ExportScreen() {
         {/* ── Format ── */}
         <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">Format</Text>
-          <View className="flex-row flex-wrap gap-2.5">
-            {FORMATS.map((f) => {
-              const active = format === f.key;
-              return (
-                <TouchableOpacity
-                  key={f.key}
-                  onPress={() => setFormat(f.key)}
-                  activeOpacity={0.75}
-                  className={`flex-row items-center gap-2 rounded-xl border px-4 py-2.5 ${
-                    active
-                      ? 'border-primary bg-primary'
-                      : 'border-border bg-surface'
-                  }`}>
-                  <Icon
-                    as={f.icon}
-                    size={16}
-                    className={active ? 'text-white dark:text-black' : 'text-muted'}
-                  />
-                  <Text
-                    className={`text-sm font-semibold ${
-                      active ? 'text-white dark:text-black' : 'text-foreground'
-                    }`}>
-                    {f.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <ChipSelector
+            items={FORMATS}
+            selected={[format]}
+            onToggle={(k) => setFormat(k as ExportFormat)}
+          />
         </View>
 
         {/* ── Export button ── */}

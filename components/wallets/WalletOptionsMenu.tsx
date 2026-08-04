@@ -1,9 +1,10 @@
-import { View, TouchableOpacity, Modal } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Plus } from 'lucide-react-native';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { InAppModal } from '@/components/ui/InAppModal';
 
 interface WalletOptionsMenuProps {
   visible: boolean;
@@ -18,10 +19,8 @@ export function WalletOptionsMenu({ visible, onClose, onAddWallet }: WalletOptio
   });
 
   return (
-    <Modal
+    <InAppModal
       visible={isRendered}
-      transparent={true}
-      animationType="none"
       onRequestClose={onClose}
     >
       <TouchableOpacity 
@@ -44,6 +43,6 @@ export function WalletOptionsMenu({ visible, onClose, onAddWallet }: WalletOptio
           </View>
         </Animated.View>
       </TouchableOpacity>
-    </Modal>
+    </InAppModal>
   );
 }

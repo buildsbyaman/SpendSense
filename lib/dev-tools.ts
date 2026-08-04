@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const DEV_MODE = process.env.EXPO_PUBLIC_DEV_MODE === '1';
+// Developer tools must never be reachable in a release build, regardless of a
+// misconfigured build-time env var.
+export const DEV_MODE = __DEV__ && process.env.EXPO_PUBLIC_DEV_MODE === '1';
 
 const STORAGE_KEY = 'spendsense:devTools';
 

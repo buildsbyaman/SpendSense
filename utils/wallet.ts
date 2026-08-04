@@ -1,4 +1,4 @@
-import { Smartphone, Landmark, CreditCard, type LucideIcon } from 'lucide-react-native';
+import { Smartphone, Landmark, CreditCard, Wallet, type LucideIcon } from 'lucide-react-native';
 
 export interface Account {
   id: string;
@@ -31,15 +31,21 @@ const compactAbs = (absValue: number, decimals = 2): string => {
   if (absValue >= 1_000_000_000_000) return compact(1e12, 'T');
   if (absValue >= 1_000_000_000) return compact(1e9, 'B');
   if (absValue >= 1_000_000) return compact(1e6, 'M');
-  return absValue.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return absValue.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
 };
 
 /**
  * Safely parses and formats a wallet balance for storage.
- * Ensures the balance is within safe bounds (-999,999,999 to 999,999,999).
  * Returns a full-precision formatted string (e.g. -$50.00, $6,000,000.00).
+ * No bounds clamping: balances are stored at full precision to avoid silent data loss.
  */
-export const formatWalletBalance = (balanceInput: string | number, symbol: string = '$'): string => {
+export const formatWalletBalance = (
+  balanceInput: string | number,
+  symbol: string = '$'
+): string => {
   const balanceStr = typeof balanceInput === 'number' ? balanceInput.toString() : balanceInput;
   let parsedBalance: number;
   if (/^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/.test(balanceStr.trim())) {
@@ -51,10 +57,6 @@ export const formatWalletBalance = (balanceInput: string | number, symbol: strin
 
   if (isNaN(parsedBalance)) {
     parsedBalance = 0;
-  } else if (parsedBalance > 999999999) {
-    parsedBalance = 999999999;
-  } else if (parsedBalance < -999999999) {
-    parsedBalance = -999999999;
   }
 
   const isNegative = parsedBalance < 0;
@@ -86,5 +88,60 @@ const WALLET_TYPE_COLORS: Record<string, string> = {
   Digital: '#10b981',
 };
 
-export const getWalletTypeColor = (type: string): string =>
-  WALLET_TYPE_COLORS[type] ?? '#64748b';
+export const getWalletTypeColor = (type: string): string => WALLET_TYPE_COLORS[type] ?? '#64748b';
+
+const WALLET_TYPE_ICONS: Record<string, LucideIcon> = {
+  Bank: Landmark,
+  Card: CreditCard,
+  Digital: Smartphone,
+};
+
+/**
+ * Maps a stored wallet type to its display icon. Single source of truth so a
+ * Card wallet renders the same icon everywhere (adding vs. reloading).
+ */
+export const getWalletTypeIcon = (type: string): LucideIcon =>
+  WALLET_TYPE_ICONS[type] ?? CreditCard;
+
+/**
+ * Hydrates a stored wallet row into a full Account with its display icon.
+ */
+export const deserializeAccount = (data: {
+  id: string;
+  name: string;
+  number: string;
+  balance: string;
+  type: string;
+  isDefault?: boolean;
+}): Account => {
+  const iconMap: Record<string, typeof Wallet> = {
+    Bank: Landmark,
+    Card: Wallet,
+    Digital: Smartphone,
+  };
+  return { ...data, icon: iconMap[data.type] ?? Wallet };
+};
+
+/**
+ * Sanitizes a raw balance input: keeps only digits, minus and decimal point.
+ */
+export const sanitizeBalanceInput = (text: string): string => text.replace(/[^0-9.-]/g, '');
+
+/**
+ * Validates wallet form fields (name required, balance required + numeric).
+ */
+export const validateWallet = (
+  name: string,
+  balanceText: string
+): { name?: string; balance?: string } => {
+  const errors: { name?: string; balance?: string } = {};
+  if (!name.trim()) errors.name = 'Wallet name is required';
+  if (!balanceText.trim()) errors.balance = 'Current balance is required';
+  else {
+    const parsedBalance = parseFloat(balanceText.replace(/[^0-9.-]/g, ''));
+    if (!isFinite(parsedBalance)) {
+      errors.balance = 'Enter a valid amount';
+    }
+  }
+  return errors;
+};

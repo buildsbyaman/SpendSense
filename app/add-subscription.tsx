@@ -10,7 +10,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { X, Calendar } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { sanitizeAmountInput, formatDatePickerDate } from '@/utils/transaction';
@@ -19,6 +19,13 @@ import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
+import { QuickDatePicker } from '@/components/transactions/QuickDatePicker';
+import { CycleSelector } from '@/components/subscriptions/CycleSelector';
+import { EndDateSelector } from '@/components/subscriptions/EndDateSelector';
+import { WalletSelector } from '@/components/wallets/WalletSelector';
+import { CategorySelector } from '@/components/categories/CategorySelector';
+import { usePrefillSubscriptionForm } from '@/components/subscriptions/usePrefillSubscriptionForm';
+import { validateSubscriptionForm } from '@/lib/subscriptionForm';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AnimatedSegment from '@/components/ui/animated-segment';
 import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
@@ -49,7 +56,8 @@ export default function AddSubscriptionScreen() {
   // Re-sync wallet selection if accounts load after mount or previous selection becomes stale
   useEffect(() => {
     if (selectedWalletId && accounts.some((a) => a.id === selectedWalletId)) return;
-    const fallback = (getSortedAccounts().find((a) => a.isDefault)?.id || getSortedAccounts()[0]?.id) ?? '';
+    const fallback =
+      (getSortedAccounts().find((a) => a.isDefault)?.id || getSortedAccounts()[0]?.id) ?? '';
     if (fallback) setSelectedWalletId(fallback);
   }, [accounts, getSortedAccounts, selectedWalletId]);
   const [category, setCategory] = useState('Subscriptions');
@@ -68,28 +76,19 @@ export default function AddSubscriptionScreen() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const sheetRef = useRef<SlideSheetHandle>(null);
 
-  useEffect(() => {
-    if (editId) {
-      const sub = subscriptions.find((s) => s.id === editId);
-      if (sub) {
-        setName(sub.name);
-        setAmount(sub.amount.toString());
-        setCycle(sub.cycle);
-        setCategory(sub.category);
-        setSelectedWalletId(sub.wallet_id);
-        setNextDate(new Date(sub.next_billing_date));
-        setCalendarMonth(new Date(sub.next_billing_date));
-        setIsActive(sub.is_active === 1);
-        if (sub.end_date) {
-          setHasEndDate(true);
-          setEndDate(new Date(sub.end_date));
-          setEndCalendarMonth(new Date(sub.end_date));
-        } else {
-          setHasEndDate(false);
-        }
-      }
-    }
-  }, [editId]);
+  usePrefillSubscriptionForm(editId, subscriptions, {
+    setName,
+    setAmount,
+    setCycle,
+    setCategory,
+    setSelectedWalletId,
+    setNextDate,
+    setCalendarMonth,
+    setIsActive,
+    setHasEndDate,
+    setEndDate,
+    setEndCalendarMonth,
+  });
 
   const handleNavigateBack = () => {
     if (router.canGoBack()) {
@@ -103,39 +102,44 @@ export default function AddSubscriptionScreen() {
     sheetRef.current?.close();
   };
 
+  const savingRef = useRef(false);
+
   const handleSave = async () => {
+    if (savingRef.current) return;
+
     const parsedAmount = parseFloat(amount);
-    if (!name.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Name',
-        text2: 'Please enter a subscription name',
-      });
-      return;
-    }
-    if (isNaN(parsedAmount) || !isFinite(parsedAmount) || parsedAmount <= 0) {
-      Toast.show({ type: 'error', text1: 'Invalid Amount', text2: 'Please enter a valid amount' });
-      return;
-    }
-    if (!selectedWalletId) {
-      Toast.show({ type: 'error', text1: 'Wallet Required', text2: 'Please select a wallet' });
+    const validation = validateSubscriptionForm({
+      name,
+      amount,
+      selectedWalletId,
+      hasEndDate,
+      endDate,
+      nextDate,
+    });
+    if (validation) {
+      Toast.show({ type: 'error', ...validation });
       return;
     }
 
-    if (hasEndDate && endDate < nextDate) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid End Date',
-        text2: 'End date must be after next billing date',
-      });
-      return;
-    }
-
-    if (editId) {
-      const sub = subscriptions.find((s) => s.id === editId);
-      if (sub) {
-        await updateSubscription({
-          ...sub,
+    savingRef.current = true;
+    try {
+      if (editId) {
+        const sub = subscriptions.find((s) => s.id === editId);
+        if (sub) {
+          await updateSubscription({
+            ...sub,
+            name: name.trim(),
+            amount: parsedAmount,
+            cycle,
+            category,
+            wallet_id: selectedWalletId,
+            next_billing_date: nextDate.toISOString(),
+            is_active: isActive ? 1 : 0,
+            end_date: hasEndDate ? endDate.toISOString() : null,
+          });
+        }
+      } else {
+        await addSubscription({
           name: name.trim(),
           amount: parsedAmount,
           cycle,
@@ -146,28 +150,19 @@ export default function AddSubscriptionScreen() {
           end_date: hasEndDate ? endDate.toISOString() : null,
         });
       }
-    } else {
-      await addSubscription({
-        name: name.trim(),
-        amount: parsedAmount,
-        cycle,
-        category,
-        wallet_id: selectedWalletId,
-        next_billing_date: nextDate.toISOString(),
-        is_active: isActive ? 1 : 0,
-        end_date: hasEndDate ? endDate.toISOString() : null,
+
+      Toast.show({
+        type: 'success',
+        text1: editId ? 'Subscription Updated' : 'Subscription Added',
+        text2: editId
+          ? 'Subscription details saved successfully.'
+          : `Successfully added ${name.trim()} subscription!`,
       });
+
+      handleClose();
+    } finally {
+      savingRef.current = false;
     }
-
-    Toast.show({
-      type: 'success',
-      text1: editId ? 'Subscription Updated' : 'Subscription Added',
-      text2: editId
-        ? 'Subscription details saved successfully.'
-        : `Successfully added ${name.trim()} subscription!`,
-    });
-
-    handleClose();
   };
 
   const categoriesList = getSortedCategories('expense');
@@ -184,11 +179,13 @@ export default function AddSubscriptionScreen() {
             onPress={handleClose}
           />
 
-          <View className="rounded-t-2xl border-t border-border bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+          <View
+            className="rounded-t-2xl border-t border-border bg-background p-6 pb-12"
+            style={{ maxHeight: '90%' }}>
             {/* Header */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Subscription' : 'Add Subscription'}</Text>
-              <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
+              <TouchableOpacity onPress={handleClose} className="rounded-[6px] bg-secondary p-2.5">
                 <Icon as={X} size={20} className="text-foreground" />
               </TouchableOpacity>
             </View>
@@ -232,19 +229,7 @@ export default function AddSubscriptionScreen() {
                 {/* Cycle Selector */}
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Billing Cycle</Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {(['weekly', 'monthly', 'quarterly', 'yearly'] as const).map((c) => (
-                      <TouchableOpacity
-                        key={c}
-                        onPress={() => setCycle(c)}
-                        className={`min-w-[70px] flex-1 items-center justify-center rounded-xl border px-2 py-2.5 ${cycle === c ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                        <Text
-                          className={`text-xs font-semibold capitalize ${cycle === c ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                          {c}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  <CycleSelector value={cycle} onChange={setCycle} />
                 </View>
 
                 {/* Active Toggle */}
@@ -266,143 +251,51 @@ export default function AddSubscriptionScreen() {
                 {/* Wallet Selector */}
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet for Auto-Pay</Text>
-                  {accounts.length === 0 ? (
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (router.canGoBack()) router.back();
-                        router.push('/(tabs)/wallets');
-                      }}
-                      className="items-center rounded-xl border border-dashed border-border bg-surface p-4">
-                      <Text className="text-sm font-semibold text-primary">
-                        Create a wallet first
-                      </Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View className="flex-row gap-3 py-1">
-                        {getSortedAccounts().map((wallet) => {
-                          const isSelected = selectedWalletId === wallet.id;
-                          return (
-                            <TouchableOpacity
-                              key={wallet.id}
-                              onPress={() => setSelectedWalletId(wallet.id)}
-                              className={`flex-row items-center gap-2.5 rounded-xl border px-4 py-3 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                              <Icon
-                                as={wallet.icon}
-                                size={16}
-                                className={
-                                  isSelected ? 'text-white dark:text-black' : 'text-foreground'
-                                }
-                              />
-                              <View>
-                                <Text
-                                  className={`text-sm font-semibold ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                                  {wallet.name}
-                                </Text>
-                                <Text
-                                  className={`text-[10px] ${isSelected ? 'text-white/80 dark:text-black/60' : 'text-muted'}`}>
-                                  {wallet.balance}
-                                </Text>
-                              </View>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </ScrollView>
-                  )}
+                  <WalletSelector
+                    accounts={accounts}
+                    sortedAccounts={getSortedAccounts()}
+                    selectedWalletId={selectedWalletId}
+                    onSelect={setSelectedWalletId}
+                    emptyMessage="Create a wallet first"
+                    onEmptyAction={() => {
+                      if (router.canGoBack()) router.back();
+                      router.push('/(tabs)/wallets');
+                    }}
+                  />
                 </View>
 
                 {/* Category Selector */}
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row gap-2.5 py-1">
-                      {categoriesList.map((cat) => {
-                        const isSelected = category === cat.name;
-                        return (
-                          <TouchableOpacity
-                            key={cat.name}
-                            onPress={() => setCategory(cat.name)}
-                            className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                            <Text
-                              className={`text-sm font-medium ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                              {cat.name}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </ScrollView>
+                  <CategorySelector
+                    categories={categoriesList as Array<{ name: string; icon?: string; color?: string }>}
+                    selected={category}
+                    onSelect={setCategory}
+                  />
                 </View>
 
                 {/* Quick Date Selector */}
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Next Billing Date</Text>
-                  <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      onPress={() => setNextDate(new Date())}
-                      className={`flex-1 items-center rounded-xl border py-3 ${nextDate.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                      <Text
-                        className={`text-xs font-semibold ${nextDate.toDateString() === new Date().toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                        Today
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setCalendarMonth(new Date(nextDate));
-                        setIsDatePickerOpen(true);
-                      }}
-                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border px-3 py-3 ${nextDate.toDateString() !== new Date().toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-                      <Icon
-                        as={Calendar}
-                        size={12}
-                        className={
-                          nextDate.toDateString() !== new Date().toDateString()
-                            ? 'text-white dark:text-black'
-                            : 'text-foreground'
-                        }
-                      />
-                      <Text
-                        className={`text-xs font-semibold ${nextDate.toDateString() !== new Date().toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}
-                        numberOfLines={1}>
-                        {formatDatePickerDate(nextDate)}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <QuickDatePicker
+                    date={nextDate}
+                    onSelectToday={() => setNextDate(new Date())}
+                    onOpenCalendar={() => {
+                      setCalendarMonth(new Date(nextDate));
+                      setIsDatePickerOpen(true);
+                    }}
+                  />
                 </View>
 
                 {/* End Date Selector */}
-                <View>
-                  <Text className="mb-2 ml-1 text-sm text-muted">Expiration Date</Text>
-                  <AnimatedSegment<'never' | 'set'>
-                    options={[
-                      { label: 'Never Expires', value: 'never' },
-                      { label: 'Set End Date', value: 'set' },
-                    ]}
-                    selectedValue={hasEndDate ? 'set' : 'never'}
-                    onChange={(val) => {
-                      const isSet = val === 'set';
-                      setHasEndDate(isSet);
-                      if (isSet && endDate < nextDate) {
-                        const d = new Date(nextDate);
-                        d.setMonth(d.getMonth() + 1);
-                        setEndDate(d);
-                      }
-                    }}
-                  />
-                  {hasEndDate && (
-                    <View className="mt-4 flex-row justify-center">
-                      <TouchableOpacity
-                        onPress={() => setIsEndDatePickerOpen(true)}
-                        className="bg-primary/10 flex-row items-center gap-1.5 rounded-xl border border-primary px-5 py-2.5">
-                        <Icon as={Calendar} size={14} className="text-primary" />
-                        <Text className="text-sm font-semibold text-primary">
-                          {formatDatePickerDate(endDate)}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
+                <EndDateSelector
+                  hasEndDate={hasEndDate}
+                  endDate={endDate}
+                  nextDate={nextDate}
+                  onChangeHasEndDate={setHasEndDate}
+                  onChangeEndDate={setEndDate}
+                  onOpenPicker={() => setIsEndDatePickerOpen(true)}
+                />
 
                 <TouchableOpacity
                   onPress={handleSave}
@@ -412,7 +305,7 @@ export default function AddSubscriptionScreen() {
                     parseFloat(amount) === 0 ||
                     !name.trim()
                   }
-                  className={`mt-8 items-center justify-center rounded-xl bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
+                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
                   activeOpacity={0.7}>
                   <Text className="text-base font-medium text-white dark:text-black">
                     {editId ? 'Save Changes' : 'Save Subscription'}

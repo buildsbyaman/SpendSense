@@ -1,8 +1,16 @@
-import { View, TouchableOpacity, TextInput, LayoutAnimation, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  TextInput,
+  LayoutAnimation,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import { useState, useEffect, useRef } from 'react';
-import { formatWalletBalance, formatAccountNumber } from '@/utils/wallet';
+import { formatWalletBalance, formatAccountNumber, validateWallet } from '@/utils/wallet';
 import { useApp } from '@/context/AppContext';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
@@ -17,11 +25,13 @@ const ACCOUNT_TYPES = ['Bank', 'Card', 'Digital', 'Cash'];
 
 export default function AddWalletScreen() {
   const { colorScheme } = useColorScheme();
-  const { accounts, addWallet, updateWallet, deleteWallet, setDefaultWallet, userProfile } = useApp();
+  const { accounts, addWallet, updateWallet, deleteWallet, setDefaultWallet, userProfile } =
+    useApp();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
-  
-  const placeholderColor = colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
-  
+
+  const placeholderColor =
+    colorScheme === 'dark' ? PLACEHOLDER_COLORS.dark : PLACEHOLDER_COLORS.light;
+
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
@@ -32,7 +42,7 @@ export default function AddWalletScreen() {
 
   useEffect(() => {
     if (editId) {
-      const wallet = accounts.find(a => a.id === editId);
+      const wallet = accounts.find((a) => a.id === editId);
       if (wallet) {
         setNewName(wallet.name);
         setNewNumber(wallet.number || '');
@@ -54,10 +64,12 @@ export default function AddWalletScreen() {
     sheetRef.current?.close();
   };
 
+  const savingRef = useRef(false);
+
   const handleSave = () => {
-    const newErrors: { name?: string; balance?: string } = {};
-    if (!newName.trim()) newErrors.name = 'Wallet name is required';
-    if (!newBalance.trim()) newErrors.balance = 'Current balance is required';
+    if (savingRef.current) return;
+
+    const newErrors = validateWallet(newName, newBalance);
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -65,37 +77,50 @@ export default function AddWalletScreen() {
       return;
     }
 
-    const formattedName = newName.trim();
-    const formattedBalance = formatWalletBalance(newBalance, userProfile.currencySymbol);
+    savingRef.current = true;
+    try {
+      const formattedName = newName.trim();
+      const formattedBalance = formatWalletBalance(newBalance, userProfile.currencySymbol);
 
-    let icon = Wallet;
-    if (accountType === 'Bank') icon = Landmark;
-    if (accountType === 'Card') icon = CreditCard;
-    if (accountType === 'Digital') icon = Smartphone;
+      let icon = Wallet;
+      if (accountType === 'Bank') icon = Landmark;
+      if (accountType === 'Card') icon = CreditCard;
+      if (accountType === 'Digital') icon = Smartphone;
 
-    if (editId) {
-      updateWallet({
-        id: editId,
-        name: formattedName,
-        number: newNumber.trim(),
-        balance: formattedBalance,
-        icon,
-        type: accountType,
-        isDefault: accounts.find(a => a.id === editId)?.isDefault || false,
-      });
-      Toast.show({ type: 'success', text1: 'Wallet Updated', text2: 'Your wallet has been updated successfully' });
-    } else {
-      addWallet({
-        name: formattedName,
-        number: newNumber.trim(),
-        balance: formattedBalance,
-        icon,
-        type: accountType,
-      });
-      Toast.show({ type: 'success', text1: 'Wallet Added', text2: 'Your new wallet has been successfully added' });
+      if (editId) {
+        updateWallet({
+          id: editId,
+          name: formattedName,
+          number: newNumber.trim(),
+          balance: formattedBalance,
+          icon,
+          type: accountType,
+          isDefault: accounts.find((a) => a.id === editId)?.isDefault || false,
+        });
+        Toast.show({
+          type: 'success',
+          text1: 'Wallet Updated',
+          text2: 'Your wallet has been updated successfully',
+        });
+      } else {
+        addWallet({
+          name: formattedName,
+          number: newNumber.trim(),
+          balance: formattedBalance,
+          icon,
+          type: accountType,
+        });
+        Toast.show({
+          type: 'success',
+          text1: 'Wallet Added',
+          text2: 'Your new wallet has been successfully added',
+        });
+      }
+
+      handleClose();
+    } finally {
+      savingRef.current = false;
     }
-
-    handleClose();
   };
 
   const handleDelete = async () => {
@@ -103,9 +128,17 @@ export default function AddWalletScreen() {
       const result = await deleteWallet(editId);
       if (!result.blocked) {
         if (result.newDefaultName) {
-          Toast.show({ type: 'success', text1: 'Wallet Deleted', text2: `"${result.newDefaultName}" is now your default wallet.` });
+          Toast.show({
+            type: 'success',
+            text1: 'Wallet Deleted',
+            text2: `"${result.newDefaultName}" is now your default wallet.`,
+          });
         } else {
-          Toast.show({ type: 'success', text1: 'Wallet Deleted', text2: 'Transactions have been moved to your default wallet.' });
+          Toast.show({
+            type: 'success',
+            text1: 'Wallet Deleted',
+            text2: 'Transactions have been moved to your default wallet.',
+          });
         }
         handleClose();
       }
@@ -115,7 +148,11 @@ export default function AddWalletScreen() {
   const handleSetDefault = () => {
     if (editId) {
       setDefaultWallet(editId);
-      Toast.show({ type: 'success', text1: 'Default Set', text2: 'Wallet has been set as your default.' });
+      Toast.show({
+        type: 'success',
+        text1: 'Default Set',
+        text2: 'Wallet has been set as your default.',
+      });
       handleClose();
     }
   };
@@ -126,124 +163,139 @@ export default function AddWalletScreen() {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50 dark:bg-black/70">
-          
-          <TouchableOpacity 
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
-            activeOpacity={1} 
-            onPress={handleClose} 
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            activeOpacity={1}
+            onPress={handleClose}
           />
 
-          <View className="rounded-t-2xl border-t border-border bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+          <View
+            className="rounded-t-2xl border-t border-border bg-background p-6 pb-12"
+            style={{ maxHeight: '90%' }}>
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Wallet' : 'Add Wallet'}</Text>
               <View className="flex-row items-center gap-2">
-                {editId && !accounts.find(a => a.id === editId)?.isDefault && (
-                  <TouchableOpacity 
-                    onPress={handleDelete} 
-                    className="rounded-full bg-red-100 p-2.5 dark:bg-red-900/30">
+                {editId && !accounts.find((a) => a.id === editId)?.isDefault && (
+                  <TouchableOpacity
+                    onPress={handleDelete}
+                    className="rounded-[6px] bg-red-100 p-2.5 dark:bg-red-900/30">
                     <Icon as={Trash2} size={20} className="text-red-500" />
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
+                <TouchableOpacity
+                  onPress={handleClose}
+                  className="rounded-[6px] bg-secondary p-2.5">
                   <Icon as={X} size={20} className="text-foreground" />
                 </TouchableOpacity>
               </View>
             </View>
 
-            <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled">
               <View className="flex-col gap-5">
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">Wallet Name</Text>
-                <TextInput
-                  className={`text-foreground rounded-xl border bg-surface px-4 py-3 text-base ${errors.name ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
-                  placeholder="e.g. PayPal"
-                  placeholderTextColor={placeholderColor}
-                  value={newName}
-                  onChangeText={(text) => {
-                    if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-                    if (text.length > 0) {
-                      setNewName(text.charAt(0).toUpperCase() + text.slice(1));
-                    } else {
-                      setNewName(text);
-                    }
-                  }}
-                  onFocus={() => setFocusedInput('name')}
-                  onBlur={() => setFocusedInput(null)}
-                />
-                {errors.name && <Text className="ml-4 mt-2 text-xs text-red-500">{errors.name}</Text>}
-              </View>
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Wallet Name</Text>
+                  <TextInput
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${errors.name ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
+                    placeholder="e.g. PayPal"
+                    placeholderTextColor={placeholderColor}
+                    value={newName}
+                    onChangeText={(text) => {
+                      if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                      if (text.length > 0) {
+                        setNewName(text.charAt(0).toUpperCase() + text.slice(1));
+                      } else {
+                        setNewName(text);
+                      }
+                    }}
+                    onFocus={() => setFocusedInput('name')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                  {errors.name && (
+                    <Text className="ml-4 mt-2 text-xs text-red-500">{errors.name}</Text>
+                  )}
+                </View>
 
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">Account Type</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-                  {ACCOUNT_TYPES.map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      className={`mr-2 rounded-xl border px-3 py-2.5 ${accountType === type ? 'border-primary bg-primary' : 'border-border bg-surface'}`}
-                      onPress={() => setAccountType(type)}>
-                      <Text
-                        className={`text-sm font-medium ${accountType === type ? 'text-white dark:text-black' : 'text-foreground'}`}>
-                        {type}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Account Type</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    className="flex-row">
+                    {ACCOUNT_TYPES.map((type) => (
+                      <TouchableOpacity
+                        key={type}
+                        className={`mr-2 rounded-xl border px-3 py-2.5 ${accountType === type ? 'bg-primary/10 dark:bg-primary/15 border-primary' : 'border-border bg-surface'}`}
+                        onPress={() => setAccountType(type)}>
+                        <Text
+                          className={`text-sm font-semibold ${accountType === type ? 'text-primary' : 'text-foreground'}`}>
+                          {type}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
 
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">Card / Account Number (Optional)</Text>
-                <TextInput
-                  className={`text-foreground rounded-xl border bg-surface px-4 py-3 text-base ${focusedInput === 'number' ? 'border-primary' : 'border-border'}`}
-                  placeholder="**** **** **** 1234"
-                  placeholderTextColor={placeholderColor}
-                  value={newNumber}
-                  onChangeText={(text) => setNewNumber(formatAccountNumber(text))}
-                  maxLength={50}
-                  onFocus={() => setFocusedInput('number')}
-                  onBlur={() => setFocusedInput(null)}
-                />
-              </View>
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">
+                    Card / Account Number (Optional)
+                  </Text>
+                  <TextInput
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'number' ? 'border-primary' : 'border-border'}`}
+                    placeholder="**** **** **** 1234"
+                    placeholderTextColor={placeholderColor}
+                    value={newNumber}
+                    onChangeText={(text) => setNewNumber(formatAccountNumber(text))}
+                    maxLength={50}
+                    onFocus={() => setFocusedInput('number')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                </View>
 
-              <View>
-                <Text className="mb-2 ml-1 text-sm text-muted">Current Balance</Text>
-                <TextInput
-                  className={`text-foreground rounded-xl border bg-surface px-4 py-3 text-base ${errors.balance ? 'border-red-500' : focusedInput === 'balance' ? 'border-primary' : 'border-border'}`}
-                  placeholder={`${userProfile.currencySymbol}0.00`}
-                  placeholderTextColor={placeholderColor}
-                  keyboardType="decimal-pad"
-                  value={newBalance}
-                  onChangeText={(text) => {
-                    if (errors.balance) setErrors((prev) => ({ ...prev, balance: undefined }));
-                    const sanitized = text.replace(/(?!^)-/g, '').replace(/^-{2,}/, '-');
-                    setNewBalance(sanitized);
-                  }}
-                  onFocus={() => setFocusedInput('balance')}
-                  onBlur={() => setFocusedInput(null)}
-                />
-                <Text className="ml-4 mt-1.5 text-xs text-muted">
-                  Tip: Start with − to enter a negative balance
-                </Text>
-                {errors.balance && (
-                  <Text className="ml-4 mt-1 text-xs text-red-500">{errors.balance}</Text>
-                )}
-              </View>
+                <View>
+                  <Text className="mb-2 ml-1 text-sm text-muted">Current Balance</Text>
+                  <TextInput
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${errors.balance ? 'border-red-500' : focusedInput === 'balance' ? 'border-primary' : 'border-border'}`}
+                    placeholder={`${userProfile.currencySymbol}0.00`}
+                    placeholderTextColor={placeholderColor}
+                    keyboardType="decimal-pad"
+                    value={newBalance}
+                    onChangeText={(text) => {
+                      if (errors.balance) setErrors((prev) => ({ ...prev, balance: undefined }));
+                      const sanitized = text.replace(/(?!^)-/g, '').replace(/^-{2,}/, '-');
+                      setNewBalance(sanitized);
+                    }}
+                    onFocus={() => setFocusedInput('balance')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                  <Text className="ml-4 mt-1.5 text-xs text-muted">
+                    Tip: Start with − to enter a negative balance
+                  </Text>
+                  {errors.balance && (
+                    <Text className="ml-4 mt-1 text-xs text-red-500">{errors.balance}</Text>
+                  )}
+                </View>
               </View>
             </ScrollView>
 
             <View className="mt-8 flex-row gap-3">
-              {editId && !accounts.find(a => a.id === editId)?.isDefault && (
+              {editId && !accounts.find((a) => a.id === editId)?.isDefault && (
                 <TouchableOpacity
-                  className="flex-1 items-center justify-center rounded-xl bg-secondary py-3.5"
+                  className="flex-1 items-center justify-center rounded-[6px] bg-secondary py-3.5"
                   onPress={handleSetDefault}
                   activeOpacity={0.7}>
-                  <Text className="text-foreground text-base font-medium">Set Default</Text>
+                  <Text className="text-base font-medium text-foreground">Set Default</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
-                className={`items-center justify-center rounded-xl bg-primary py-3.5 ${editId && !accounts.find(a => a.id === editId)?.isDefault ? 'flex-1' : 'flex-1'} ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
+                className={`items-center justify-center rounded-[6px] bg-primary py-3.5 flex-1 ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
                 onPress={handleSave}
                 activeOpacity={0.7}>
-                <Text className="text-base font-medium text-white dark:text-black">Save Wallet</Text>
+                <Text className="text-base font-medium text-white dark:text-black">
+                  Save Wallet
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

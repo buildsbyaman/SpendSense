@@ -1,10 +1,11 @@
-import { View, TouchableOpacity, Modal } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { AlertTriangle } from 'lucide-react-native';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { InAppModal } from '@/components/ui/InAppModal';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -56,7 +57,7 @@ export function ConfirmDialog({
   const displayIcon = content.icon || AlertTriangle;
 
   return (
-    <Modal visible={isRendered} transparent animationType="none" onRequestClose={onCancel}>
+    <InAppModal visible={isRendered} onRequestClose={onCancel}>
       <TouchableOpacity
         style={{ zIndex: 9999, elevation: 99 }}
         className="flex-1 items-center justify-center px-6"
@@ -79,14 +80,14 @@ export function ConfirmDialog({
               {!content.hideCancel && (
                 <TouchableOpacity
                   onPress={onCancel}
-                  className="flex-1 items-center justify-center rounded-xl bg-secondary py-3.5"
+                  className="flex-1 items-center justify-center rounded-[6px] bg-secondary py-3.5"
                   activeOpacity={0.8}>
                   <Text className="text-sm font-semibold text-foreground">{content.cancelText}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
                 onPress={onConfirm}
-                className={`flex-1 items-center justify-center rounded-xl py-3.5 ${content.destructive && !content.hideCancel ? 'bg-red-500' : 'bg-primary'}`}
+                className={`flex-1 items-center justify-center rounded-[6px] py-3.5 ${content.destructive && !content.hideCancel ? 'bg-destructive' : 'bg-primary'}`}
                 activeOpacity={0.8}>
                 <Text
                   className={`text-sm font-semibold ${content.destructive && !content.hideCancel ? 'text-white' : 'text-white dark:text-black'}`}>
@@ -97,6 +98,6 @@ export function ConfirmDialog({
           </View>
         </Animated.View>
       </TouchableOpacity>
-    </Modal>
+    </InAppModal>
   );
 }

@@ -14,7 +14,7 @@ import { formatNumber } from '@/utils/wallet';
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
 import { router } from 'expo-router';
 
-export default function BudgetsScreen() {
+export default function BudgetsScreen({ referrer }: { referrer?: string }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
   const { budgets, transactions, getSortedCategories, userProfile } = useApp();
@@ -67,7 +67,7 @@ export default function BudgetsScreen() {
         <Header 
           title="Budgets" 
           showBack={true} 
-          onLeftPress={() => navigateTab('profile')} 
+          onLeftPress={() => navigateTab(referrer === 'home' ? 'index' : 'profile')} 
           rightIcon={Plus}
           onRightPress={() => router.push("/add-budget")}
         />

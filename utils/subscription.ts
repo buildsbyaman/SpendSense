@@ -1,5 +1,12 @@
 export type SubscriptionCycle = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
+export const SUBSCRIPTION_CYCLES: readonly SubscriptionCycle[] = [
+  'weekly',
+  'monthly',
+  'quarterly',
+  'yearly',
+];
+
 export interface Subscription {
   id: string;
   name: string;
@@ -12,20 +19,36 @@ export interface Subscription {
   end_date?: string | null;
 }
 
-export function getNextBillingDate(date: Date, cycle: SubscriptionCycle): Date {
+/**
+ * Adds `months` to `date` while keeping the day-of-month anchored to `anchorDay`.
+ * The day is clamped to the last day of the target month so month-end dates do
+ * not permanently drift (Jan 31 -> Feb 28 -> Mar 31 -> Apr 30, not ... -> Mar 28).
+ * Time-of-day is preserved.
+ */
+function addMonthsKeepingAnchor(date: Date, months: number, anchorDay: number): void {
+  const y = date.getFullYear();
+  const m = date.getMonth() + months;
+  date.setFullYear(y, m, 1);
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  date.setDate(Math.min(anchorDay, lastDay));
+}
+
+export function getNextBillingDate(
+  date: Date,
+  cycle: SubscriptionCycle,
+  anchorDay: number = date.getDate()
+): Date {
   const next = new Date(date);
-  const day = next.getDate();
   if (cycle === 'weekly') {
     next.setDate(next.getDate() + 7);
   } else if (cycle === 'monthly') {
-    next.setMonth(next.getMonth() + 1);
-    if (next.getDate() !== day) next.setDate(0);
+    addMonthsKeepingAnchor(next, 1, anchorDay);
   } else if (cycle === 'quarterly') {
-    next.setMonth(next.getMonth() + 3);
-    if (next.getDate() !== day) next.setDate(0);
+    addMonthsKeepingAnchor(next, 3, anchorDay);
   } else if (cycle === 'yearly') {
-    next.setFullYear(next.getFullYear() + 1);
-    if (next.getDate() !== day) next.setDate(0);
+    addMonthsKeepingAnchor(next, 12, anchorDay);
   }
+  // Unknown/invalid cycles return the input date unchanged. Callers MUST validate
+  // `cycle` before looping or they risk an infinite loop.
   return next;
 }

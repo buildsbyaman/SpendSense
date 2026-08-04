@@ -32,7 +32,7 @@ export function Avatar({ name, avatar, size = 48 }: AvatarProps) {
   const textColor = isDark ? '#e8e8ec' : '#1a1c1b';
 
   if (avatar) {
-    const isDataUri = avatar.startsWith('data:');
+    const isDataUri = avatar.startsWith('data:image/');
     const isFileUri = avatar.startsWith('file://') || avatar.startsWith('ph://');
     if (isDataUri || isFileUri) {
       return (

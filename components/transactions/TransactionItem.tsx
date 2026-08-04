@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ChevronDown, ChevronUp, ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
@@ -9,7 +9,6 @@ import {
   getCategoryDetails,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
-  sanitizeAmountInput,
 } from '@/utils/transaction';
 import { type Account, formatNumber } from '@/utils/wallet';
 import { router } from 'expo-router';
@@ -26,7 +25,6 @@ interface TransactionItemProps {
   isLast: boolean;
   onToggleExpand: () => void;
   onDelete: () => void;
-  onUpdate: (updated: Transaction) => void;
   accounts: Account[];
   getWalletName: (walletId: string) => string;
 }
@@ -37,7 +35,6 @@ export function TransactionItem({
   isLast,
   onToggleExpand,
   onDelete,
-  onUpdate,
   accounts,
   getWalletName,
 }: TransactionItemProps) {

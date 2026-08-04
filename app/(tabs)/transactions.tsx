@@ -13,7 +13,7 @@ import {
   filterTransactionsByDateRange,
   formatDatePickerDate,
 } from '@/utils/transaction';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, ChevronDown, Plus, Receipt, Wallet } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
@@ -26,7 +26,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { transactions, accounts, deleteTransaction, updateTransaction, userProfile } = useApp();
+  const { transactions, accounts, deleteTransaction, userProfile } = useApp();
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -51,10 +51,10 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
 
-  const toggleTransactionExpand = (id: string) => {
+  const toggleTransactionExpand = useCallback((id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedTransactionId(expandedTransactionId === id ? null : id);
-  };
+    setExpandedTransactionId((prev) => (prev === id ? null : id));
+  }, []);
 
   // Close date picker when leaving this tab
   useEffect(() => {
@@ -64,26 +64,31 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     }
   }, [isActive]);
 
-  const getWalletName = (walletId: string) => {
-    return accounts.find((a) => a.id === walletId)?.name || 'Unknown Wallet';
-  };
+  const getWalletName = useCallback(
+    (walletId: string) => {
+      return accounts.find((a) => a.id === walletId)?.name || 'Unknown Wallet';
+    },
+    [accounts]
+  );
 
-  // 1. Type filter
-  let visibleTransactions = transactions.filter((tx) => {
-    if (filter === 'all') return true;
-    return tx.type === filter;
-  });
+  // The whole filter → date → search → group pipeline is memoized so it only
+  // re-runs when its inputs actually change, not on every keystroke/render.
+  const visibleTransactions = useMemo(() => {
+    // 1. Type filter
+    const typeFiltered = transactions.filter((tx) => {
+      if (filter === 'all') return true;
+      return tx.type === filter;
+    });
+    // 2. Date filter
+    const dateFiltered = filterTransactionsByDateRange(typeFiltered, dateFrom, dateTo);
+    // 3. Search filter
+    return searchTransactions(dateFiltered, searchQuery, getWalletName);
+  }, [transactions, filter, dateFrom, dateTo, searchQuery, getWalletName]);
 
-  // 2. Date filter
-  visibleTransactions = filterTransactionsByDateRange(visibleTransactions, dateFrom, dateTo);
-
-  // 3. Search filter
-  visibleTransactions = searchTransactions(visibleTransactions, searchQuery, getWalletName);
-
-  // Group transactions by date
-  const groupTransactionsByDate = (txs: Transaction[]) => {
+  // Group transactions by date (pure + stable identity so it can be hoisted)
+  const grouped = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
-    txs.forEach((tx) => {
+    visibleTransactions.forEach((tx) => {
       const dateStr = new Date(tx.date).toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -95,56 +100,66 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
       groups[dateStr].push(tx);
     });
     return groups;
-  };
+  }, [visibleTransactions]);
 
-  const grouped = groupTransactionsByDate(visibleTransactions);
-
-  const handleDelete = (id: string, title: string) => {
+  const handleDelete = useCallback((id: string, title: string) => {
     setPendingDelete({ id, title });
-  };
+  }, []);
 
   // Quick stats
-  const totalIncome = visibleTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = useMemo(
+    () =>
+      visibleTransactions
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0),
+    [visibleTransactions]
+  );
 
-  const totalExpense = visibleTransactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = useMemo(
+    () =>
+      visibleTransactions
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0),
+    [visibleTransactions]
+  );
 
-  const isDefaultDate = () => {
+  const isDefaultDate = useCallback(() => {
     if (!dateFrom || !dateTo) return false;
     const d = new Date();
     const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
     const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
     return dateFrom.getTime() === firstDay && dateTo.getTime() === lastDay;
-  };
+  }, [dateFrom, dateTo]);
 
-  const hasActiveFilter =
-    filter !== 'all' ||
-    searchQuery.length > 0 ||
-    (!isDefaultDate() && (dateFrom !== null || dateTo !== null));
+  const hasActiveFilter = useMemo(
+    () =>
+      filter !== 'all' ||
+      searchQuery.length > 0 ||
+      (!isDefaultDate() && (dateFrom !== null || dateTo !== null)),
+    [filter, searchQuery, dateFrom, dateTo, isDefaultDate]
+  );
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     setFilter('all');
     setSearchQuery('');
     const d = new Date();
     setDateFrom(new Date(d.getFullYear(), d.getMonth(), 1));
     setDateTo(new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999));
-  };
+  }, []);
 
-  let dateLabel = 'Any Date';
-  if (dateFrom && dateTo) {
-    if (dateFrom.toDateString() === dateTo.toDateString()) {
-      dateLabel = formatDatePickerDate(dateFrom);
-    } else {
-      dateLabel = `${formatDatePickerDate(dateFrom)} - ${formatDatePickerDate(dateTo)}`;
+  const dateLabel = useMemo(() => {
+    if (dateFrom && dateTo) {
+      if (dateFrom.toDateString() === dateTo.toDateString()) {
+        return formatDatePickerDate(dateFrom);
+      }
+      return `${formatDatePickerDate(dateFrom)} - ${formatDatePickerDate(dateTo)}`;
+    } else if (dateFrom) {
+      return `From ${formatDatePickerDate(dateFrom)}`;
+    } else if (dateTo) {
+      return `Until ${formatDatePickerDate(dateTo)}`;
     }
-  } else if (dateFrom) {
-    dateLabel = `From ${formatDatePickerDate(dateFrom)}`;
-  } else if (dateTo) {
-    dateLabel = `Until ${formatDatePickerDate(dateTo)}`;
-  }
+    return 'Any Date';
+  }, [dateFrom, dateTo]);
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
@@ -262,14 +277,6 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                           isLast={isLast}
                           onToggleExpand={() => toggleTransactionExpand(tx.id)}
                           onDelete={() => handleDelete(tx.id, tx.title)}
-                          onUpdate={(updated) => {
-                            updateTransaction(updated);
-                            Toast.show({
-                              type: 'success',
-                              text1: 'Transaction Updated',
-                              text2: 'Wallet balances adjusted successfully.',
-                            });
-                          }}
                           accounts={accounts}
                           getWalletName={getWalletName}
                         />

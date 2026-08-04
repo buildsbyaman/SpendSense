@@ -50,7 +50,6 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   useEffect(() => {
     if (!isActive) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsMenuOpen(false);
       setExpandedWalletId(null);
       setWalletToDelete(null);
@@ -131,8 +130,9 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
     const balanceSorted = [...accounts].sort(
       (a, b) => parseBalance(b.balance) - parseBalance(a.balance)
     );
+    // Only update the draft preview. Persisting happens on commitReorder, so a
+    // cancelled reset cannot clobber the previously saved custom order.
     setDraftOrder(balanceSorted);
-    updateWalletOrder([]);
   };
 
   const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);

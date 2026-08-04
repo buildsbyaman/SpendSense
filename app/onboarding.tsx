@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useColorScheme } from 'nativewind';
 import { Camera, Shield, Wallet, PieChart } from 'lucide-react-native';
 import { Avatar } from '@/components/ui/avatar';
+import { sanitizeAvatarUri } from '@/utils/avatar';
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
@@ -40,10 +41,15 @@ export default function OnboardingScreen() {
 
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
+      let nextAvatar: string | null = null;
       if (asset.base64) {
-        setAvatar(`data:image/jpeg;base64,${asset.base64}`);
-      } else if (asset.uri) {
-        setAvatar(asset.uri);
+        nextAvatar = sanitizeAvatarUri(`data:image/jpeg;base64,${asset.base64}`);
+      }
+      if (!nextAvatar && asset.uri) {
+        nextAvatar = sanitizeAvatarUri(asset.uri);
+      }
+      if (nextAvatar) {
+        setAvatar(nextAvatar);
       }
     }
   }, []);
@@ -55,7 +61,7 @@ export default function OnboardingScreen() {
       return;
     }
     completeOnboarding({ name: trimmed, avatar });
-    
+
     Toast.show({
       type: 'success',
       text1: 'Welcome aboard!',
@@ -152,14 +158,11 @@ export default function OnboardingScreen() {
         <TouchableOpacity
           onPress={handleContinue}
           disabled={!canContinue}
-          className={`mb-8 mt-10 flex-row items-center justify-center gap-2 rounded-xl py-4 shadow-xs bg-primary ${
+          className={`mb-8 mt-10 flex-row items-center justify-center gap-2 rounded-[6px] bg-primary py-4 shadow-xs ${
             canContinue ? '' : 'opacity-50'
           }`}
           activeOpacity={0.8}>
-          <Text
-            className="text-lg font-bold text-white dark:text-black">
-            Get Started
-          </Text>
+          <Text className="text-lg font-bold text-white dark:text-black">Get Started</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

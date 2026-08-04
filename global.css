@@ -87,30 +87,30 @@
 
 .dark:root {
   --background: #000000;
-  --foreground: #ffffff;
+  --foreground: #f3f4f6;
 
   --surface: #0a0a0a;
   --card: #0a0a0a;
-  --card-foreground: #ffffff;
+  --card-foreground: #f3f4f6;
 
   --popover: #0a0a0a;
-  --popover-foreground: #ffffff;
+  --popover-foreground: #f3f4f6;
 
-  --primary: #ffffff;
-  --primary-foreground: #1c1c1e;
+  --primary: #e4e4e7;
+  --primary-foreground: #09090b;
 
   --secondary: #2c2c2e;
-  --secondary-foreground: #ffffff;
+  --secondary-foreground: #f3f4f6;
 
   --muted: #8e8e93;
-  --muted-foreground: #ffffff;
+  --muted-foreground: #f3f4f6;
   --placeholder: #8e8e93;
 
   --accent: #f6c98a;
   --accent-foreground: #111113;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --destructive: #c53030;
+  --destructive-foreground: #f3f4f6;
 
   --success: #22c55e;
   --danger: #ef4444;

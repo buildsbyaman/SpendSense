@@ -47,20 +47,26 @@ export default function TransactionFilterBar({
 
       <TouchableOpacity
         onPress={onDatePress}
-        className={`flex-row items-center gap-1.5 rounded-xl border px-4 py-2.5 ${dateLabel !== 'Any Date' ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
+        className={`flex-row items-center gap-1.5 rounded-[6px] border px-4 py-2.5 ${
+          dateLabel !== 'Any Date'
+            ? 'border-primary bg-transparent'
+            : 'border-border bg-surface'
+        }`}>
         <Icon
           as={Calendar}
           size={14}
-          className={dateLabel !== 'Any Date' ? 'text-white dark:text-black' : 'text-foreground'}
+          className={dateLabel !== 'Any Date' ? 'text-primary' : 'text-foreground'}
         />
         <Text
-          className={`text-xs font-semibold ${dateLabel !== 'Any Date' ? 'text-white dark:text-black' : 'text-foreground'}`}>
+          className={`text-xs font-semibold ${
+            dateLabel !== 'Any Date' ? 'text-primary' : 'text-foreground'
+          }`}>
           {dateLabel}
         </Text>
       </TouchableOpacity>
 
       {hasActiveFilter && (
-        <TouchableOpacity onPress={onClearAll} className="rounded-xl bg-secondary p-2.5">
+        <TouchableOpacity onPress={onClearAll} className="rounded-[6px] bg-secondary p-2.5">
           <Icon as={X} size={14} className="text-foreground" />
         </TouchableOpacity>
       )}

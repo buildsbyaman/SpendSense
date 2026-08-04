@@ -1,134 +1,24 @@
 import { type ExportedTable } from '@/lib/export/buildExportData';
-import { type Transaction, type TransactionType } from '@/utils/transaction';
-import { type Subscription, type SubscriptionCycle } from '@/utils/subscription';
-import { type Account } from '@/utils/wallet';
+import { type Transaction } from '@/utils/transaction';
+import { type Subscription } from '@/utils/subscription';
+import { type Account, formatWalletBalance } from '@/utils/wallet';
 import { type Budget, type UserProfile } from '@/lib/repository';
 import { type CustomCategory } from '@/utils/transaction';
-import { newId } from '@/lib/id';
+import { sanitizeImportedAvatar } from '@/utils/avatar';
+import { detectTable, TABLE_PROCESS_ORDER } from './table-kind';
+import {
+  type ImportMode,
+  type ConflictPolicy,
+  type ImportPlan,
+  type PlanContext,
+} from './plans/types';
+import { processWalletsTable } from './plans/wallets';
+import { processTransactionsTable } from './plans/transactions';
+import { processSubscriptionsTable } from './plans/subscriptions';
+import { processBudgetsTable } from './plans/budgets';
+import { processCategoriesTable } from './plans/categories';
 
-export type ImportMode = 'merge' | 'replace';
-export type ConflictPolicy = 'skip' | 'overwrite';
-
-export interface ImportPlan {
-  wallets: { insert: Account[]; update: Account[]; skip: number; dropped: number };
-  transactions: { insert: Transaction[]; update: Transaction[]; skip: number; dropped: number };
-  subscriptions: { insert: Subscription[]; update: Subscription[]; skip: number; dropped: number };
-  budgets: { insert: Budget[]; update: Budget[]; skip: number; dropped: number };
-  categories: { insert: CustomCategory[]; update: CustomCategory[]; skip: number; dropped: number };
-  profile: { value: UserProfile | null; apply: boolean };
-  categoryOrder: { expense: string[]; income: string[] } | null;
-  hiddenCategories: string[] | null;
-  walletOrder: string[] | null;
-  replace: boolean;
-  replaceTypes: string[];
-  currencyWarning: string | null;
-}
-
-// ── Display-value parsers ──────────────────────────────────────────────
-
-const MONTHS: Record<string, number> = {
-  jan: 0,
-  feb: 1,
-  mar: 2,
-  apr: 3,
-  may: 4,
-  jun: 5,
-  jul: 6,
-  aug: 7,
-  sep: 8,
-  oct: 9,
-  nov: 10,
-  dec: 11,
-};
-
-export function parseDisplayDate(str: string): string | null {
-  const clean = str.trim().replace(/,/g, '');
-  const m = clean.match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
-  if (!m) return null;
-  const month = MONTHS[m[1].toLowerCase()];
-  if (month == null) return null;
-  const y = parseInt(m[3]);
-  const d = parseInt(m[2]);
-  if (y < 2000 || y > 2100 || d < 1 || d > 31) return null;
-  const ms = new Date(y, month, d).getTime();
-  if (isNaN(ms)) return null;
-  const result = new Date(ms);
-  if (result.getFullYear() !== y || result.getMonth() !== month || result.getDate() !== d)
-    return null;
-  return result.toISOString();
-}
-
-export function parseDisplayAmount(str: string): number {
-  const cleaned = str.replace(/[^0-9.\-]/g, '');
-  if (!cleaned || cleaned === '-' || cleaned === '.') return 0;
-  const num = parseFloat(cleaned);
-  return isNaN(num) || num < 0 ? 0 : num;
-}
-
-function parseCycle(raw: string): SubscriptionCycle {
-  const lower = raw.toLowerCase();
-  if (lower === 'weekly' || lower === 'monthly' || lower === 'quarterly' || lower === 'yearly')
-    return lower;
-  return 'monthly';
-}
-
-function parseStatus(raw: string): number {
-  return raw.toLowerCase() === 'active' ? 1 : 0;
-}
-
-// ── Table-title detection ──────────────────────────────────────────────
-
-type TableKind =
-  | 'transactions'
-  | 'subscriptions'
-  | 'wallets'
-  | 'budgets'
-  | 'categories'
-  | 'balances'
-  | 'profile'
-  | 'categoryorder'
-  | 'walletorder'
-  | 'hiddencategories'
-  | 'unknown';
-
-function detectTable(title: string, columns: string[]): TableKind {
-  const t = title.toLowerCase();
-  const cols = columns.map((c) => c.toLowerCase());
-
-  if (t.includes('wallet') && t.includes('order')) return 'walletorder';
-
-  if (
-    t.includes('transaction') ||
-    (cols.includes('title') &&
-      cols.includes('type') &&
-      cols.includes('amount') &&
-      cols.includes('wallet'))
-  )
-    return 'transactions';
-
-  if (t.includes('subscription') || (cols.includes('cycle') && cols.includes('next billing')))
-    return 'subscriptions';
-
-  if (t.includes('wallet') || (cols.includes('number') && cols.includes('default')))
-    return 'wallets';
-
-  if (t.includes('budget') || (cols.includes('budget') && cols.includes('category')))
-    return 'budgets';
-
-  if (t.includes('profile') || (cols.includes('field') && cols.includes('value'))) return 'profile';
-
-  if (t.includes('order') && t.includes('categor')) return 'categoryorder';
-
-  if (t.includes('hidden') && t.includes('categor')) return 'hiddencategories';
-
-  if (t.includes('categor') || (cols.includes('source') && cols.includes('color')))
-    return 'categories';
-
-  if (t.includes('balance') || (cols.includes('income') && cols.includes('expense')))
-    return 'balances';
-
-  return 'unknown';
-}
+export type { ImportMode, ConflictPolicy, ImportPlan, PlanContext } from './plans/types';
 
 // ── Main builder ───────────────────────────────────────────────────────
 
@@ -172,45 +62,66 @@ export function buildImportPlan(
 
   // In replace mode, treat all file data as inserts (existing data will be cleared first)
   const existingAccounts = isReplace ? [] : [...current.accounts];
-  const existingTxs = isReplace ? [] : [...current.transactions];
   const existingSubs = isReplace ? [] : [...current.subscriptions];
   const existingBudgets = isReplace ? [] : [...current.budgets];
   const existingCats = isReplace ? [] : [...current.customCategories];
 
+  // Index existing transactions by match key so plan building is O(n) instead of
+  // O(n x m) (a 10k-row file against 10k existing rows would otherwise ANR).
+  const existingTxsMap = new Map<string, Transaction[]>();
+  if (!isReplace) {
+    for (const t of current.transactions) {
+      const key = `${t.title}|${t.category}|${t.date.slice(0, 10)}|${t.walletId}`;
+      const arr = existingTxsMap.get(key) ?? [];
+      arr.push(t);
+      existingTxsMap.set(key, arr);
+    }
+  }
+
+  // Defense against crafted files: drop null / primitive rows before any
+  // dereference (a `null` row would otherwise throw an uncaught TypeError).
+  const cleanTables = tables.map((t) => ({
+    ...t,
+    rows: t.rows.filter((r) => r !== null && typeof r === 'object'),
+  }));
+
   // Build balance lookup from any Balances table (for auto-creating wallets with correct balances)
   const balanceLookup = new Map<string, string>();
-  for (const table of tables) {
+  for (const table of cleanTables) {
     const kind = detectTable(table.title, table.columns);
     if (kind === 'balances') {
       for (const row of table.rows) {
         const walletName = String(row['Wallet'] ?? '').trim();
-        const balance = String(row['Balance'] ?? '').trim();
+        const rawBalance = String(row['Balance'] ?? '').trim();
         if (walletName) {
-          balanceLookup.set(walletName.toLowerCase(), balance || '0.00');
+          const parsed = rawBalance ? parseFloat(rawBalance.replace(/[^0-9.-]/g, '')) : NaN;
+          balanceLookup.set(
+            walletName.toLowerCase(),
+            isFinite(parsed) ? formatWalletBalance(parsed.toString()) : '0.00'
+          );
         }
       }
       break;
     }
   }
 
+  const ctx: PlanContext = {
+    plan,
+    conflict,
+    isReplace,
+    existingAccounts,
+    existingSubs,
+    existingBudgets,
+    existingCats,
+    existingTxsMap,
+    balanceLookup,
+  };
+
   // Process tables in dependency order
-  const sorted = [...tables].sort((a, b) => {
-    const order = [
-      'wallets',
-      'walletorder',
-      'transactions',
-      'subscriptions',
-      'budgets',
-      'categories',
-      'categoryorder',
-      'hiddencategories',
-      'profile',
-      'balances',
-      'unknown',
-    ];
+  const sorted = [...cleanTables].sort((a, b) => {
     return (
-      order.indexOf(detectTable(a.title, a.columns)) -
-      order.indexOf(detectTable(b.title, b.columns))
+      TABLE_PROCESS_ORDER.indexOf(detectTable(a.title, a.columns)) -
+      TABLE_PROCESS_ORDER.indexOf(detectTable(b.title, b.columns))
     );
   });
 
@@ -234,9 +145,9 @@ export function buildImportPlan(
             avatar: (() => {
               const v = map.get('Avatar');
               if (!v || v === '—') return null;
-              // Reject remote URLs for privacy (only keep local data URIs, file URIs, or base64)
-              if (v.startsWith('http://') || v.startsWith('https://')) return null;
-              return v;
+              // Only self-contained image data URIs are accepted (rejects
+              // remote URLs, non-image payloads, and oversized base64).
+              return sanitizeImportedAvatar(v);
             })(),
             hasOnboarded: true,
           },
@@ -304,279 +215,11 @@ export function buildImportPlan(
 
     if (!want(kind)) continue;
 
-    if (kind === 'wallets') {
-      let defaultFound = false;
-      for (const row of table.rows) {
-        const name = String(row['Name'] ?? '').trim();
-        const number = String(row['Number'] ?? '').trim();
-        const type = String(row['Type'] ?? 'Bank').trim();
-        const balance = String(row['Balance'] ?? '0').trim();
-        let isDefault = String(row['Default'] ?? '').toLowerCase() === 'yes';
-        if (!name) {
-          plan.wallets.dropped++;
-          continue;
-        }
-
-        // Enforce single default wallet
-        if (isDefault) {
-          if (defaultFound) {
-            isDefault = false;
-          } else {
-            // In merge mode, don't override existing app default
-            if (!isReplace && existingAccounts.some((a) => a.isDefault)) {
-              isDefault = false;
-            } else {
-              defaultFound = true;
-            }
-          }
-        }
-
-        const existing = existingAccounts.find(
-          (a) => a.name.toLowerCase() === name.toLowerCase() && (!number || a.number === number)
-        );
-        if (existing) {
-          if (conflict === 'overwrite') {
-            const updated = {
-              ...existing,
-              name,
-              number: number || existing.number,
-              type,
-              balance: balance || existing.balance,
-              isDefault,
-            };
-            plan.wallets.update.push(updated);
-            existingAccounts.splice(existingAccounts.indexOf(existing), 1, updated);
-          } else {
-            plan.wallets.skip++;
-          }
-        } else {
-          const newAcc: Account = {
-            id: newId(),
-            name,
-            number,
-            balance,
-            type,
-            isDefault,
-            icon: undefined as any,
-          };
-          plan.wallets.insert.push(newAcc);
-          existingAccounts.push(newAcc);
-        }
-      }
-    }
-
-    if (kind === 'transactions') {
-      for (const row of table.rows) {
-        const title = String(row['Title'] ?? '').trim();
-        const category = String(row['Category'] ?? '').trim();
-        const typeStr = String(row['Type'] ?? '')
-          .trim()
-          .toLowerCase();
-        const amountStr = String(row['Amount'] ?? '0');
-        const dateStr = String(row['Date'] ?? '');
-        const dateISO = String(row['Date ISO'] ?? '').trim();
-        const walletName = String(row['Wallet'] ?? '').trim();
-        if (!title || !typeStr || (typeStr !== 'income' && typeStr !== 'expense')) {
-          plan.transactions.dropped++;
-          continue;
-        }
-
-        const amount = parseDisplayAmount(amountStr);
-        // Prefer raw ISO date if present, fall back to parsed display date
-        const parsedISO = typeof row['Date ISO'] === 'string' ? dateISO : '';
-        const dateISOValid =
-          parsedISO &&
-          !isNaN(new Date(parsedISO).getTime()) &&
-          new Date(parsedISO).getFullYear() >= 2000;
-        const date = dateISOValid ? parsedISO : parseDisplayDate(dateStr);
-        if (!date) {
-          plan.transactions.dropped++;
-          continue;
-        }
-
-        const walletId = resolveWallet(walletName, existingAccounts, plan, balanceLookup);
-        if (!walletId) {
-          plan.transactions.dropped++;
-          continue;
-        }
-
-        const tx: Transaction = {
-          id: newId(),
-          title,
-          amount,
-          type: typeStr as TransactionType,
-          category,
-          date,
-          walletId,
-        };
-
-        const existing = existingTxs.find(
-          (e) =>
-            e.title === tx.title &&
-            Math.abs(e.amount - tx.amount) < 0.01 &&
-            e.category === tx.category &&
-            e.date.slice(0, 10) === tx.date.slice(0, 10) &&
-            e.walletId === tx.walletId
-        );
-        if (existing) {
-          if (conflict === 'overwrite') {
-            plan.transactions.update.push({ ...tx, id: existing.id });
-            existingTxs.splice(existingTxs.indexOf(existing), 1);
-          } else {
-            plan.transactions.skip++;
-          }
-        } else {
-          plan.transactions.insert.push(tx);
-        }
-      }
-    }
-
-    if (kind === 'subscriptions') {
-      for (const row of table.rows) {
-        const name = String(row['Name'] ?? '').trim();
-        const amountStr = String(row['Amount'] ?? '0');
-        const cycleStr = String(row['Cycle'] ?? 'monthly');
-        const category = String(row['Category'] ?? '').trim();
-        const nextBillingISO = String(row['Next Billing ISO'] ?? '');
-        const nextBillingStr = String(row['Next Billing'] ?? '');
-        const statusStr = String(row['Status'] ?? 'Active');
-        const endDateISO = String(row['End Date ISO'] ?? '');
-        const endDateStr = String(row['End Date'] ?? '');
-        const walletName = String(row['Wallet'] ?? '').trim();
-        if (!name) {
-          plan.subscriptions.dropped++;
-          continue;
-        }
-
-        const amount = parseDisplayAmount(amountStr);
-
-        // Prefer ISO columns for lossless round-trip
-        let next_billing_date: string | null = null;
-        if (nextBillingISO && !isNaN(new Date(nextBillingISO).getTime())) {
-          next_billing_date = new Date(nextBillingISO).toISOString();
-        } else if (nextBillingStr) {
-          next_billing_date = parseDisplayDate(nextBillingStr);
-        }
-        if (!next_billing_date) {
-          plan.subscriptions.dropped++;
-          continue;
-        }
-
-        let end_date: string | null = null;
-        if (endDateISO && endDateISO !== 'null' && !isNaN(new Date(endDateISO).getTime())) {
-          end_date = new Date(endDateISO).toISOString();
-        } else if (endDateStr && endDateStr !== '—') {
-          end_date = parseDisplayDate(endDateStr);
-        }
-
-        // Wallet: resolve by name (new Column), fallback to default
-        const walletId = walletName
-          ? resolveWallet(walletName, existingAccounts, plan, balanceLookup)
-          : resolveWalletDefault(existingAccounts, plan, balanceLookup);
-        if (!walletId) {
-          plan.subscriptions.dropped++;
-          continue;
-        }
-
-        const sub: Subscription = {
-          id: newId(),
-          name,
-          amount,
-          cycle: parseCycle(cycleStr),
-          category,
-          wallet_id: walletId,
-          next_billing_date,
-          is_active: parseStatus(statusStr),
-          end_date,
-        };
-
-        const existing = existingSubs.find(
-          (e) =>
-            e.name.toLowerCase() === sub.name.toLowerCase() &&
-            Math.abs(e.amount - sub.amount) < 0.01 &&
-            e.cycle === sub.cycle &&
-            e.wallet_id === sub.wallet_id &&
-            e.next_billing_date.slice(0, 10) === sub.next_billing_date.slice(0, 10)
-        );
-        if (existing) {
-          if (conflict === 'overwrite') {
-            plan.subscriptions.update.push({ ...sub, id: existing.id });
-            existingSubs.splice(existingSubs.indexOf(existing), 1);
-          } else {
-            plan.subscriptions.skip++;
-          }
-        } else {
-          plan.subscriptions.insert.push(sub);
-        }
-      }
-    }
-
-    if (kind === 'budgets') {
-      for (const row of table.rows) {
-        const category = String(row['Category'] ?? '').trim();
-        const budgetStr = String(row['Budget'] ?? '0');
-        if (!category) {
-          plan.budgets.dropped++;
-          continue;
-        }
-
-        const amount = parseDisplayAmount(budgetStr);
-        const budget: Budget = { id: newId(), category, amount };
-
-        const existing = existingBudgets.find(
-          (e) => e.category.toLowerCase() === budget.category.toLowerCase()
-        );
-        if (existing) {
-          if (conflict === 'overwrite') {
-            plan.budgets.update.push({ ...budget, id: existing.id });
-            existingBudgets.splice(existingBudgets.indexOf(existing), 1);
-          } else {
-            plan.budgets.skip++;
-          }
-        } else {
-          plan.budgets.insert.push(budget);
-        }
-      }
-    }
-
-    if (kind === 'categories') {
-      for (const row of table.rows) {
-        const source = String(row['Source'] ?? '').trim();
-        if (source !== 'Custom') continue;
-        const typeStr = String(row['Type'] ?? '')
-          .trim()
-          .toLowerCase();
-        const name = String(row['Name'] ?? '').trim();
-        const colorStr = String(row['Color'] ?? '').trim();
-        const iconStr = String(row['Icon'] ?? '').trim();
-        if (!name || !typeStr) {
-          plan.categories.dropped++;
-          continue;
-        }
-
-        const cat: CustomCategory = {
-          id: newId(),
-          name,
-          type: typeStr as TransactionType,
-          color: colorStr && colorStr !== '—' ? colorStr : undefined,
-          icon: iconStr && iconStr !== '—' ? iconStr : undefined,
-        };
-
-        const existing = existingCats.find(
-          (e) => e.name.toLowerCase() === cat.name.toLowerCase() && e.type === cat.type
-        );
-        if (existing) {
-          if (conflict === 'overwrite') {
-            plan.categories.update.push({ ...cat, id: existing.id });
-            existingCats.splice(existingCats.indexOf(existing), 1);
-          } else {
-            plan.categories.skip++;
-          }
-        } else {
-          plan.categories.insert.push(cat);
-        }
-      }
-    }
+    if (kind === 'wallets') processWalletsTable(table, ctx);
+    else if (kind === 'transactions') processTransactionsTable(table, ctx);
+    else if (kind === 'subscriptions') processSubscriptionsTable(table, ctx);
+    else if (kind === 'budgets') processBudgetsTable(table, ctx);
+    else if (kind === 'categories') processCategoriesTable(table, ctx);
   }
 
   // Currency warning: always warn when currencies differ
@@ -589,50 +232,4 @@ export function buildImportPlan(
   }
 
   return plan;
-}
-
-function resolveWallet(
-  walletName: string,
-  accounts: Account[],
-  plan: ImportPlan,
-  balanceLookup: Map<string, string>
-): string | null {
-  if (!walletName) {
-    const defaultAcc = accounts.find((a) => a.isDefault);
-    if (defaultAcc) return defaultAcc.id;
-    if (accounts.length > 0) return accounts[0].id;
-    if (plan.wallets.insert.length > 0) return plan.wallets.insert[0].id;
-    return null;
-  }
-  const lower = walletName.toLowerCase();
-  const found = accounts.find((a) => a.name.toLowerCase() === lower);
-  if (found) return found.id;
-  const inserting = plan.wallets.insert.find((a) => a.name.toLowerCase() === lower);
-  if (inserting) return inserting.id;
-  // Auto-create missing wallet — use balance from Balances table if available
-  const balance = balanceLookup.get(lower) ?? '0.00';
-  const newAcc: Account = {
-    id: newId(),
-    name: walletName,
-    number: '',
-    type: 'Bank',
-    balance,
-    isDefault: false,
-    icon: undefined as any,
-  };
-  plan.wallets.insert.push(newAcc);
-  accounts.push(newAcc);
-  return newAcc.id;
-}
-
-function resolveWalletDefault(
-  accounts: Account[],
-  plan: ImportPlan,
-  balanceLookup: Map<string, string>
-): string {
-  const defaultAcc = accounts.find((a) => a.isDefault);
-  if (defaultAcc) return defaultAcc.id;
-  if (plan.wallets.insert.length > 0) return plan.wallets.insert[0].id;
-  if (accounts.length > 0) return accounts[0].id;
-  return '';
 }

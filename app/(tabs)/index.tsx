@@ -4,13 +4,13 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import { getCategoryDetails } from '@/utils/transaction';
-import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt, Wallet } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt, Wallet, Tag, Target, Calendar, TrendingUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { parseBalance, formatNumber } from '@/utils/wallet';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { Avatar } from '@/components/ui/avatar';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
 export default function HomeScreen(_props: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -27,33 +27,31 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
     });
   }, [addListener]);
 
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 0 || !parts[0]) return 'U';
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-  const initials = getInitials(userProfile.name);
-
   // Calculate Net Worth
   const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
 
-  // Recent 5 transactions
-  const recentTransactions = transactions.slice(0, 5);
+  // Recent 20 transactions
+  const recentTransactions = transactions.slice(0, 20);
 
   const now = new Date();
-  const currentMonthTransactions = transactions.filter((t) => {
-    const d = new Date(t.date);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
+  const currentMonthTransactions = useMemo(
+    () =>
+      transactions.filter((t) => {
+        const d = new Date(t.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }),
+    [transactions, now.getMonth(), now.getFullYear()]
+  );
 
-  const totalIncome = currentMonthTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = useMemo(
+    () => currentMonthTransactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+    [currentMonthTransactions]
+  );
 
-  const totalExpense = currentMonthTransactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = useMemo(
+    () => currentMonthTransactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+    [currentMonthTransactions]
+  );
 
   const getWalletName = (walletId: string) => {
     return accounts.find((a) => a.id === walletId)?.name || 'Wallet';
@@ -73,16 +71,9 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
         </View>
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 120,
-          paddingHorizontal: 20,
-        }}>
-        {/* Net Balance Card */}
-        <View className="mb-6 rounded-xl border border-border bg-surface py-5 shadow-xs">
+      {/* Net Balance Card (Fixed at top) */}
+      <View className="px-5 mb-5">
+        <View className="rounded-xl border border-border bg-surface py-5 shadow-xs">
           <View className="px-6 mb-4">
             <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
             <Text className="text-3xl font-bold text-foreground">
@@ -125,49 +116,108 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
             </View>
           </View>
 
-          {/* See Analytics Link */}
+          {/* Quick Actions Grid */}
           <View className="mb-4 h-[1px] bg-divider" />
-          <TouchableOpacity
-            className="flex-row items-center justify-center gap-1 py-1"
-            activeOpacity={0.7}
-            onPress={() => navigateTab('analytics')}>
-            <Text className="text-base font-bold text-primary">See analytics</Text>
-            <Icon as={ArrowRight} size={14} className="text-primary" />
-          </TouchableOpacity>
-        </View>
+          <View className="flex-row px-6 pb-2">
+            {/* Column 1 */}
+            <View className="flex-1 gap-3 pr-4">
+              <TouchableOpacity
+                onPress={() => navigateTab('categories', { referrer: 'home' })}
+                activeOpacity={0.7}
+                className="flex-row items-center gap-3 py-1">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                  <Icon as={Tag} size={14} className="text-primary" />
+                </View>
+                <Text className="text-sm font-semibold text-foreground">Categories</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => navigateTab('budgets', { referrer: 'home' })}
+                activeOpacity={0.7}
+                className="flex-row items-center gap-3 py-1">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                  <Icon as={Target} size={14} className="text-primary" />
+                </View>
+                <Text className="text-sm font-semibold text-foreground">Budgets</Text>
+              </TouchableOpacity>
+            </View>
 
+            {/* Vertical Divider */}
+            <View className="mx-4 w-[1px] bg-divider" />
+
+            {/* Column 2 */}
+            <View className="flex-1 gap-3 pl-6">
+              <TouchableOpacity
+                onPress={() => navigateTab('analytics', { referrer: 'home' })}
+                activeOpacity={0.7}
+                className="flex-row items-center gap-3 py-1">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                  <Icon as={TrendingUp} size={14} className="text-primary" />
+                </View>
+                <Text className="text-sm font-semibold text-foreground">Analytics</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => navigateTab('subscriptions', { referrer: 'home' })}
+                activeOpacity={0.7}
+                className="flex-row items-center gap-3 py-1">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                  <Icon as={Calendar} size={14} className="text-primary" />
+                </View>
+                <Text className="text-sm font-semibold text-foreground">Subscriptions</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Recent Activity Header (Fixed at top) */}
+      <View className="flex-row items-center justify-between px-5 mb-4">
+        <Text className="text-lg font-semibold text-foreground">Recent Activity</Text>
+        {transactions.length > 0 && (
+          <TouchableOpacity
+            onPress={() => navigateTab('transactions')}
+            className="flex-row items-center gap-1.5 rounded-[6px] border border-border bg-surface px-3 py-1.5 shadow-xs"
+            activeOpacity={0.7}>
+            <Text className="text-xs font-semibold text-foreground">View All</Text>
+            <Icon as={ArrowRight} size={12} className="text-foreground" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: 120,
+          paddingHorizontal: 20,
+        }}>
         {/* Recent Transactions Section */}
         <View className="gap-4">
-          <View className="flex-row items-center justify-between px-1">
-            <Text className="text-lg font-semibold text-foreground">Recent Activity</Text>
-            {transactions.length > 5 && (
-              <TouchableOpacity
-                onPress={() => navigateTab('transactions')}
-                className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 shadow-xs"
-                activeOpacity={0.7}>
-                <Text className="text-xs font-semibold text-foreground">View All</Text>
-                <Icon as={ArrowRight} size={12} className="text-foreground" />
-              </TouchableOpacity>
-            )}
-          </View>
 
           {recentTransactions.length === 0 ? (
             accounts.length === 0 ? (
-              <EmptyState
-                icon={Wallet}
-                title="Create Your First Wallet"
-                description="Add a wallet to start tracking your balances and transactions."
-                buttonText="Add Wallet"
-                onButtonPress={() => router.push('/add-wallet')}
-              />
+              <View className="items-center justify-center">
+                <EmptyState
+                  icon={Wallet}
+                  title="Create Your First Wallet"
+                  description="Add a wallet to start tracking your balances and transactions."
+                  buttonText="Add Wallet"
+                  onButtonPress={() => router.push('/add-wallet')}
+                />
+              </View>
             ) : (
-              <EmptyState
-                icon={Receipt}
-                title="No Activity Yet"
-                description="You haven't logged any transactions. Add your first transaction to get started."
-                buttonText="Add Your First Transaction"
-                onButtonPress={() => router.push('/add-transaction')}
-              />
+              <View className="justify-center">
+                <EmptyState
+                  icon={Receipt}
+                  title="No Activity Yet"
+                  description="You haven't logged any transactions. Add your first transaction to get started."
+                  buttonText="Add Your First Transaction"
+                  onButtonPress={() => router.push('/add-transaction')}
+                />
+              </View>
             )
           ) : (
             <View className="overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-xs">
@@ -208,6 +258,13 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                 );
               })}
             </View>
+          )}
+          {recentTransactions.length > 0 && (
+            <Text className="text-center text-xs text-muted mt-2 font-medium">
+              {transactions.length > 20
+                ? 'Showing up to 20 recent transactions'
+                : 'Reached the end of recent activity'}
+            </Text>
           )}
         </View>
       </ScrollView>

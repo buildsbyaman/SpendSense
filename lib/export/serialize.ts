@@ -1,6 +1,7 @@
 import { type ExportedTable } from './buildExportData';
 import { encodeUtf8Base64 } from '../import/base64';
 import { decodePayloadFromPdf } from '../import/pdfPayload';
+import { MAX_ROWS_PER_TABLE, MAX_TOTAL_ROWS } from '../import/parse';
 
 // ── Shared constants ──────────────────────────────────────────────────
 
@@ -27,13 +28,20 @@ export function buildFilename(types: string[], periodLabel: string, format: Expo
 
 // ── JSON ──────────────────────────────────────────────────────────────
 
+// Keys that would trigger prototype setters if assigned on a plain object.
+const DANGEROUS_TABLE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export function tablesToJSON(
   tables: ExportedTable[],
   profile: { name: string; currencyCode: string }
 ): string {
   const data: Record<string, unknown[]> = {};
   for (const table of tables) {
-    data[table.title.toLowerCase()] = table.rows;
+    const key = table.title.toLowerCase();
+    // `data["__proto__"] = rows` would run the prototype setter instead of
+    // storing data. Skip such titles defensively.
+    if (DANGEROUS_TABLE_KEYS.has(key)) continue;
+    data[key] = table.rows;
   }
   const wrapper = {
     exportedAt: new Date().toISOString(),
@@ -46,6 +54,15 @@ export function tablesToJSON(
 }
 
 // ── XLSX bytes ────────────────────────────────────────────────────────
+
+// Spreadsheet formula-injection guard (OWASP CSV/Separator Injection):
+// cells that begin with =, +, -, @, tab, or CR are prefixed with a single
+// quote so they export as literal text instead of executable formulas.
+function escapeFormulaCell(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  if (/^[=+\-@\t\r]/.test(value)) return `'${value}`;
+  return value;
+}
 
 export async function buildXlsxBytes(
   tables: ExportedTable[],
@@ -61,8 +78,8 @@ export async function buildXlsxBytes(
     const metaWs = XLSX.utils.aoa_to_sheet([
       ['Field', 'Value'],
       ['App', 'SpendSense'],
-      ['User', profile.name],
-      ['Currency', profile.currencyCode],
+      ['User', escapeFormulaCell(profile.name)],
+      ['Currency', escapeFormulaCell(profile.currencyCode)],
     ]);
     metaWs['!cols'] = [{ wch: 10 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, metaWs, '__meta__');
@@ -71,7 +88,7 @@ export async function buildXlsxBytes(
   for (const table of tables) {
     const wsData = [
       table.columns,
-      ...table.rows.map((row) => table.columns.map((col) => row[col] ?? '')),
+      ...table.rows.map((row) => table.columns.map((col) => escapeFormulaCell(row[col] ?? ''))),
     ];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
@@ -127,12 +144,33 @@ export async function buildPdfBytes(
     isFirstTable = false;
   }
 
-  // Embed hidden payload for import round-trip (visible output unchanged)
+  // Embed hidden payload for import round-trip (visible output unchanged). The
+  // payload is capped to the same limits the import screen enforces so a large
+  // export can never produce a PDF that its own import would reject (>5MB).
   if (profile) {
+    const payloadTables = tables.map((t) => ({
+      title: t.title,
+      columns: t.columns,
+      rows: t.rows.slice(0, MAX_ROWS_PER_TABLE),
+    }));
+    let truncated = tables.some((t) => t.rows.length > MAX_ROWS_PER_TABLE);
+    let remaining = MAX_TOTAL_ROWS;
+    for (const t of payloadTables) {
+      if (remaining <= 0) {
+        t.rows = [];
+        continue;
+      }
+      if (t.rows.length > remaining) {
+        t.rows = t.rows.slice(0, remaining);
+        truncated = true;
+      }
+      remaining -= t.rows.length;
+    }
     const payload = JSON.stringify({
       app: 'SpendSense',
       currency: profile.currencyCode,
-      tables: tables.map((t) => ({ title: t.title, columns: t.columns, rows: t.rows })),
+      truncated,
+      tables: payloadTables,
     });
     doc.setProperties({ subject: encodeUtf8Base64(payload) });
   }
