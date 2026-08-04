@@ -57,17 +57,17 @@ export function MonthYearPickerModal({
           <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
           <Animated.View style={animatedStyle}>
             <TouchableWithoutFeedback>
-              <View className="rounded-[32px] bg-surface p-6 shadow-sm border border-gray-100 dark:border-gray-900">
+              <View className="rounded-2xl bg-surface p-6 shadow-sm border border-border">
               {/* Header */}
               <View className="mb-6 flex-row items-center justify-between">
                 <Text className="text-xl font-bold text-foreground">Select Month</Text>
-                <TouchableOpacity onPress={onClose} className="rounded-full bg-gray-50 dark:bg-gray-900 p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
+                <TouchableOpacity onPress={onClose} className="rounded-full bg-secondary p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
                   <Icon as={X} size={20} className="text-foreground" />
                 </TouchableOpacity>
               </View>
 
               {/* Year Selector */}
-              <View className="mb-6 flex-row items-center justify-between rounded-full bg-secondary p-1">
+              <View className="mb-6 flex-row items-center justify-between rounded-xl bg-secondary p-1">
                 <TouchableOpacity
                   onPress={() => setViewYear(y => y - 1)}
                   className="p-3"
@@ -99,18 +99,18 @@ export function MonthYearPickerModal({
                       key={monthName}
                       disabled={isFuture}
                       onPress={() => handleMonthSelect(index)}
-                      className={`w-[30%] items-center justify-center rounded-full py-3 ${
+                      className={`w-[30%] items-center justify-center rounded-xl py-3 ${
                         isSelected
                           ? 'bg-primary'
                           : isFuture
                             ? 'bg-transparent'
-                            : 'bg-gray-50 dark:bg-gray-900'
+                            : 'bg-secondary'
                       }`}
                     >
                       <Text
                         className={`text-sm font-semibold ${
                           isSelected
-                            ? 'text-[--primary-foreground]'
+                            ? 'text-white dark:text-black'
                             : isFuture
                               ? 'text-muted opacity-40'
                               : 'text-foreground'
@@ -127,17 +127,17 @@ export function MonthYearPickerModal({
               {allowAllYear && (
                 <TouchableOpacity
                   onPress={() => handleMonthSelect(null)}
-                  className={`mt-4 items-center justify-center rounded-full py-4 ${
+                  className={`mt-4 items-center justify-center rounded-xl py-3.5 ${
                     viewYear === currentYear && currentMonth === null
                       ? 'bg-primary'
-                      : 'bg-gray-50 dark:bg-gray-900'
+                      : 'bg-secondary'
                   }`}
                   activeOpacity={0.7}
                 >
                   <Text
                     className={`text-sm font-semibold ${
                       viewYear === currentYear && currentMonth === null
-                        ? 'text-[--primary-foreground]'
+                        ? 'text-white dark:text-black'
                         : 'text-foreground'
                     }`}
                   >

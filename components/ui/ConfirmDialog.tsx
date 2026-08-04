@@ -65,7 +65,7 @@ export function ConfirmDialog({
         <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
         <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
           <View
-            className="w-full rounded-[32px] bg-surface p-6 items-center shadow-2xl"
+            className="w-full rounded-2xl border border-border bg-surface p-6 items-center shadow-2xl"
             onStartShouldSetResponder={() => true}>
             
             <View className="w-16 h-16 rounded-full items-center justify-center mb-5 bg-red-50 dark:bg-red-900/20">
@@ -79,14 +79,14 @@ export function ConfirmDialog({
               {!content.hideCancel && (
                 <TouchableOpacity
                   onPress={onCancel}
-                  className="flex-1 items-center justify-center rounded-full bg-secondary py-3.5"
+                  className="flex-1 items-center justify-center rounded-xl bg-secondary py-3.5"
                   activeOpacity={0.8}>
                   <Text className="text-sm font-semibold text-foreground">{content.cancelText}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
                 onPress={onConfirm}
-                className={`flex-1 items-center justify-center rounded-full py-3.5 ${content.destructive && !content.hideCancel ? 'bg-red-500' : 'bg-primary'}`}
+                className={`flex-1 items-center justify-center rounded-xl py-3.5 ${content.destructive && !content.hideCancel ? 'bg-red-500' : 'bg-primary'}`}
                 activeOpacity={0.8}>
                 <Text
                   className={`text-sm font-semibold ${content.destructive && !content.hideCancel ? 'text-white' : 'text-white dark:text-black'}`}>

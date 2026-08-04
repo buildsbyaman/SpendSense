@@ -4,7 +4,7 @@ import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
-import { TrendingUp, Plus, Wallet } from 'lucide-react-native';
+import { TrendingUp, Wallet } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTabNavigation } from '@/context/TabNavigationContext';
@@ -16,6 +16,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { TrendChart } from '@/components/analytics/TrendChart';
 import { CategoryDonut } from '@/components/analytics/CategoryDonut';
 import { SectionCard } from '@/components/analytics/SectionCard';
+import { GranularityToggle } from '@/components/analytics/GranularityToggle';
 
 import {
   filterByMonth,
@@ -24,7 +25,9 @@ import {
   sumByType,
   groupByCategory,
   buildWeeklySeries,
+  buildDailySeries,
   buildMonthlySeries,
+  buildYearlyWeekSeries,
   getPreviousStats,
 } from '@/utils/analytics';
 
@@ -47,6 +50,7 @@ export default function AnalyticsScreen() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState<number | null>(now.getMonth());
   const [type, setType] = useState<TypeFilter>('expense');
+  const [granularity, setGranularity] = useState<'days' | 'weeks' | 'months'>('weeks');
 
   const scopeTxs = useMemo(
     () =>
@@ -58,9 +62,13 @@ export default function AnalyticsScreen() {
   const trendSeries = useMemo(
     () =>
       month !== null
-        ? buildWeeklySeries(transactions, year, month)
-        : buildMonthlySeries(transactions, year),
-    [transactions, year, month]
+        ? granularity === 'days'
+          ? buildDailySeries(transactions, year, month)
+          : buildWeeklySeries(transactions, year, month)
+        : granularity === 'weeks'
+          ? buildYearlyWeekSeries(transactions, year)
+          : buildMonthlySeries(transactions, year),
+    [transactions, year, month, granularity]
   );
   const { incomeDelta, expenseDelta } = useMemo(
     () => getPreviousStats(transactions, year, month),
@@ -68,7 +76,7 @@ export default function AnalyticsScreen() {
   );
 
   const categoryData = useMemo(() => {
-    const catTxs = filterByType(scopeTxs, type === 'all' ? 'expense' : type);
+    const catTxs = filterByType(scopeTxs, type);
     return groupByCategory(catTxs);
   }, [scopeTxs, type]);
 
@@ -133,7 +141,33 @@ export default function AnalyticsScreen() {
               count={filteredTxs.length}
             />
 
-            <SectionCard>
+            <SectionCard
+              title="Trend"
+              headerRight={
+                <GranularityToggle
+                  options={
+                    month !== null
+                      ? [
+                          { label: 'Days', value: 'days' },
+                          { label: 'Weeks', value: 'weeks' },
+                        ]
+                      : [
+                          { label: 'Weeks', value: 'weeks' },
+                          { label: 'Months', value: 'months' },
+                        ]
+                  }
+                  value={
+                    month !== null
+                      ? granularity === 'days'
+                        ? 'days'
+                        : 'weeks'
+                      : granularity === 'weeks'
+                        ? 'weeks'
+                        : 'months'
+                  }
+                  onChange={(v) => setGranularity(v as 'days' | 'weeks' | 'months')}
+                />
+              }>
               <TrendChart data={trendSeries} type={type} />
             </SectionCard>
 

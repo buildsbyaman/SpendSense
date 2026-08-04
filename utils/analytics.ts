@@ -116,6 +116,63 @@ export function buildWeeklySeries(
   return series;
 }
 
+const LABEL_DAYS = new Set([1, 5, 10, 15, 20, 25, 30]);
+
+export function buildDailySeries(
+  transactions: Transaction[],
+  year: number,
+  month: number
+): { day: number; label: string; income: number; expense: number }[] {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const series: { day: number; label: string; income: number; expense: number }[] = [];
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    series.push({ day, label: LABEL_DAYS.has(day) ? String(day) : '', income: 0, expense: 0 });
+  }
+
+  const { from, to } = getMonthBounds(year, month);
+  for (const tx of transactions) {
+    const d = new Date(tx.date);
+    if (d >= from && d <= to) {
+      const idx = d.getDate() - 1;
+      if (tx.type === 'income') series[idx].income += tx.amount;
+      else series[idx].expense += tx.amount;
+    }
+  }
+  return series;
+}
+
+export function buildYearlyWeekSeries(
+  transactions: Transaction[],
+  year: number
+): { day: number; label: string; income: number; expense: number }[] {
+  const series: { day: number; label: string; income: number; expense: number }[] = [];
+  for (let w = 0; w < 52; w++) {
+    series.push({
+      day: w,
+      label: w % 4 === 0 ? `W${w + 1}` : '',
+      income: 0,
+      expense: 0,
+    });
+  }
+
+  const from = new Date(year, 0, 1);
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(year, 11, 31);
+  to.setHours(23, 59, 59, 999);
+  const yearStart = from.getTime();
+
+  for (const tx of transactions) {
+    const d = new Date(tx.date);
+    if (d >= from && d <= to) {
+      const weekIdx = Math.min(Math.floor((d.getTime() - yearStart) / (7 * 86400000)), 51);
+      if (tx.type === 'income') series[weekIdx].income += tx.amount;
+      else series[weekIdx].expense += tx.amount;
+    }
+  }
+  return series;
+}
+
 export function buildMonthlySeries(
   transactions: Transaction[],
   year: number

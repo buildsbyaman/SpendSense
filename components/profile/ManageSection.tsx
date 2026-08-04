@@ -32,8 +32,8 @@ const rows: ManageRow[] = [
 export function ManageSection() {
   const { navigate: navigateTab } = useTabNavigation();
   return (
-    <View className="mt-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
-      <Text className="mb-4 text-sm font-medium text-muted">Manage</Text>
+    <View className="mt-6 rounded-xl border border-border bg-surface pt-5 pb-1.5 shadow-xs">
+      <Text className="mb-4 px-6 text-sm font-medium text-muted">Manage</Text>
       {rows.map((row, idx) => {
         const isLast = idx === rows.length - 1;
         return (
@@ -47,14 +47,14 @@ export function ManageSection() {
                 }
               }}
               activeOpacity={0.7}
-              className="flex-row items-center gap-3 py-3">
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
+              className="flex-row items-center gap-3.5 px-6 py-3.5">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
                 <Icon as={row.icon} size={18} className="text-foreground" />
               </View>
               <Text className="flex-1 text-base font-medium text-foreground">{row.label}</Text>
               <Icon as={ChevronRight} size={16} className="text-muted" />
             </TouchableOpacity>
-            {!isLast && <View className="ml-12 h-[1px] bg-divider" />}
+            {!isLast && <View className="h-[1px] bg-divider" />}
           </View>
         );
       })}

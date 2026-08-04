@@ -25,7 +25,7 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
   const addIcon = isDark ? '#000000' : '#ffffff';
 
   // Glass capsule
-  const glassBg = isDark ? 'rgba(28,28,30,0.75)' : 'rgba(255,255,255,0.85)';
+  const glassBg = isDark ? 'rgba(28,28,30,0.82)' : 'rgba(255,255,255,0.9)';
   const glassBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)';
   const glassTint = isDark ? 'dark' : 'light' as const;
 
@@ -41,7 +41,7 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
           { backgroundColor: glassBg, borderColor: glassBorder },
         ]}
         tint={glassTint}
-        intensity={Platform.OS === 'android' ? 20 : 30}
+        intensity={Platform.OS === 'android' ? 35 : 45}
         {...(Platform.OS === 'android' ? { experimentalBlurMethod: 'dimezisBlurView' } : {})}>
         {/* ── Home ── */}
         <TouchableOpacity

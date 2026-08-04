@@ -146,7 +146,7 @@ export default function CurrencySettings() {
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
         keyboardShouldPersistTaps="handled">
         {/* ── Section 1: Select Currency ── */}
-        <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-1 text-sm font-medium text-muted">Active Currency</Text>
           <Text className="mb-4 text-lg font-bold text-foreground">
             {userProfile.currencyCode} · {userProfile.currencySymbol}
@@ -163,10 +163,10 @@ export default function CurrencySettings() {
                   key={c.code}
                   onPress={() => handleSelectPreset(c.code)}
                   activeOpacity={0.75}
-                  className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2.5 ${
+                  className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
                     isSelected
                       ? 'border-primary bg-primary'
-                      : 'border-gray-200 bg-transparent dark:border-gray-800'
+                      : 'border-border bg-surface'
                   }`}>
                   <Text
                     className={`text-sm font-bold ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
@@ -187,10 +187,10 @@ export default function CurrencySettings() {
                 setSelectedCode(CUSTOM_KEY);
               }}
               activeOpacity={0.75}
-              className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2.5 ${
+              className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
                 isCustom
                   ? 'border-primary bg-primary'
-                  : 'border-dashed border-gray-300 bg-transparent dark:border-gray-700'
+                  : 'border-dashed border-border bg-surface'
               }`}>
               <Icon
                 as={isCustom ? Check : Plus}
@@ -216,14 +216,14 @@ export default function CurrencySettings() {
 
         {/* ── Section 2: Custom Currency Form ── */}
         {isCustom && (
-          <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+          <View className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
             <Text className="mb-4 text-sm font-medium text-muted">Custom Currency Details</Text>
 
             <View className="gap-4">
               <View>
                 <Text className="mb-2 ml-1 text-sm text-muted">Full Name</Text>
                 <TextInput
-                  className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'cn' ? 'border-primary' : 'border-transparent'}`}
+                  className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'cn' ? 'border-primary' : 'border-border'}`}
                   placeholder="e.g. Bitcoin"
                   placeholderTextColor={placeholderColor}
                   value={customName}
@@ -237,7 +237,7 @@ export default function CurrencySettings() {
                 <View className="flex-1">
                   <Text className="mb-2 ml-1 text-sm text-muted">Short Code</Text>
                   <TextInput
-                    className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'cc' ? 'border-primary' : 'border-transparent'}`}
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'cc' ? 'border-primary' : 'border-border'}`}
                     placeholder="BTC"
                     placeholderTextColor={placeholderColor}
                     autoCapitalize="characters"
@@ -251,7 +251,7 @@ export default function CurrencySettings() {
                 <View className="flex-1">
                   <Text className="mb-2 ml-1 text-sm text-muted">Symbol</Text>
                   <TextInput
-                    className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'cs' ? 'border-primary' : 'border-transparent'}`}
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'cs' ? 'border-primary' : 'border-border'}`}
                     placeholder="₿"
                     placeholderTextColor={placeholderColor}
                     maxLength={5}
@@ -267,7 +267,7 @@ export default function CurrencySettings() {
         )}
 
         {/* ── Section 3: Conversion ── */}
-        <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-2 ml-1 text-sm text-muted">Conversion Strategy</Text>
 
           <AnimatedSegment<'no' | 'yes'>
@@ -289,7 +289,7 @@ export default function CurrencySettings() {
                   1 {userProfile.currencyCode} = ? {effectiveNewCurrency?.code ?? '—'}
                 </Text>
                 <TextInput
-                  className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base font-semibold text-foreground dark:bg-gray-900 ${focusedInput === 'rate' ? 'border-primary' : 'border-transparent'}`}
+                  className={`rounded-xl border bg-surface px-4 py-3 text-base font-semibold text-foreground ${focusedInput === 'rate' ? 'border-primary' : 'border-border'}`}
                   placeholder="e.g. 83.50"
                   placeholderTextColor={placeholderColor}
                   keyboardType="decimal-pad"
@@ -307,7 +307,7 @@ export default function CurrencySettings() {
                 </Text>
               )}
 
-              <View className="flex-row items-start gap-2.5 rounded-2xl bg-gray-50 p-4 dark:bg-gray-900">
+              <View className="flex-row items-start gap-2.5 rounded-xl bg-secondary p-4">
                 <Icon as={Info} size={14} className="mt-0.5 text-muted" />
                 <Text className="flex-1 text-xs leading-4 text-muted">
                   All wallets, transactions, budgets and subscriptions will be permanently
@@ -323,7 +323,7 @@ export default function CurrencySettings() {
           onPress={handleSave}
           disabled={isSaving}
           activeOpacity={0.8}
-          className={`items-center justify-center rounded-full bg-primary py-4 ${isSaving ? 'opacity-50' : ''}`}>
+          className={`items-center justify-center rounded-xl bg-primary py-4 ${isSaving ? 'opacity-50' : ''}`}>
           <Text className="text-base font-medium text-white dark:text-black">
             {isSaving ? 'Applying...' : 'Apply Currency'}
           </Text>

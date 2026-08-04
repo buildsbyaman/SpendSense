@@ -187,7 +187,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
         {/* Quick Stats Cards */}
         {filter === 'all' && transactions.length > 0 && (
           <View className="mb-6 flex-row gap-4">
-            <View className="flex-1 flex-row items-center gap-3 rounded-3xl bg-surface p-4">
+            <View className="flex-1 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs">
               <View className="bg-income/10 dark:bg-income/20 h-10 w-10 items-center justify-center rounded-full">
                 <Icon as={ArrowDownLeft} size={20} className="text-income" />
               </View>
@@ -201,7 +201,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                 </Text>
               </View>
             </View>
-            <View className="flex-1 flex-row items-center gap-3 rounded-3xl bg-surface p-4">
+            <View className="flex-1 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs">
               <View className="bg-expense/10 dark:bg-expense/20 h-10 w-10 items-center justify-center rounded-full">
                 <Icon as={ArrowUpRight} size={20} className="text-expense" />
               </View>
@@ -250,29 +250,31 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                 <Text className="ml-1 text-xs font-bold uppercase tracking-widest text-muted">
                   {date}
                 </Text>
-                <View>
+                <View className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
                   {txs.map((tx, idx) => {
                     const isLast = idx === txs.length - 1;
 
                     return (
-                      <TransactionItem
-                        key={tx.id}
-                        transaction={tx}
-                        isExpanded={expandedTransactionId === tx.id}
-                        isLast={isLast}
-                        onToggleExpand={() => toggleTransactionExpand(tx.id)}
-                        onDelete={() => handleDelete(tx.id, tx.title)}
-                        onUpdate={(updated) => {
-                          updateTransaction(updated);
-                          Toast.show({
-                            type: 'success',
-                            text1: 'Transaction Updated',
-                            text2: 'Wallet balances adjusted successfully.',
-                          });
-                        }}
-                        accounts={accounts}
-                        getWalletName={getWalletName}
-                      />
+                      <View key={tx.id}>
+                        <TransactionItem
+                          transaction={tx}
+                          isExpanded={expandedTransactionId === tx.id}
+                          isLast={isLast}
+                          onToggleExpand={() => toggleTransactionExpand(tx.id)}
+                          onDelete={() => handleDelete(tx.id, tx.title)}
+                          onUpdate={(updated) => {
+                            updateTransaction(updated);
+                            Toast.show({
+                              type: 'success',
+                              text1: 'Transaction Updated',
+                              text2: 'Wallet balances adjusted successfully.',
+                            });
+                          }}
+                          accounts={accounts}
+                          getWalletName={getWalletName}
+                        />
+                        {!isLast && <View className="h-[1px] bg-divider" />}
+                      </View>
                     );
                   })}
                 </View>

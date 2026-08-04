@@ -82,18 +82,20 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           paddingHorizontal: 20,
         }}>
         {/* Net Balance Card */}
-        <View className="mb-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
-          <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
-          <Text className="mb-4 text-3xl font-bold text-foreground">
-            {userProfile.currencySymbol}
-            {formatNumber(totalBalance)}
-          </Text>
+        <View className="mb-6 rounded-xl border border-border bg-surface py-5 shadow-xs">
+          <View className="px-6 mb-4">
+            <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
+            <Text className="text-3xl font-bold text-foreground">
+              {userProfile.currencySymbol}
+              {formatNumber(totalBalance)}
+            </Text>
+          </View>
 
           {/* Divider */}
-          <View className="mb-4 h-[1px] bg-divider" />
+          <View className="mb-5 h-[1px] bg-divider" />
 
           {/* Quick Income/Expense Summary */}
-          <View className="flex-row">
+          <View className="flex-row px-6 mb-5">
             <View className="flex-1 flex-row items-center gap-3">
               <View className="bg-income/10 dark:bg-income/20 h-9 w-9 items-center justify-center rounded-full">
                 <Icon as={ArrowDownLeft} size={18} className="text-income" />
@@ -124,9 +126,9 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           </View>
 
           {/* See Analytics Link */}
-          <View className="my-4 h-[1px] bg-divider" />
+          <View className="mb-4 h-[1px] bg-divider" />
           <TouchableOpacity
-            className="flex-row items-center justify-center gap-1"
+            className="flex-row items-center justify-center gap-1 py-1"
             activeOpacity={0.7}
             onPress={() => navigateTab('analytics')}>
             <Text className="text-base font-bold text-primary">See analytics</Text>
@@ -140,8 +142,8 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
             <Text className="text-lg font-semibold text-foreground">Recent Activity</Text>
             {transactions.length > 5 && (
               <TouchableOpacity
-                onPress={() => router.push('/(tabs)/transactions')}
-                className="flex-row items-center gap-1.5 rounded-full border border-gray-100 bg-surface px-3 py-1.5 shadow-xs dark:border-gray-900"
+                onPress={() => navigateTab('transactions')}
+                className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 shadow-xs"
                 activeOpacity={0.7}>
                 <Text className="text-xs font-semibold text-foreground">View All</Text>
                 <Icon as={ArrowRight} size={12} className="text-foreground" />
@@ -168,14 +170,14 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
               />
             )
           ) : (
-            <View className="overflow-hidden rounded-[32px] border border-gray-100 bg-surface px-4 py-2 shadow-xs dark:border-gray-900">
+            <View className="overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-xs">
               {recentTransactions.map((tx, idx) => {
                 const { icon, color } = getCategoryDetails(tx.category, tx.title, customCategories);
                 const isLast = idx === recentTransactions.length - 1;
 
                 return (
                   <View key={tx.id}>
-                    <View className="flex-row items-center justify-between py-3.5">
+                    <View className="flex-row items-center justify-between px-5 py-5">
                       <View className="mr-2 flex-1 flex-row items-center gap-3.5">
                         <View
                           className="h-10 w-10 items-center justify-center rounded-full"
@@ -184,7 +186,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                         </View>
                         <View className="flex-1">
                           <Text
-                            className="text-base font-semibold text-foreground"
+                            className="text-base font-medium text-foreground"
                             numberOfLines={1}>
                             {tx.title}
                           </Text>
@@ -195,13 +197,13 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                       </View>
 
                       <Text
-                        className={`text-base font-bold ${tx.type === 'income' ? 'text-income' : 'text-expense'}`}>
+                        className={`text-base font-semibold ${tx.type === 'income' ? 'text-income' : 'text-expense'}`}>
                         {tx.type === 'income' ? '+' : '-'}
                         {userProfile.currencySymbol}
                         {formatNumber(tx.amount)}
                       </Text>
                     </View>
-                    {!isLast && <View className="ml-[54px] h-[1px] bg-divider" />}
+                    {!isLast && <View className="h-[1px] bg-divider" />}
                   </View>
                 );
               })}

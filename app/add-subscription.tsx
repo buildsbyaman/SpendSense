@@ -30,6 +30,7 @@ export default function AddSubscriptionScreen() {
     addSubscription,
     updateSubscription,
     getSortedCategories,
+    getSortedAccounts,
     subscriptions,
     userProfile,
   } = useApp();
@@ -42,15 +43,15 @@ export default function AddSubscriptionScreen() {
   const [amount, setAmount] = useState('');
   const [cycle, setCycle] = useState<SubscriptionCycle>('monthly');
   const [selectedWalletId, setSelectedWalletId] = useState(
-    accounts.find((a) => a.isDefault)?.id || (accounts[0]?.id ?? '')
+    getSortedAccounts().find((a) => a.isDefault)?.id || (getSortedAccounts()[0]?.id ?? '')
   );
 
   // Re-sync wallet selection if accounts load after mount or previous selection becomes stale
   useEffect(() => {
     if (selectedWalletId && accounts.some((a) => a.id === selectedWalletId)) return;
-    const fallback = (accounts.find((a) => a.isDefault)?.id || accounts[0]?.id) ?? '';
+    const fallback = (getSortedAccounts().find((a) => a.isDefault)?.id || getSortedAccounts()[0]?.id) ?? '';
     if (fallback) setSelectedWalletId(fallback);
-  }, [accounts, selectedWalletId]);
+  }, [accounts, getSortedAccounts, selectedWalletId]);
   const [category, setCategory] = useState('Subscriptions');
   const [isActive, setIsActive] = useState(true);
 
@@ -183,7 +184,7 @@ export default function AddSubscriptionScreen() {
             onPress={handleClose}
           />
 
-          <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+          <View className="rounded-t-2xl border-t border-border bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
             {/* Header */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Subscription' : 'Add Subscription'}</Text>
@@ -200,7 +201,7 @@ export default function AddSubscriptionScreen() {
                   <TextInput
                     value={name}
                     onChangeText={setName}
-                    className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'name' ? 'border-primary' : 'border-transparent'}`}
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
                     placeholder="Netflix, Spotify, Gym, etc."
                     placeholderTextColor={placeholderColor}
                     onFocus={() => setFocusedInput('name')}
@@ -218,7 +219,7 @@ export default function AddSubscriptionScreen() {
                     <TextInput
                       value={amount}
                       onChangeText={(text) => setAmount(sanitizeAmountInput(text))}
-                      className={`rounded-full border-2 bg-gray-50 py-3.5 pl-10 pr-5 text-base font-semibold text-foreground dark:bg-gray-900 ${focusedInput === 'amount' ? 'border-primary' : 'border-transparent'}`}
+                      className={`rounded-xl border bg-surface py-3.5 pl-10 pr-5 text-base font-semibold text-foreground ${focusedInput === 'amount' ? 'border-primary' : 'border-border'}`}
                       placeholder="0.00"
                       keyboardType="decimal-pad"
                       placeholderTextColor={placeholderColor}
@@ -236,7 +237,7 @@ export default function AddSubscriptionScreen() {
                       <TouchableOpacity
                         key={c}
                         onPress={() => setCycle(c)}
-                        className={`min-w-[70px] flex-1 items-center justify-center rounded-full border px-2 py-2.5 ${cycle === c ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                        className={`min-w-[70px] flex-1 items-center justify-center rounded-xl border px-2 py-2.5 ${cycle === c ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                         <Text
                           className={`text-xs font-semibold capitalize ${cycle === c ? 'text-white dark:text-black' : 'text-foreground'}`}>
                           {c}
@@ -271,7 +272,7 @@ export default function AddSubscriptionScreen() {
                         if (router.canGoBack()) router.back();
                         router.push('/(tabs)/wallets');
                       }}
-                      className="items-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+                      className="items-center rounded-xl border border-dashed border-border bg-surface p-4">
                       <Text className="text-sm font-semibold text-primary">
                         Create a wallet first
                       </Text>
@@ -279,13 +280,13 @@ export default function AddSubscriptionScreen() {
                   ) : (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       <View className="flex-row gap-3 py-1">
-                        {accounts.map((wallet) => {
+                        {getSortedAccounts().map((wallet) => {
                           const isSelected = selectedWalletId === wallet.id;
                           return (
                             <TouchableOpacity
                               key={wallet.id}
                               onPress={() => setSelectedWalletId(wallet.id)}
-                              className={`flex-row items-center gap-2.5 rounded-2xl border px-4 py-3 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                              className={`flex-row items-center gap-2.5 rounded-xl border px-4 py-3 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                               <Icon
                                 as={wallet.icon}
                                 size={16}
@@ -322,7 +323,7 @@ export default function AddSubscriptionScreen() {
                           <TouchableOpacity
                             key={cat.name}
                             onPress={() => setCategory(cat.name)}
-                            className={`flex-row items-center gap-2 rounded-full border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                            className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                             <Text
                               className={`text-sm font-medium ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
                               {cat.name}
@@ -340,7 +341,7 @@ export default function AddSubscriptionScreen() {
                   <View className="flex-row gap-3">
                     <TouchableOpacity
                       onPress={() => setNextDate(new Date())}
-                      className={`flex-1 items-center rounded-full border py-3 ${nextDate.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 items-center rounded-xl border py-3 ${nextDate.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                       <Text
                         className={`text-xs font-semibold ${nextDate.toDateString() === new Date().toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
                         Today
@@ -351,7 +352,7 @@ export default function AddSubscriptionScreen() {
                         setCalendarMonth(new Date(nextDate));
                         setIsDatePickerOpen(true);
                       }}
-                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-full border px-3 py-3 ${nextDate.toDateString() !== new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border px-3 py-3 ${nextDate.toDateString() !== new Date().toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                       <Icon
                         as={Calendar}
                         size={12}
@@ -393,7 +394,7 @@ export default function AddSubscriptionScreen() {
                     <View className="mt-4 flex-row justify-center">
                       <TouchableOpacity
                         onPress={() => setIsEndDatePickerOpen(true)}
-                        className="bg-primary/10 flex-row items-center gap-1.5 rounded-full border border-primary px-5 py-2.5">
+                        className="bg-primary/10 flex-row items-center gap-1.5 rounded-xl border border-primary px-5 py-2.5">
                         <Icon as={Calendar} size={14} className="text-primary" />
                         <Text className="text-sm font-semibold text-primary">
                           {formatDatePickerDate(endDate)}
@@ -411,7 +412,7 @@ export default function AddSubscriptionScreen() {
                     parseFloat(amount) === 0 ||
                     !name.trim()
                   }
-                  className={`mt-8 items-center justify-center rounded-full bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
+                  className={`mt-8 items-center justify-center rounded-xl bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
                   activeOpacity={0.7}>
                   <Text className="text-base font-medium text-white dark:text-black">
                     {editId ? 'Save Changes' : 'Save Subscription'}

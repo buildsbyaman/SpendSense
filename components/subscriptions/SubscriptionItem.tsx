@@ -83,12 +83,13 @@ export function SubscriptionItem({
   );
 
   return (
-    <View className="mb-4 overflow-hidden rounded-3xl border border-border bg-surface shadow-xs">
+    <View className="mb-4 overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
       {rowView}
       <Animated.View style={actionsStyle}>
-        <View className="flex-row gap-2.5 px-4 pb-4">
+        <View className="h-[1px] bg-divider" />
+        <View className="flex-row gap-2.5 px-4 py-3">
           <TouchableOpacity
-            className="flex-1 items-center justify-center rounded-full bg-secondary py-3"
+            className="flex-1 items-center justify-center rounded-[6px] bg-secondary py-3"
             onPress={() =>
               router.push({ pathname: '/add-subscription', params: { editId: subscription.id } })
             }>
@@ -96,7 +97,7 @@ export function SubscriptionItem({
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-1 items-center justify-center rounded-full bg-red-50 py-3 dark:bg-red-950/20"
+            className="flex-1 items-center justify-center rounded-[6px] bg-red-50 py-3 dark:bg-red-950/20"
             onPress={onDelete}>
             <Text className="text-xs font-bold text-red-500">Delete</Text>
           </TouchableOpacity>

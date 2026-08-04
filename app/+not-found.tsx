@@ -9,7 +9,7 @@ export default function NotFoundScreen() {
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
       <View className="flex-1 items-center justify-center gap-4 bg-background px-6">
-        <View className="h-20 w-20 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-800">
+        <View className="h-20 w-20 items-center justify-center rounded-full bg-secondary">
           <Icon as={AlertTriangle} size={36} className="text-muted" />
         </View>
         <Text variant="h3" className="text-foreground text-center">

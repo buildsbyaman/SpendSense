@@ -133,7 +133,7 @@ export default function AddWalletScreen() {
             onPress={handleClose} 
           />
 
-          <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+          <View className="rounded-t-2xl border-t border-border bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Wallet' : 'Add Wallet'}</Text>
               <View className="flex-row items-center gap-2">
@@ -155,7 +155,7 @@ export default function AddWalletScreen() {
               <View>
                 <Text className="mb-2 ml-1 text-sm text-muted">Wallet Name</Text>
                 <TextInput
-                  className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${errors.name ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-transparent'}`}
+                  className={`text-foreground rounded-xl border bg-surface px-4 py-3 text-base ${errors.name ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
                   placeholder="e.g. PayPal"
                   placeholderTextColor={placeholderColor}
                   value={newName}
@@ -179,7 +179,7 @@ export default function AddWalletScreen() {
                   {ACCOUNT_TYPES.map((type) => (
                     <TouchableOpacity
                       key={type}
-                      className={`mr-2 rounded-full border px-3 py-2.5 ${accountType === type ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}
+                      className={`mr-2 rounded-xl border px-3 py-2.5 ${accountType === type ? 'border-primary bg-primary' : 'border-border bg-surface'}`}
                       onPress={() => setAccountType(type)}>
                       <Text
                         className={`text-sm font-medium ${accountType === type ? 'text-white dark:text-black' : 'text-foreground'}`}>
@@ -193,7 +193,7 @@ export default function AddWalletScreen() {
               <View>
                 <Text className="mb-2 ml-1 text-sm text-muted">Card / Account Number (Optional)</Text>
                 <TextInput
-                  className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${focusedInput === 'number' ? 'border-primary' : 'border-transparent'}`}
+                  className={`text-foreground rounded-xl border bg-surface px-4 py-3 text-base ${focusedInput === 'number' ? 'border-primary' : 'border-border'}`}
                   placeholder="**** **** **** 1234"
                   placeholderTextColor={placeholderColor}
                   value={newNumber}
@@ -207,7 +207,7 @@ export default function AddWalletScreen() {
               <View>
                 <Text className="mb-2 ml-1 text-sm text-muted">Current Balance</Text>
                 <TextInput
-                  className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${errors.balance ? 'border-red-500' : focusedInput === 'balance' ? 'border-primary' : 'border-transparent'}`}
+                  className={`text-foreground rounded-xl border bg-surface px-4 py-3 text-base ${errors.balance ? 'border-red-500' : focusedInput === 'balance' ? 'border-primary' : 'border-border'}`}
                   placeholder={`${userProfile.currencySymbol}0.00`}
                   placeholderTextColor={placeholderColor}
                   keyboardType="decimal-pad"
@@ -233,14 +233,14 @@ export default function AddWalletScreen() {
             <View className="mt-8 flex-row gap-3">
               {editId && !accounts.find(a => a.id === editId)?.isDefault && (
                 <TouchableOpacity
-                  className="flex-1 items-center justify-center rounded-full bg-secondary py-3.5"
+                  className="flex-1 items-center justify-center rounded-xl bg-secondary py-3.5"
                   onPress={handleSetDefault}
                   activeOpacity={0.7}>
                   <Text className="text-foreground text-base font-medium">Set Default</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
-                className={`items-center justify-center rounded-full bg-primary py-3.5 ${editId && !accounts.find(a => a.id === editId)?.isDefault ? 'flex-1' : 'flex-1'} ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
+                className={`items-center justify-center rounded-xl bg-primary py-3.5 ${editId && !accounts.find(a => a.id === editId)?.isDefault ? 'flex-1' : 'flex-1'} ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
                 onPress={handleSave}
                 activeOpacity={0.7}>
                 <Text className="text-base font-medium text-white dark:text-black">Save Wallet</Text>

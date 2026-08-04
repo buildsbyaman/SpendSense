@@ -236,6 +236,29 @@ export async function saveCategoryOrder(type: string, sortOrder: string[]): Prom
   );
 }
 
+export async function fetchWalletOrder(): Promise<string[] | null> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ sort_order: string }>(
+    "SELECT sort_order FROM wallet_order WHERE id = 'default'"
+  );
+  if (row && row.sort_order) {
+    try {
+      return JSON.parse(row.sort_order);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function saveWalletOrder(sortOrder: string[]): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    "INSERT OR REPLACE INTO wallet_order (id, sort_order) VALUES ('default', ?)",
+    JSON.stringify(sortOrder)
+  );
+}
+
 // ── Profile ──────────────────────────────────────────────────────────
 
 interface ProfileRow {
@@ -328,6 +351,7 @@ export async function clearAll(): Promise<void> {
     DELETE FROM custom_categories;
     DELETE FROM deleted_default_categories;
     DELETE FROM category_order;
+    DELETE FROM wallet_order;
     DELETE FROM budgets;
     DELETE FROM subscriptions;
   `);
@@ -341,6 +365,7 @@ export async function clearAllData(): Promise<void> {
     DELETE FROM custom_categories;
     DELETE FROM deleted_default_categories;
     DELETE FROM category_order;
+    DELETE FROM wallet_order;
     DELETE FROM budgets;
     DELETE FROM subscriptions;
   `);

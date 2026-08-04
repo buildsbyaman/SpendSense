@@ -29,7 +29,7 @@ export default function TransactionFilterBar({
 
   return (
     <View className="mb-4 flex-row items-center gap-2">
-      <View className="flex-1 flex-row items-center rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 focus-within:border-primary dark:border-gray-800 dark:bg-gray-900">
+      <View className="flex-1 flex-row items-center rounded-xl border border-border bg-surface px-4 py-2.5 focus-within:border-primary">
         <Icon as={Search} size={16} className="mr-2 text-muted" />
         <TextInput
           value={searchQuery}
@@ -47,7 +47,7 @@ export default function TransactionFilterBar({
 
       <TouchableOpacity
         onPress={onDatePress}
-        className={`flex-row items-center gap-1.5 rounded-full border px-4 py-2.5 ${dateLabel !== 'Any Date' ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+        className={`flex-row items-center gap-1.5 rounded-xl border px-4 py-2.5 ${dateLabel !== 'Any Date' ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
         <Icon
           as={Calendar}
           size={14}
@@ -60,7 +60,7 @@ export default function TransactionFilterBar({
       </TouchableOpacity>
 
       {hasActiveFilter && (
-        <TouchableOpacity onPress={onClearAll} className="rounded-full bg-secondary p-2.5">
+        <TouchableOpacity onPress={onClearAll} className="rounded-xl bg-secondary p-2.5">
           <Icon as={X} size={14} className="text-foreground" />
         </TouchableOpacity>
       )}

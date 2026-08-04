@@ -79,3 +79,12 @@ export const formatNumber = (value: number, decimals = 2): string => {
   const formatted = compactAbs(Math.abs(value), decimals);
   return isNegative ? `-${formatted}` : formatted;
 };
+
+const WALLET_TYPE_COLORS: Record<string, string> = {
+  Bank: '#3b82f6',
+  Card: '#8b5cf6',
+  Digital: '#10b981',
+};
+
+export const getWalletTypeColor = (type: string): string =>
+  WALLET_TYPE_COLORS[type] ?? '#64748b';

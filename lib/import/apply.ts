@@ -11,6 +11,8 @@ import {
   insertCustomCategory,
   saveProfile,
   saveCategoryOrder,
+  saveWalletOrder,
+  fetchAccounts,
   replaceDeletedDefaultCategories,
 } from '@/lib/repository';
 import { type ImportPlan } from './merge';
@@ -49,7 +51,7 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
     // Replace mode: clear only selected tables in dependency order
     if (plan.replace && plan.replaceTypes.length > 0) {
       const typeToTables: Record<string, string[]> = {
-        wallets: ['accounts'],
+        wallets: ['accounts', 'wallet_order'],
         transactions: ['transactions'],
         subscriptions: ['subscriptions'],
         budgets: ['budgets'],
@@ -62,7 +64,7 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
         }
       }
       // Delete in dependency order
-      for (const table of ['subscriptions', 'transactions', 'budgets', 'deleted_default_categories', 'category_order', 'custom_categories', 'accounts']) {
+      for (const table of ['subscriptions', 'transactions', 'budgets', 'deleted_default_categories', 'category_order', 'custom_categories', 'accounts', 'wallet_order']) {
         if (tablesToDelete.has(table)) {
           await db.runAsync(`DELETE FROM ${table}`);
         }
@@ -83,6 +85,24 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ApplyResult> {
     for (const w of plan.wallets.update) {
       await updateAccount(w);
       result.walletsUpdated++;
+    }
+
+    // Wallet order (map file names -> ids; append any accounts not listed)
+    if (plan.walletOrder) {
+      const allAccounts = await fetchAccounts();
+      const orderedIds: string[] = [];
+      for (const name of plan.walletOrder) {
+        const match = allAccounts.find(
+          (a) => a.name.toLowerCase() === String(name).trim().toLowerCase()
+        );
+        if (match && !orderedIds.includes(match.id)) orderedIds.push(match.id);
+      }
+      for (const acc of allAccounts) {
+        if (!orderedIds.includes(acc.id)) orderedIds.push(acc.id);
+      }
+      if (orderedIds.length > 0) {
+        await saveWalletOrder(orderedIds);
+      }
     }
 
     // Transactions

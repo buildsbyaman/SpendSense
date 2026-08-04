@@ -106,7 +106,7 @@ export default function TransactionDatePickerModal({
       <View style={{ zIndex: 9999, elevation: 99 }} className="flex-1 justify-center items-center px-6">
         <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
         <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
-          <View className="bg-surface rounded-3xl w-full p-6 gap-4 max-w-[340px]">
+          <View className="bg-surface rounded-2xl border border-border w-full p-6 gap-4 max-w-[340px] shadow-2xl">
           {/* Calendar Header */}
           <View className="flex-row justify-between items-center pb-2">
             <TouchableOpacity onPress={() => onNavigateMonth('prev')} className="p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
@@ -191,7 +191,7 @@ export default function TransactionDatePickerModal({
                     setRangeFrom(new Date(currentYear, currentMonth, 1));
                     setRangeTo(new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
                   }}
-                  className={`py-2 px-4 rounded-full ${isWholeMonth ? 'bg-primary/20' : ''}`}
+                  className={`py-2 px-4 rounded-xl ${isWholeMonth ? 'bg-primary/20' : ''}`}
                 >
                   <Text className={`text-xs ${isWholeMonth ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Month</Text>
                 </TouchableOpacity>
@@ -201,7 +201,7 @@ export default function TransactionDatePickerModal({
                     setRangeFrom(new Date(currentYear, 0, 1));
                     setRangeTo(new Date(currentYear, 11, 31, 23, 59, 59, 999));
                   }}
-                  className={`py-2 px-4 rounded-full ${isWholeYear ? 'bg-primary/20' : ''}`}
+                  className={`py-2 px-4 rounded-xl ${isWholeYear ? 'bg-primary/20' : ''}`}
                 >
                   <Text className={`text-xs ${isWholeYear ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Year</Text>
                 </TouchableOpacity>
@@ -211,13 +211,13 @@ export default function TransactionDatePickerModal({
           <View className="flex-row gap-3 pt-2">
             <TouchableOpacity
               onPress={onClose}
-              className="flex-1 py-3 bg-secondary rounded-full items-center"
+              className="flex-1 py-3 bg-secondary rounded-xl items-center"
             >
               <Text className="font-bold text-xs text-foreground">Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleConfirm}
-              className="flex-1 py-3 bg-primary rounded-full items-center"
+              className="flex-1 py-3 bg-primary rounded-xl items-center"
             >
               <Text className="font-bold text-xs text-white dark:text-black">Confirm</Text>
             </TouchableOpacity>

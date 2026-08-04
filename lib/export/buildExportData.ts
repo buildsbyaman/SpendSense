@@ -49,6 +49,7 @@ interface AppState {
   profile: UserProfile;
   categoryOrder: { expense: string[]; income: string[] };
   deletedDefaultCategories: string[];
+  walletOrder: string[];
 }
 
 function filterByPeriod(txs: Transaction[], period: ExportSelection['period']): Transaction[] {
@@ -363,6 +364,18 @@ function buildHiddenCategoriesTable(deleted: string[]): ExportedTable {
   };
 }
 
+function buildWalletOrderTable(
+  order: string[],
+  accounts: AppState['accounts']
+): ExportedTable {
+  const rows: Record<string, string>[] = [];
+  for (const id of order) {
+    const account = accounts.find((a) => a.id === id);
+    rows.push({ Name: account?.name ?? id });
+  }
+  return { title: 'Wallet Order', columns: ['Name'], rows };
+}
+
 // ── Main builder ───────────────────────────────────────────────────────
 
 export function buildExportData(selection: ExportSelection, state: AppState): ExportedTable[] {
@@ -385,6 +398,7 @@ export function buildExportData(selection: ExportSelection, state: AppState): Ex
   }
   if (want('wallets')) {
     tables.push(buildWalletsTable(state.accounts));
+    tables.push(buildWalletOrderTable(state.walletOrder, state.accounts));
   }
   if (want('balances')) {
     tables.push(

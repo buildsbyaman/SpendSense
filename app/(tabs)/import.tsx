@@ -85,6 +85,7 @@ export default function ImportScreen() {
     customCategories,
     userProfile,
     categoryOrder,
+    walletOrder,
     refreshAllData,
   } = useApp();
   const { navigate: navigateTab } = useTabNavigation();
@@ -117,6 +118,7 @@ export default function ImportScreen() {
       (plan.categoryOrder
         ? plan.categoryOrder.expense.length + plan.categoryOrder.income.length
         : 0) +
+      (plan.walletOrder ? plan.walletOrder.length : 0) +
       (plan.hiddenCategories ? plan.hiddenCategories.length : 0)
     );
   }, []);
@@ -170,7 +172,7 @@ export default function ImportScreen() {
 
     const plan = buildImportPlan(
       parsedData.tables,
-      { accounts, transactions, budgets, subscriptions, customCategories, categoryOrder },
+      { accounts, transactions, budgets, subscriptions, customCategories, categoryOrder, walletOrder },
       userProfile.currencyCode,
       parsedData.meta.currency ?? null,
       selectedTypes,
@@ -186,6 +188,7 @@ export default function ImportScreen() {
     subscriptions,
     customCategories,
     categoryOrder,
+    walletOrder,
     userProfile.currencyCode,
     selectedTypes,
     importMode,
@@ -317,6 +320,7 @@ export default function ImportScreen() {
     if (plan.categories.insert.length > 0)
       parts.push(`${plan.categories.insert.length} category(ies)`);
     if (plan.categoryOrder) parts.push('category order');
+    if (plan.walletOrder) parts.push('wallet order');
     if (plan.hiddenCategories) parts.push(`${plan.hiddenCategories.length} hidden default(s)`);
     const totalSkip =
       plan.wallets.skip +
@@ -362,7 +366,7 @@ export default function ImportScreen() {
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
         keyboardShouldPersistTaps="handled">
         {/* ── What to import ── */}
-        <View className="mb-4 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">What to import</Text>
           <View className="flex-row flex-wrap gap-2.5">
             {DATA_TYPES.map((dt) => {
@@ -372,10 +376,10 @@ export default function ImportScreen() {
                   key={dt.key}
                   onPress={() => toggleType(dt.key)}
                   activeOpacity={0.75}
-                  className={`flex-row items-center gap-2 rounded-full border px-4 py-2.5 ${
+                  className={`flex-row items-center gap-2 rounded-xl border px-4 py-2.5 ${
                     active
                       ? 'border-primary bg-primary'
-                      : 'border-gray-200 bg-transparent dark:border-gray-800'
+                      : 'border-border bg-surface'
                   }`}>
                   <Icon
                     as={dt.icon}
@@ -395,7 +399,7 @@ export default function ImportScreen() {
         </View>
 
         {/* ── Configuration ── */}
-        <View className="mb-4 gap-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-4 gap-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <View>
             <Text className="mb-3 text-sm font-medium text-muted">Format</Text>
             <AnimatedSegment
@@ -425,13 +429,13 @@ export default function ImportScreen() {
         </View>
 
         {/* ── Attach File ── */}
-        <View className="mb-4 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">Data Source</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={handlePickFile}
             className="flex-row items-center gap-3 py-1">
-            <View className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-800">
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
               <Icon as={FileUp} size={18} className="text-foreground" />
             </View>
             <View className="flex-1">
@@ -457,14 +461,14 @@ export default function ImportScreen() {
             !pendingPlan ||
             getPlanTotalRecords(pendingPlan) === 0
           }
-          className={`mb-4 flex-row items-center justify-center gap-2 rounded-full py-4 ${
+          className={`mb-4 flex-row items-center justify-center gap-2 rounded-xl py-4 ${
             importing ||
             parsing ||
             selectedTypes.length === 0 ||
             !selectedFile ||
             !pendingPlan ||
             getPlanTotalRecords(pendingPlan) === 0
-              ? 'bg-gray-200 dark:bg-gray-800'
+              ? 'bg-secondary'
               : 'bg-primary'
           }`}>
           <Icon

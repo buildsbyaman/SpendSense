@@ -37,9 +37,9 @@ export function SettingsOptionsMenu({ visible, onClose, onEditProfile }: Setting
           activeOpacity={1}
           onPress={onClose}>
           <Animated.View style={animatedStyle}>
-            <View className="w-64 gap-1 overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+            <View className="w-64 gap-1 overflow-hidden rounded-xl border border-border bg-surface p-2 shadow-2xl">
               <TouchableOpacity
-              className="flex-row items-center rounded-xl p-3 active:bg-gray-50 dark:active:bg-gray-800"
+              className="flex-row items-center rounded-xl p-3 active:bg-secondary"
               onPress={() => {
                 onClose();
                 onEditProfile();
@@ -51,7 +51,7 @@ export function SettingsOptionsMenu({ visible, onClose, onEditProfile }: Setting
             <View className="mx-2 my-1 h-[1px] bg-divider" />
 
             <TouchableOpacity
-              className="flex-row items-center rounded-xl p-3 active:bg-gray-50 dark:active:bg-gray-800"
+              className="flex-row items-center rounded-xl p-3 active:bg-secondary"
               onPress={handleDeleteAll}>
               <Icon as={Trash2} size={20} className="mr-3 text-red-500" />
               <Text className="text-base font-medium text-red-500">Delete All Data</Text>

@@ -95,17 +95,17 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
       <View style={{ zIndex: 9999, elevation: 99 }} className="flex-1 justify-center items-center px-6">
         <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
         <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
-          <View className="bg-surface w-full rounded-3xl p-6 items-center shadow-2xl">
+          <View className="bg-surface w-full rounded-2xl border border-border p-6 items-center shadow-2xl">
           <View className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 items-center justify-center mb-5">
             <Icon as={Wallet} size={28} className="text-red-500" />
           </View>
 
-          <Text variant="h3" className="mb-2 text-center">{title}</Text>
+          <Text variant="h3" className="mb-2 text-center text-foreground">{title}</Text>
           <Text className="text-muted text-center mb-8 px-2">{subtitle}</Text>
 
           <View className="flex-row gap-3 w-full">
             <TouchableOpacity
-              className="flex-1 py-3.5 items-center justify-center bg-secondary rounded-full"
+              className="flex-1 py-3.5 items-center justify-center bg-secondary rounded-xl"
               onPress={onCancel}
               activeOpacity={0.7}>
               <Text className="text-foreground font-semibold">
@@ -114,7 +114,7 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
             </TouchableOpacity>
             {!isLastWallet && (
               <TouchableOpacity
-                className="flex-1 py-3.5 items-center justify-center bg-red-500 rounded-full"
+                className="flex-1 py-3.5 items-center justify-center bg-red-500 rounded-xl"
                 onPress={onConfirm}
                 activeOpacity={0.7}>
                 <Text className="text-white font-semibold">Delete</Text>

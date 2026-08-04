@@ -30,9 +30,9 @@ export function WalletOptionsMenu({ visible, onClose, onAddWallet }: WalletOptio
         onPress={onClose}
       >
         <Animated.View style={animatedStyle}>
-          <View className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 w-64 rounded-2xl overflow-hidden shadow-2xl p-2">
+          <View className="w-64 overflow-hidden rounded-xl border border-border bg-surface p-2 shadow-2xl">
           <TouchableOpacity 
-            className="flex-row items-center p-3 active:bg-gray-50 dark:active:bg-gray-800 rounded-xl"
+            className="flex-row items-center rounded-xl p-3 active:bg-secondary"
             onPress={() => {
               onClose();
               onAddWallet();

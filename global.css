@@ -38,10 +38,15 @@
   --expense: #f87171;
   --income: #16a34a;
 
-  --border: #e8e8e8;
+  --border: #f3f4f6;
   --divider: #efefef;
   --input: #f6f6f6;
   --ring: #f6c98a;
+
+  --wallet-bank: #3b82f6;
+  --wallet-card: #8b5cf6;
+  --wallet-digital: #10b981;
+  --wallet-fallback: #64748b;
 
   --gray-50: #fafafa;
   --gray-100: #f6f6f6;
@@ -59,11 +64,13 @@
   /* ========= Radius ========= */
 
   --radius: 0.75rem;
-  --radius-xs: 12px;
-  --radius-sm: 18px;
-  --radius-md: 22px;
-  --radius-lg: 30px;
-  --radius-xl: 36px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
   --radius-pill: 999px;
 
   /* ========= Shadows ========= */
@@ -82,11 +89,11 @@
   --background: #000000;
   --foreground: #ffffff;
 
-  --surface: #1c1c1e;
-  --card: #1c1c1e;
+  --surface: #0a0a0a;
+  --card: #0a0a0a;
   --card-foreground: #ffffff;
 
-  --popover: #1c1c1e;
+  --popover: #0a0a0a;
   --popover-foreground: #ffffff;
 
   --primary: #ffffff;
@@ -112,10 +119,15 @@
   --expense: #f87171;
   --income: #4ade80;
 
-  --border: #2e2e32;
+  --border: #18181b;
   --divider: #242428;
   --input: #1a1a1e;
   --ring: #f6c98a;
+
+  --wallet-bank: #3b82f6;
+  --wallet-card: #8b5cf6;
+  --wallet-digital: #10b981;
+  --wallet-fallback: #64748b;
 
   --gray-50: #131316;
   --gray-100: #1c1c1f;

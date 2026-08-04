@@ -147,9 +147,9 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
           paddingHorizontal: 20,
         }}
         keyboardShouldPersistTaps="handled">
-        <View className="gap-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="rounded-xl border border-border bg-surface py-5 shadow-xs">
           {/* Avatar Section */}
-          <View className="flex-row items-center gap-4 py-2">
+          <View className="flex-row items-center gap-4 py-2 px-6">
             <TouchableOpacity activeOpacity={0.7} onPress={handlePickImage}>
               <Avatar name={userProfile.name} avatar={userProfile.avatar} size={56} />
             </TouchableOpacity>
@@ -161,19 +161,19 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
             </View>
           </View>
 
-          <View className="h-[1px] bg-divider" />
+          <View className="my-4 h-[1px] bg-divider" />
 
           {!isEditing ? (
             /* Read-Only Details Mode */
-            <View className="gap-6">
-              <View className="flex-row items-center justify-between px-1">
+            <View className="gap-4">
+              <View className="flex-row items-center justify-between px-6">
                 <Text className="text-sm font-medium text-muted">Name</Text>
                 <Text className="text-sm font-semibold text-foreground">{userProfile.name}</Text>
               </View>
 
               <View className="h-[1px] bg-divider" />
 
-              <View className="flex-row items-center justify-between px-1">
+              <View className="flex-row items-center justify-between px-6">
                 <Text className="text-sm font-medium text-muted">Dark Mode</Text>
                 <TouchableOpacity
                   activeOpacity={0.8}
@@ -194,7 +194,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
             </View>
           ) : (
             /* Inline Edit Form Mode */
-            <>
+            <View className="gap-4 px-6">
               <View className="gap-2">
                 <Text className="ml-1 text-sm font-medium text-muted">Profile Name</Text>
                 <TextInput
@@ -203,7 +203,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
                     setName(text);
                     if (error) setError(null);
                   }}
-                  className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${error ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-transparent'}`}
+                  className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${error ? 'border-red-500' : focusedInput === 'name' ? 'border-primary' : 'border-border'}`}
                   placeholder="Enter your name"
                   placeholderTextColor={placeholderColor}
                   onFocus={() => setFocusedInput('name')}
@@ -220,19 +220,19 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
                     setError(null);
                     setIsEditing(false);
                   }}
-                  className="flex-1 items-center justify-center rounded-full bg-secondary py-3"
+                  className="flex-1 items-center justify-center rounded-xl bg-secondary py-3"
                   activeOpacity={0.8}>
                   <Text className="text-sm font-semibold text-foreground">Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSave}
-                  className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary py-3"
+                  className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3"
                   activeOpacity={0.8}>
                   <Icon as={Check} size={16} className="text-white dark:text-black" />
                   <Text className="text-sm font-semibold text-white dark:text-black">Save</Text>
                 </TouchableOpacity>
               </View>
-            </>
+            </View>
           )}
         </View>
 
@@ -240,12 +240,12 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
 
         {/* Dev-only: Load Demo Data */}
         {DEV_MODE && devToolsEnabled && (
-          <View className="mt-6 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+          <View className="mt-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
             <Text className="mb-4 text-sm font-medium text-muted">Developer</Text>
             <TouchableOpacity
               onPress={() => setConfirmSeed(true)}
               className="flex-row items-center gap-3 py-3">
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
                 <Icon as={Database} size={18} className="text-foreground" />
               </View>
               <Text className="flex-1 text-base font-medium text-foreground">Load Demo Data</Text>

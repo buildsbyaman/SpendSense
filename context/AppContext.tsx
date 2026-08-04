@@ -31,6 +31,8 @@ import {
   fetchDeletedDefaultCategories,
   fetchCategoryOrder,
   saveCategoryOrder,
+  fetchWalletOrder,
+  saveWalletOrder,
   fetchProfile,
   saveProfile,
   clearAll,
@@ -85,6 +87,7 @@ interface AppContextType {
   refreshAllData: () => Promise<void>;
   customCategories: CustomCategory[];
   addCustomCategory: (category: Omit<CustomCategory, 'id'>) => void;
+  updateCustomCategory: (category: CustomCategory, oldName?: string) => Promise<void>;
   deleteCustomCategory: (id: string) => void;
   deletedDefaultCategories: string[];
   deleteDefaultCategory: (name: string) => void;
@@ -93,6 +96,9 @@ interface AppContextType {
   getSortedCategories: (
     type: 'expense' | 'income'
   ) => (CustomCategory | { name: string; isDefault: boolean })[];
+  walletOrder: string[];
+  updateWalletOrder: (order: string[]) => void;
+  getSortedAccounts: () => Account[];
   budgets: Budget[];
   addBudget: (budget: Omit<Budget, 'id'>) => void;
   updateBudget: (budget: Budget) => void;
@@ -168,6 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     expense: [],
     income: [],
   });
+  const [walletOrder, setWalletOrder] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<{
     name: string;
     currencySymbol: string;
@@ -190,6 +197,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const storedDeletedDefaults = await fetchDeletedDefaultCategories();
         const expenseOrder = (await fetchCategoryOrder('expense')) || [];
         const incomeOrder = (await fetchCategoryOrder('income')) || [];
+        const storedWalletOrder = (await fetchWalletOrder()) || [];
         const storedProfile = (await fetchProfile()) || {
           name: 'User',
           currencySymbol: '$',
@@ -231,6 +239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCustomCategories(storedCategories);
         setDeletedDefaultCategories(storedDeletedDefaults);
         setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
+        setWalletOrder(storedWalletOrder);
         setUserProfile(storedProfile);
         setBudgets(storedBudgets);
         setSubscriptions(storedSubscriptions);
@@ -294,6 +303,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const storedDeletedDefaults = await fetchDeletedDefaultCategories();
     const expenseOrder = (await fetchCategoryOrder('expense')) || [];
     const incomeOrder = (await fetchCategoryOrder('income')) || [];
+    const storedWalletOrder = (await fetchWalletOrder()) || [];
     const storedBudgets = await fetchBudgets();
     const storedSubscriptions = await fetchSubscriptions();
     const storedProfile = (await fetchProfile()) || {
@@ -308,6 +318,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCustomCategories(storedCategories);
     setDeletedDefaultCategories(storedDeletedDefaults);
     setCategoryOrder({ expense: expenseOrder, income: incomeOrder });
+    setWalletOrder(storedWalletOrder);
     setBudgets(storedBudgets);
     setSubscriptions(storedSubscriptions);
     setUserProfile(storedProfile);
@@ -327,6 +338,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCustomCategories((prev) => [...prev, newCategory]);
     insertCustomCategory(newCategory);
   }, [customCategories]);
+
+  const updateCustomCategory = useCallback(
+    async (updatedCat: CustomCategory, oldName?: string) => {
+      if (oldName && oldName !== updatedCat.name) {
+        await reassignTransactionsCategory(oldName, updatedCat.name);
+        await updateBudgetsCategory(oldName, updatedCat.name);
+        setTransactions((prev) =>
+          prev.map((t) => (t.category === oldName ? { ...t, category: updatedCat.name } : t))
+        );
+        setBudgets((prev) =>
+          prev.map((b) => (b.category === oldName ? { ...b, category: updatedCat.name } : b))
+        );
+      }
+      setCustomCategories((prev) =>
+        prev.map((c) => (c.id === updatedCat.id ? updatedCat : c))
+      );
+      await insertCustomCategory(updatedCat);
+    },
+    []
+  );
 
   const deleteCustomCategory = useCallback(
     async (id: string) => {
@@ -369,6 +400,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCategoryOrder((prev) => ({ ...prev, [type]: order }));
     saveCategoryOrder(type, order);
   }, []);
+
+  const updateWalletOrder = useCallback((order: string[]) => {
+    setWalletOrder(order);
+    saveWalletOrder(order);
+  }, []);
+
+  const getSortedAccounts = useCallback(() => {
+    const orderList = walletOrder;
+    if (orderList && orderList.length > 0) {
+      return [...accounts].sort((a, b) => {
+        const idxA = orderList.indexOf(a.id);
+        const idxB = orderList.indexOf(b.id);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return 0;
+      });
+    }
+    return [...accounts].sort((a, b) => parseBalance(b.balance) - parseBalance(a.balance));
+  }, [accounts, walletOrder]);
 
   const getSortedCategories = useCallback(
     (type: 'expense' | 'income') => {
@@ -478,6 +529,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           await updateAccount(newAccounts[0]);
         }
         await deleteAccount(id);
+      });
+
+      setWalletOrder((prev) => {
+        const filtered = prev.filter((wid) => wid !== id);
+        saveWalletOrder(filtered);
+        return filtered;
       });
 
       return { blocked: false, newDefaultName: isDefault ? targetWallet.name : undefined };
@@ -590,6 +647,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSubscriptions([]);
     setDeletedDefaultCategories([]);
     setCategoryOrder({ expense: [], income: [] });
+    setWalletOrder([]);
     setUserProfile({
       name: 'User',
       currencySymbol: '$',
@@ -611,6 +669,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const storedDeletedDefaults = await fetchDeletedDefaultCategories();
       const storedExpenseOrder = (await fetchCategoryOrder('expense')) || [];
       const storedIncomeOrder = (await fetchCategoryOrder('income')) || [];
+      const storedWalletOrder = (await fetchWalletOrder()) || [];
       setAccounts(storedAccounts);
       setTransactions(storedTransactions);
       setBudgets(storedBudgets);
@@ -618,6 +677,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCustomCategories(storedCategories);
       setDeletedDefaultCategories(storedDeletedDefaults);
       setCategoryOrder({ expense: storedExpenseOrder, income: storedIncomeOrder });
+      setWalletOrder(storedWalletOrder);
     } catch (err) {
       console.error('Seed demo data failed:', err);
     }
@@ -733,12 +793,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         refreshAllData,
         customCategories,
         addCustomCategory,
+        updateCustomCategory,
         deleteCustomCategory,
         deletedDefaultCategories,
         deleteDefaultCategory,
         categoryOrder,
         updateCategoryOrder,
         getSortedCategories,
+        walletOrder,
+        updateWalletOrder,
+        getSortedAccounts,
         budgets,
         addBudget,
         updateBudget,

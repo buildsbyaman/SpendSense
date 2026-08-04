@@ -18,6 +18,7 @@ export interface ImportPlan {
   profile: { value: UserProfile | null; apply: boolean };
   categoryOrder: { expense: string[]; income: string[] } | null;
   hiddenCategories: string[] | null;
+  walletOrder: string[] | null;
   replace: boolean;
   replaceTypes: string[];
   currencyWarning: string | null;
@@ -86,12 +87,15 @@ type TableKind =
   | 'balances'
   | 'profile'
   | 'categoryorder'
+  | 'walletorder'
   | 'hiddencategories'
   | 'unknown';
 
 function detectTable(title: string, columns: string[]): TableKind {
   const t = title.toLowerCase();
   const cols = columns.map((c) => c.toLowerCase());
+
+  if (t.includes('wallet') && t.includes('order')) return 'walletorder';
 
   if (
     t.includes('transaction') ||
@@ -138,6 +142,7 @@ export function buildImportPlan(
     customCategories: CustomCategory[];
     categoryOrder: { expense: string[]; income: string[] };
     hiddenCategories?: string[];
+    walletOrder?: string[];
   },
   currentCurrency: string,
   importedCurrency: string | null,
@@ -159,6 +164,7 @@ export function buildImportPlan(
     profile: { value: null, apply: false },
     categoryOrder: null,
     hiddenCategories: null,
+    walletOrder: null,
     replace: isReplace,
     replaceTypes: isReplace ? selectedTypes.filter((t) => t !== 'alldata') : [],
     currencyWarning: null,
@@ -191,6 +197,7 @@ export function buildImportPlan(
   const sorted = [...tables].sort((a, b) => {
     const order = [
       'wallets',
+      'walletorder',
       'transactions',
       'subscriptions',
       'budgets',
@@ -278,6 +285,20 @@ export function buildImportPlan(
       // In merge mode, combine with existing; in replace mode, file list is authoritative
       const existingHidden = isReplace ? [] : (current.hiddenCategories ?? []);
       plan.hiddenCategories = [...new Set([...existingHidden, ...fileHidden])];
+      continue;
+    }
+
+    // Wallet order: merge file order with existing order (append new names)
+    if (kind === 'walletorder' && want('wallets')) {
+      const existingOrder = isReplace ? [] : (current.walletOrder ?? []);
+      const fileOrder: string[] = [];
+      for (const row of table.rows) {
+        const name = String(row['Name'] ?? '').trim();
+        if (name) fileOrder.push(name);
+      }
+      // Merge: file order first, then append existing names not in file (preserving order)
+      const merged = [...fileOrder, ...existingOrder.filter((n) => !fileOrder.includes(n))];
+      plan.walletOrder = merged;
       continue;
     }
 

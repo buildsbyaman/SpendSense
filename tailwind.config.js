@@ -40,6 +40,11 @@ module.exports = {
         expense: 'var(--expense)',
         income: 'var(--income)',
 
+        'wallet-bank': 'var(--wallet-bank)',
+        'wallet-card': 'var(--wallet-card)',
+        'wallet-digital': 'var(--wallet-digital)',
+        'wallet-fallback': 'var(--wallet-fallback)',
+
         border: 'var(--border)',
         divider: 'var(--divider)',
         input: 'var(--input)',
@@ -68,6 +73,8 @@ module.exports = {
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
         xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-3xl)',
         full: 'var(--radius-pill)',
       },
 

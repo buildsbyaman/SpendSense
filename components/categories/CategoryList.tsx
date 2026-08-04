@@ -2,59 +2,57 @@ import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { Wallet, Plus } from 'lucide-react-native';
-import { WalletItem } from './WalletItem';
-import { type Account } from '@/utils/wallet';
+import { Tag, Plus } from 'lucide-react-native';
+import { CategoryItem, type CategoryItemData } from './CategoryItem';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
-interface WalletListProps {
-  accounts: Account[];
-  expandedWalletId: string | null;
-  onToggleExpand: (id: string) => void;
-  onSetDefault: (id: string) => void;
-  onDeleteClick: (id: string) => void;
-  onAddFirstWallet: () => void;
-  onEditClick: (id: string) => void;
+interface CategoryListProps {
+  categories: CategoryItemData[];
+  expandedCategoryId: string | null;
+  onToggleExpand: (name: string) => void;
+  onEditClick: (category: CategoryItemData) => void;
+  onDeleteClick: (category: CategoryItemData) => void;
+  onAddFirstCategory: () => void;
   reorderMode?: boolean;
-  onReorderEnd?: (order: Account[]) => void;
+  onReorderEnd?: (order: CategoryItemData[]) => void;
   listHeader?: React.ReactElement | null;
   listRef?: React.Ref<any>;
   maxHeight?: number;
 }
 
-export function WalletList({
-  accounts,
-  expandedWalletId,
+export function CategoryList({
+  categories,
+  expandedCategoryId,
   onToggleExpand,
-  onSetDefault,
-  onDeleteClick,
-  onAddFirstWallet,
   onEditClick,
+  onDeleteClick,
+  onAddFirstCategory,
   reorderMode = false,
   onReorderEnd,
   listHeader,
   listRef,
   maxHeight,
-}: WalletListProps) {
+}: CategoryListProps) {
 
-  if (accounts.length === 0) {
+  if (categories.length === 0) {
     return (
       <View className="items-center justify-center mt-20 px-6">
         <View className="w-24 h-24 bg-secondary rounded-full items-center justify-center mb-6">
-          <Icon as={Wallet} size={40} className="text-muted opacity-50" />
+          <Icon as={Tag} size={40} className="text-muted opacity-50" />
         </View>
-        <Text variant="h3" className="text-center mb-2 text-foreground">No Wallets Yet</Text>
-        <Text className="text-muted text-center mb-8">
-          Add your first wallet to start tracking your balances and transactions.
+        <Text variant="h3" className="text-center mb-2 text-foreground">
+          No Categories Yet
         </Text>
-        <TouchableOpacity 
+        <Text className="text-muted text-center mb-8">
+          Add your first custom category to organize your spending.
+        </Text>
+        <TouchableOpacity
           className="bg-primary px-6 py-3.5 rounded-xl flex-row items-center gap-2"
-          onPress={onAddFirstWallet}
-          activeOpacity={0.7}
-        >
+          onPress={onAddFirstCategory}
+          activeOpacity={0.7}>
           <Icon as={Plus} size={20} className="text-white dark:text-black" />
           <Text className="text-white dark:text-black font-semibold text-base">
-            Add Your First Wallet
+            Add Category
           </Text>
         </TouchableOpacity>
       </View>
@@ -73,20 +71,18 @@ export function WalletList({
       }}>
       <DraggableFlatList
         ref={listRef}
-        data={accounts}
-        keyExtractor={(item) => item.id}
+        data={categories}
+        keyExtractor={(item) => item.name}
         onDragEnd={({ data }) => onReorderEnd?.(data)}
         renderItem={({ item, drag, isActive }) => {
           return (
             <ScaleDecorator>
-              <WalletItem
-                account={item}
-                isExpanded={!reorderMode && expandedWalletId === item.id}
-                isLast={false}
-                onToggleExpand={() => onToggleExpand(item.id)}
-                onSetDefault={() => onSetDefault(item.id)}
-                onDelete={() => onDeleteClick(item.id)}
-                onEditClick={() => onEditClick(item.id)}
+              <CategoryItem
+                category={item}
+                isExpanded={!reorderMode && expandedCategoryId === item.name}
+                onToggleExpand={() => onToggleExpand(item.name)}
+                onEdit={() => onEditClick(item)}
+                onDelete={() => onDeleteClick(item)}
                 drag={reorderMode ? drag : undefined}
                 isDragging={isActive}
                 reorderMode={reorderMode}

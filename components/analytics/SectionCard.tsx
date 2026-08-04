@@ -3,17 +3,21 @@ import { Text } from '@/components/ui/text';
 
 interface SectionCardProps {
   title?: string;
+  headerRight?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
 
-export function SectionCard({ title, children, className = '' }: SectionCardProps) {
+export function SectionCard({ title, headerRight, children, className = '' }: SectionCardProps) {
   return (
     <View
-      className={`mb-4 rounded-[32px] border border-gray-100 bg-surface p-5 shadow-xs dark:border-gray-900 ${className}`}>
-      {title ? (
+      className={`mb-4 rounded-xl border border-border bg-surface p-5 shadow-xs ${className}`}>
+      {title || headerRight ? (
         <>
-          <Text className="mb-3 text-sm font-medium text-muted">{title}</Text>
+          <View className="mb-3 flex-row items-center justify-between">
+            {title ? <Text className="text-sm font-medium text-muted">{title}</Text> : <View />}
+            {headerRight}
+          </View>
           {children}
         </>
       ) : (

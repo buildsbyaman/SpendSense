@@ -66,11 +66,11 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
 
   // Horizontal row translation for main tabs
   const translateX = useSharedValue(0);
+  const activeTabIndex = useSharedValue(0);
 
   // Swipe gesture
   const startX = useSharedValue(0);
   const isMainTab = MAIN_TABS.includes(activeTab);
-  const currentIndex = MAIN_TABS.indexOf(activeTab);
 
   const pan = Gesture.Pan()
     .enabled(isMainTab)
@@ -84,7 +84,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
       translateX.value = clamp(startX.value + e.translationX, max, 0);
     })
     .onEnd((e) => {
-      const startIdx = Math.round(-startX.value / activeWidth);
+      const startIdx = clamp(activeTabIndex.value, 0, MAIN_TABS.length - 1);
       const offsetTabs = -e.translationX / activeWidth;
       let nextIndex: number;
       if (e.velocityX < -400) {
@@ -95,12 +95,8 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
         nextIndex = Math.round(startIdx + offsetTabs);
       }
       nextIndex = Math.min(MAIN_TABS.length - 1, Math.max(0, nextIndex));
-      if (nextIndex !== startIdx) {
-        translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
-        runOnJS(navigate)(MAIN_TABS[nextIndex]);
-      } else {
-        translateX.value = withSpring(-startIdx * activeWidth, SPRING_CONFIG);
-      }
+      translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
+      runOnJS(navigate)(MAIN_TABS[nextIndex]);
     });
 
   // Vertical overlay for sub-screens
@@ -123,6 +119,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
     if (isMainTab) {
       // Slide main row to the correct tab
       const index = MAIN_TABS.indexOf(activeTab);
+      activeTabIndex.value = index;
       translateX.value = withSpring(-index * activeWidth, SPRING_CONFIG);
 
       // If coming back from a sub-screen, slide the overlay away

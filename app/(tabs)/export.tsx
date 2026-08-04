@@ -69,6 +69,7 @@ export default function ExportScreen() {
     userProfile,
     categoryOrder,
     deletedDefaultCategories,
+    walletOrder,
   } = useApp();
   const { navigate: navigateTab } = useTabNavigation();
   const now = new Date();
@@ -108,6 +109,7 @@ export default function ExportScreen() {
         profile: userProfile,
         categoryOrder,
         deletedDefaultCategories,
+        walletOrder,
       }),
     [
       selection,
@@ -119,6 +121,7 @@ export default function ExportScreen() {
       userProfile,
       categoryOrder,
       deletedDefaultCategories,
+      walletOrder,
     ]
   );
 
@@ -214,7 +217,7 @@ export default function ExportScreen() {
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
         keyboardShouldPersistTaps="handled">
         {/* ── What to export ── */}
-        <View className="mb-4 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">What to export</Text>
           <View>
             {DATA_TYPES.map((dt, idx) => {
@@ -226,7 +229,7 @@ export default function ExportScreen() {
                     activeOpacity={0.7}
                     onPress={() => toggleType(dt.key)}
                     className="flex-row items-center gap-3 py-3">
-                    <View className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
                       <Icon as={dt.icon} size={18} className="text-foreground" />
                     </View>
                     <Text className="flex-1 text-base font-medium text-foreground">{dt.label}</Text>
@@ -234,7 +237,7 @@ export default function ExportScreen() {
                       className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
                         active
                           ? 'border-primary bg-primary'
-                          : 'border-gray-300 dark:border-gray-700'
+                          : 'border-border'
                       }`}>
                       {active && (
                         <Icon as={Check} size={12} className="text-white dark:text-black" />
@@ -249,14 +252,14 @@ export default function ExportScreen() {
         </View>
 
         {/* ── Time period ── */}
-        <View className="mb-4 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">Time period</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => setIsDatePickerOpen(true)}
             className="flex-row items-center justify-between py-3">
             <View className="flex-row items-center gap-3">
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-900">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
                 <Icon as={Calendar} size={18} className="text-foreground" />
               </View>
               <Text className="text-base font-medium text-foreground">{dateLabel}</Text>
@@ -266,7 +269,7 @@ export default function ExportScreen() {
         </View>
 
         {/* ── Format ── */}
-        <View className="mb-4 rounded-[32px] border border-gray-100 bg-surface p-6 shadow-xs dark:border-gray-900">
+        <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">Format</Text>
           <View className="flex-row flex-wrap gap-2.5">
             {FORMATS.map((f) => {
@@ -276,10 +279,10 @@ export default function ExportScreen() {
                   key={f.key}
                   onPress={() => setFormat(f.key)}
                   activeOpacity={0.75}
-                  className={`flex-row items-center gap-2 rounded-full border px-4 py-2.5 ${
+                  className={`flex-row items-center gap-2 rounded-xl border px-4 py-2.5 ${
                     active
                       ? 'border-primary bg-primary'
-                      : 'border-gray-200 bg-transparent dark:border-gray-800'
+                      : 'border-border bg-surface'
                   }`}>
                   <Icon
                     as={f.icon}
@@ -303,8 +306,8 @@ export default function ExportScreen() {
           activeOpacity={0.7}
           onPress={handleExport}
           disabled={exporting || selectedTypes.length === 0}
-          className={`mb-4 flex-row items-center justify-center gap-2 rounded-full py-4 ${
-            exporting || selectedTypes.length === 0 ? 'bg-gray-200 dark:bg-gray-800' : 'bg-primary'
+          className={`mb-4 flex-row items-center justify-center gap-2 rounded-xl py-4 ${
+            exporting || selectedTypes.length === 0 ? 'bg-secondary' : 'bg-primary'
           }`}>
           <Icon
             as={Download}

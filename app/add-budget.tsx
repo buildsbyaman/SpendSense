@@ -107,7 +107,7 @@ export default function AddBudgetScreen() {
             onPress={handleClose} 
           />
 
-          <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+          <View className="rounded-t-2xl border-t border-border bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
             
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Budget' : 'Add Budget'}</Text>
@@ -126,7 +126,7 @@ export default function AddBudgetScreen() {
             <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View className="flex-col gap-6">
                 
-                <View className="flex-row items-center gap-3 rounded-2xl bg-primary/10 p-4">
+                <View className="flex-row items-center gap-3 rounded-xl bg-primary/10 p-4">
                   <Icon as={Info} size={20} className="text-primary" />
                   <Text className="flex-1 text-sm text-primary dark:text-primary">
                     Budgets apply globally and reset automatically on the 1st of every month.
@@ -151,8 +151,8 @@ export default function AddBudgetScreen() {
                             setSelectedCategory(cat.name);
                             setError('');
                           }}
-                          className={`mr-3 items-center justify-center rounded-2xl border-2 p-4 ${
-                            isSelected ? 'border-primary bg-primary/5' : 'border-gray-100 bg-surface dark:border-gray-800'
+                          className={`mr-3 items-center justify-center rounded-xl border p-4 ${
+                            isSelected ? 'border-primary bg-primary/10' : 'border-border bg-surface'
                           }`}
                           style={{ minWidth: 100 }}>
                           <View 
@@ -172,7 +172,7 @@ export default function AddBudgetScreen() {
                 <View>
                   <Text className="mb-2 ml-1 text-sm text-muted">Monthly Limit</Text>
                   <TextInput
-                    className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-4 text-base font-semibold dark:bg-gray-900 ${error ? 'border-red-500' : 'border-transparent'}`}
+                    className={`text-foreground rounded-xl border bg-surface px-4 py-3.5 text-base font-semibold ${error ? 'border-red-500' : 'border-border'}`}
                     placeholder={`${userProfile.currencySymbol}0.00`}
                     placeholderTextColor="#9ca3af"
                     keyboardType="decimal-pad"
@@ -192,13 +192,13 @@ export default function AddBudgetScreen() {
 
             <View className="mt-10 flex-row gap-3">
               <TouchableOpacity
-                className="flex-1 items-center justify-center rounded-full bg-secondary py-4"
+                className="flex-1 items-center justify-center rounded-xl bg-secondary py-4"
                 onPress={handleClose}
                 activeOpacity={0.7}>
                 <Text className="text-foreground text-base font-medium">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 items-center justify-center rounded-full bg-primary py-4 ${!amount.trim() || !selectedCategory ? 'opacity-40' : 'opacity-100'}`}
+                className={`flex-1 items-center justify-center rounded-xl bg-primary py-4 ${!amount.trim() || !selectedCategory ? 'opacity-40' : 'opacity-100'}`}
                 onPress={handleSave}
                 activeOpacity={0.7}>
                 <Text className="text-base font-medium text-white dark:text-black">Save Budget</Text>

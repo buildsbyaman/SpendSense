@@ -18,6 +18,7 @@ export default function CategoryTypeToggle({ type, onChange }: CategoryTypeToggl
         ]}
         selectedValue={type}
         onChange={onChange}
+        borderRadius={12}
       />
     </View>
   );

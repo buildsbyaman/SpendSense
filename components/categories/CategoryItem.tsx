@@ -1,42 +1,48 @@
+import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { Star, ChevronDown, GripVertical } from 'lucide-react-native';
-import { type Account, parseBalance, formatWalletDisplay, getWalletTypeColor } from '@/utils/wallet';
-import { useApp } from '@/context/AppContext';
+import { ChevronDown, GripVertical } from 'lucide-react-native';
 import { useExpandAnimation } from '@/hooks/useExpandAnimation';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
 
-interface WalletItemProps {
-  account: Account;
+export interface CategoryItemData {
+  id?: string;
+  name: string;
+  type?: 'expense' | 'income';
+  icon?: string;
+  color?: string;
+  isDefault?: boolean;
+}
+
+interface CategoryItemProps {
+  category: CategoryItemData;
   isExpanded: boolean;
-  isLast: boolean;
   onToggleExpand: () => void;
-  onSetDefault: () => void;
+  onEdit: () => void;
   onDelete: () => void;
-  onEditClick: () => void;
   drag?: () => void;
   isDragging?: boolean;
   reorderMode?: boolean;
 }
 
-export function WalletItem({
-  account,
+export function CategoryItem({
+  category,
   isExpanded,
-  isLast,
   onToggleExpand,
-  onSetDefault,
+  onEdit,
   onDelete,
-  onEditClick,
   drag,
   isDragging,
   reorderMode = false,
-}: WalletItemProps) {
-  const { userProfile } = useApp();
-  const numericBalance = parseBalance(account.balance);
-  const displayBalance = formatWalletDisplay(numericBalance, userProfile.currencySymbol);
-  const balanceColorClass = numericBalance >= 0 ? 'text-income' : 'text-expense';
-  const typeColor = getWalletTypeColor(account.type);
+}: CategoryItemProps) {
+  const isCustom = !category.isDefault;
+  const canDelete =
+    isCustom ||
+    (category.name.toLowerCase() !== 'others' && category.name.toLowerCase() !== 'other');
+  const icon = getCategoryIcon(category.name, undefined, category.icon);
+  const color = getCategoryColor(category.name, category.color);
 
   // Automatically collapse accordion actions when reorderMode is active
   const { actionsStyle, chevronStyle } = useExpandAnimation(reorderMode ? false : isExpanded);
@@ -81,26 +87,19 @@ export function WalletItem({
         <View className="mr-2 flex-1 flex-row items-center gap-3">
           <View
             className="relative h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: `${typeColor}20` }}>
-            <Icon as={account.icon} size={18} color={typeColor} />
-            {account.isDefault && (
-              <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-primary dark:border-gray-900">
-                <Icon as={Star} size={10} className="text-white dark:text-black" />
-              </View>
-            )}
+            style={{ backgroundColor: `${color}20` }}>
+            <Icon as={icon} size={18} color={color} />
           </View>
           <View className="flex-1">
             <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
-              {account.name}
+              {category.name}
             </Text>
-            {!!account.number && (
-              <Text className="mt-0.5 text-sm text-muted">{account.number}</Text>
-            )}
+            <Text className="mt-0.5 text-sm text-muted">
+              {isCustom ? 'Custom Category' : 'Default Category'}
+            </Text>
           </View>
         </View>
         <View className="flex-row items-center gap-3">
-          <Text className={`text-base font-bold ${balanceColorClass}`} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{displayBalance}</Text>
-          
           {/* Chevron container */}
           <Animated.View style={[rightActionStyle, { overflow: 'hidden' }]}>
             <Animated.View style={chevronStyle} className="shrink-0">
@@ -115,29 +114,20 @@ export function WalletItem({
         <View className="h-[1px] bg-divider" />
         <View className="flex-row gap-2.5 px-4 py-3">
           <TouchableOpacity
-            className={`flex-1 items-center justify-center rounded-[6px] py-3 ${
-              account.isDefault ? 'bg-secondary opacity-50' : 'bg-primary'
-            }`}
-            disabled={account.isDefault}
-            onPress={onSetDefault}>
-            <Text
-              className={`text-xs font-bold ${
-                account.isDefault ? 'text-muted' : 'text-white dark:text-black'
-              }`}>
-              Set Default
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
             className="flex-1 items-center justify-center rounded-[6px] bg-secondary py-3"
-            onPress={onEditClick}>
+            onPress={onEdit}>
             <Text className="text-xs font-bold text-foreground">Edit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-1 items-center justify-center rounded-[6px] bg-red-50 py-3 dark:bg-red-950/20"
+            className={`flex-1 items-center justify-center rounded-[6px] py-3 ${
+              canDelete ? 'bg-red-50 dark:bg-red-950/20' : 'bg-secondary opacity-50'
+            }`}
+            disabled={!canDelete}
             onPress={onDelete}>
-            <Text className="text-xs font-bold text-red-500">Delete</Text>
+            <Text className={`text-xs font-bold ${canDelete ? 'text-red-500' : 'text-muted'}`}>
+              Delete
+            </Text>
           </TouchableOpacity>
         </View>
       </Animated.View>

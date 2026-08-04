@@ -120,7 +120,7 @@ export default function BudgetsScreen() {
                   key={bp.id}
                   activeOpacity={0.7}
                   onPress={() => handleEdit(bp.id)}
-                  className="mb-4 rounded-3xl bg-surface p-5 border border-border shadow-xs">
+                  className="mb-4 rounded-xl bg-surface p-5 border border-border shadow-xs">
                   
                   <View className="mb-4 flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3">

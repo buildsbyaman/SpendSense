@@ -123,7 +123,7 @@ export default function OnboardingScreen() {
                 setName(text);
                 if (error) setError(null);
               }}
-              className="rounded-2xl border border-gray-200 bg-surface px-4 py-3.5 text-base font-medium text-foreground outline-none focus:border-primary dark:border-gray-800"
+              className="rounded-xl border border-border bg-surface px-4 py-3.5 text-base font-medium text-foreground outline-none focus:border-primary"
               placeholder="e.g. Aman Kumar"
               placeholderTextColor={isDark ? '#8a8a94' : '#9ca3af'}
               autoFocus
@@ -152,7 +152,7 @@ export default function OnboardingScreen() {
         <TouchableOpacity
           onPress={handleContinue}
           disabled={!canContinue}
-          className={`mb-8 mt-10 flex-row items-center justify-center gap-2 rounded-full py-4 shadow-sm bg-primary ${
+          className={`mb-8 mt-10 flex-row items-center justify-center gap-2 rounded-xl py-4 shadow-xs bg-primary ${
             canContinue ? '' : 'opacity-50'
           }`}
           activeOpacity={0.8}>

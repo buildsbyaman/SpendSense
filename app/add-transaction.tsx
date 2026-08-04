@@ -39,6 +39,7 @@ export default function AddTransactionScreen() {
     addTransaction,
     updateTransaction,
     getSortedCategories,
+    getSortedAccounts,
     budgets,
     transactions,
     userProfile,
@@ -53,7 +54,7 @@ export default function AddTransactionScreen() {
   const [amount, setAmount] = useState('');
   const [title, setTitle] = useState('');
   const [selectedWalletId, setSelectedWalletId] = useState(
-    accounts.find((a) => a.isDefault)?.id || (accounts[0]?.id ?? '')
+    getSortedAccounts().find((a) => a.isDefault)?.id || (getSortedAccounts()[0]?.id ?? '')
   );
   const [category, setCategory] = useState('Food');
 
@@ -201,7 +202,7 @@ export default function AddTransactionScreen() {
             onPress={handleClose}
           />
 
-          <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+          <View className="rounded-t-2xl border-t border-border bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
             {/* Header */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text variant="h2">{editId ? 'Edit Transaction' : 'Add Transaction'}</Text>
@@ -227,7 +228,7 @@ export default function AddTransactionScreen() {
                       onChangeText={(text) => {
                         setAmount(sanitizeAmountInput(text));
                       }}
-                      className={`rounded-full border-2 bg-gray-50 py-3.5 pl-10 pr-5 text-base font-semibold text-foreground dark:bg-gray-900 ${focusedInput === 'amount' ? 'border-primary' : 'border-transparent'}`}
+                      className={`rounded-xl border bg-surface py-3.5 pl-10 pr-5 text-base font-semibold text-foreground ${focusedInput === 'amount' ? 'border-primary' : 'border-border'}`}
                       placeholder="0.00"
                       keyboardType="decimal-pad"
                       placeholderTextColor={placeholderColor}
@@ -247,7 +248,7 @@ export default function AddTransactionScreen() {
                   <TextInput
                     value={title}
                     onChangeText={setTitle}
-                    className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${focusedInput === 'title' ? 'border-primary' : 'border-transparent'}`}
+                    className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'title' ? 'border-primary' : 'border-border'}`}
                     placeholder={
                       type === 'expense' ? 'e.g. Starbucks Coffee' : 'e.g. Freelance project, Bonus'
                     }
@@ -263,7 +264,7 @@ export default function AddTransactionScreen() {
                   {accounts.length === 0 ? (
                     <TouchableOpacity
                       onPress={() => router.push('/add-wallet')}
-                      className="items-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+                      className="items-center rounded-xl border border-dashed border-border bg-surface p-4">
                       <Text className="text-sm font-semibold text-primary">
                         Create a wallet first
                       </Text>
@@ -271,13 +272,13 @@ export default function AddTransactionScreen() {
                   ) : (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       <View className="flex-row gap-3 py-1">
-                        {accounts.map((wallet) => {
+                        {getSortedAccounts().map((wallet) => {
                           const isSelected = selectedWalletId === wallet.id;
                           return (
                             <TouchableOpacity
                               key={wallet.id}
                               onPress={() => setSelectedWalletId(wallet.id)}
-                              className={`flex-row items-center gap-2.5 rounded-2xl border px-4 py-3 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                              className={`flex-row items-center gap-2.5 rounded-xl border px-4 py-3 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                               <Icon
                                 as={wallet.icon}
                                 size={16}
@@ -317,7 +318,7 @@ export default function AddTransactionScreen() {
                             <TouchableOpacity
                               key={cat.name}
                               onPress={() => setCategory(cat.name)}
-                              className={`flex-row items-center gap-2 rounded-full border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                              className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${isSelected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                               <View
                                 className="h-7 w-7 items-center justify-center rounded-full"
                                 style={{ backgroundColor: `${color}15` }}>
@@ -341,7 +342,7 @@ export default function AddTransactionScreen() {
                   <View className="flex-row gap-3">
                     <TouchableOpacity
                       onPress={() => setDate(new Date())}
-                      className={`flex-1 items-center rounded-full border py-3 ${date.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 items-center rounded-xl border py-3 ${date.toDateString() === new Date().toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                       <Text
                         className={`text-xs font-semibold ${date.toDateString() === new Date().toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
                         Today
@@ -353,7 +354,7 @@ export default function AddTransactionScreen() {
                         yesterday.setDate(yesterday.getDate() - 1);
                         setDate(yesterday);
                       }}
-                      className={`flex-1 items-center rounded-full border py-3 ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 items-center rounded-xl border py-3 ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                       <Text
                         className={`text-xs font-semibold ${date.toDateString() === new Date(Date.now() - 3600000 * 24).toDateString() ? 'text-white dark:text-black' : 'text-foreground'}`}>
                         Yesterday
@@ -364,7 +365,7 @@ export default function AddTransactionScreen() {
                         setCalendarMonth(new Date(date));
                         setIsDatePickerOpen(true);
                       }}
-                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-full border px-3 py-3 ${date.toDateString() !== new Date().toDateString() && date.toDateString() !== new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-gray-200 bg-transparent dark:border-gray-800'}`}>
+                      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border px-3 py-3 ${date.toDateString() !== new Date().toDateString() && date.toDateString() !== new Date(Date.now() - 3600000 * 24).toDateString() ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
                       <Icon
                         as={Calendar}
                         size={12}
@@ -387,7 +388,7 @@ export default function AddTransactionScreen() {
                 <TouchableOpacity
                   onPress={handleSave}
                   disabled={!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0}
-                  className={`mt-8 items-center justify-center rounded-full bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 ? 'opacity-40' : 'opacity-100'}`}
+                  className={`mt-8 items-center justify-center rounded-xl bg-primary py-3.5 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 ? 'opacity-40' : 'opacity-100'}`}
                   activeOpacity={0.7}>
                   <Text className="text-base font-medium text-white dark:text-black">
                     {editId ? 'Save Changes' : 'Save Transaction'}

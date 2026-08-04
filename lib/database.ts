@@ -169,6 +169,20 @@ export async function getDatabase(): Promise<SQLiteDatabase> {
       }
       await db!.execAsync('PRAGMA user_version = 11');
     }
+
+    const { user_version: currentVersionAfter11 } = (await db!.getFirstAsync<{
+      user_version: number;
+    }>('PRAGMA user_version')) ?? { user_version: 0 };
+
+    if (currentVersionAfter11 < 12) {
+      await db!.execAsync(`
+        CREATE TABLE IF NOT EXISTS wallet_order (
+          id TEXT PRIMARY KEY NOT NULL,
+          sort_order TEXT NOT NULL
+        );
+      `);
+      await db!.execAsync('PRAGMA user_version = 12');
+    }
   });
   return db;
 }
