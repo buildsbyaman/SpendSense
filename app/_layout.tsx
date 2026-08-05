@@ -64,7 +64,9 @@ export { ErrorBoundary } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/components/ui/toast-config';
 import { AppProvider } from '@/context/AppContext';
+import { AppLockProvider } from '@/context/AppLockContext';
 import { loadThemePreference } from '@/lib/theme-persistence';
+import { AppLockScreen } from '@/components/AppLockScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
@@ -89,7 +91,8 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}>
+        <AppLockProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}>
           <ThemeInit />
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
           <Stack>
@@ -147,8 +150,10 @@ export default function RootLayout() {
             topOffset={insets.top + 12}
             bottomOffset={insets.bottom + 40}
           />
+          <AppLockScreen />
         </ThemeProvider>
-      </AppProvider>
+      </AppLockProvider>
+    </AppProvider>
     </GestureHandlerRootView>
   );
 }

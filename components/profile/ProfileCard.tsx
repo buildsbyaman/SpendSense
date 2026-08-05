@@ -20,6 +20,9 @@ interface Props {
   isDark: boolean;
   setColorScheme: (v: 'light' | 'dark') => void;
   placeholderColor: string;
+  appLockEnabled: boolean;
+  isAppLockChanging: boolean;
+  onAppLockToggle: () => void;
 }
 
 export function ProfileCard({
@@ -37,6 +40,9 @@ export function ProfileCard({
   isDark,
   setColorScheme,
   placeholderColor,
+  appLockEnabled,
+  isAppLockChanging,
+  onAppLockToggle,
 }: Props) {
   return (
     <View className="rounded-xl border border-border bg-surface py-5 shadow-xs">
@@ -119,6 +125,30 @@ export function ProfileCard({
               className={`h-5 w-9 justify-center rounded-full p-0.5 transition-colors duration-200 ${isDark ? 'bg-income' : 'bg-gray-200 dark:bg-gray-800'}`}>
               <View
                 className={`h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 dark:bg-black ${isDark ? 'translate-x-4' : 'translate-x-0'}`}
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View className="h-[1px] bg-divider" />
+
+        {/* App Lock */}
+        <View className="flex-row items-center justify-between px-6">
+          <View className="flex-1 pr-4">
+            <Text className="text-sm font-medium text-muted">App Lock</Text>
+            <Text className="mt-0.5 text-xs text-muted">
+              Unlock with Face ID, fingerprint, or device PIN
+            </Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            disabled={isAppLockChanging}
+            onPress={onAppLockToggle}>
+            <View
+              className={`h-5 w-9 justify-center rounded-full p-0.5 transition-colors duration-200 ${appLockEnabled ? 'bg-income' : 'bg-gray-200 dark:bg-gray-800'}`}>
+              <View
+                className={`h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 dark:bg-black ${appLockEnabled ? 'translate-x-4' : 'translate-x-0'}`}
               />
             </View>
           </TouchableOpacity>

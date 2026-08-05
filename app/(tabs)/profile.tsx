@@ -23,11 +23,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { sanitizeAvatarUri } from '@/utils/avatar';
 import { ProfileCard } from '@/components/profile/ProfileCard';
 import { DevToolsSection } from '@/components/profile/DevToolsSection';
+import { useAppLock } from '@/context/AppLockContext';
+import { canUseAuthentication } from '@/lib/biometric';
 
 export default function ProfileScreen(_props: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { colorScheme, setColorScheme } = useColorScheme();
   const { userProfile, updateUserProfile, seedDemoData } = useApp();
+  const { enabled: appLockEnabled, enable: enableAppLock, disable: disableAppLock } = useAppLock();
+  const [isAppLockChanging, setIsAppLockChanging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [name, setName] = useState(userProfile.name);
@@ -159,6 +163,34 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
     }
   };
 
+  const handleAppLockToggle = useCallback(async () => {
+    if (isAppLockChanging) return;
+    const supported = await canUseAuthentication();
+    if (!supported) {
+      Toast.show({
+        type: 'error',
+        text1: 'Not Available',
+        text2: 'Set up a screen lock (PIN, pattern, or biometric) on your device first.',
+      });
+      return;
+    }
+    setIsAppLockChanging(true);
+    try {
+      const ok = appLockEnabled ? await disableAppLock() : await enableAppLock();
+      Toast.show({
+        type: ok ? 'success' : 'error',
+        text1: ok ? (appLockEnabled ? 'App Lock Disabled' : 'App Lock Enabled') : 'Authentication Failed',
+        text2: ok
+          ? appLockEnabled
+            ? 'Your data is no longer locked on app open.'
+            : 'SpendSense will now lock whenever it leaves the screen.'
+          : 'Could not unlock. Try again.',
+      });
+    } finally {
+      setIsAppLockChanging(false);
+    }
+  }, [appLockEnabled, enableAppLock, disableAppLock, isAppLockChanging]);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -197,6 +229,9 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
           isDark={isDark}
           setColorScheme={setColorScheme}
           placeholderColor={placeholderColor}
+          appLockEnabled={appLockEnabled}
+          isAppLockChanging={isAppLockChanging}
+          onAppLockToggle={() => void handleAppLockToggle()}
         />
 
         <ManageSection />
