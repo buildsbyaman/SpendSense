@@ -1,9 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  LayoutAnimation,
-} from 'react-native';
+import { View, TouchableOpacity, LayoutAnimation } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -50,7 +46,9 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
     isCustom: boolean;
   } | null>(null);
 
-  const sortedCategories = getSortedCategories(activeTab) as CategoryItemData[];
+  const sortedCategories = getSortedCategories(
+    activeTab as 'expense' | 'income'
+  ) as CategoryItemData[];
 
   const listRef = useRef<any>(null);
   useEffect(() => {
@@ -125,7 +123,7 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   const commitReorder = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     updateCategoryOrder(
-      activeTab,
+      activeTab as 'expense' | 'income',
       draftOrder.map((c) => c.name)
     );
     setIsReorderMode(false);
@@ -140,8 +138,8 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   const resetOrder = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const defaultCats = activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-    updateCategoryOrder(activeTab, []);
-    setDraftOrder(getSortedCategories(activeTab) as CategoryItemData[]);
+    updateCategoryOrder(activeTab as 'expense' | 'income', []);
+    setDraftOrder(getSortedCategories(activeTab as 'expense' | 'income') as CategoryItemData[]);
   };
 
   return (
@@ -152,7 +150,11 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
           title="Categories"
           showBack={!isReorderMode}
           leftIcon={isReorderMode ? X : undefined}
-          onLeftPress={isReorderMode ? cancelReorder : () => navigateTab(referrer === 'home' ? 'index' : 'profile')}
+          onLeftPress={
+            isReorderMode
+              ? cancelReorder
+              : () => navigateTab(referrer === 'home' ? 'index' : 'profile')
+          }
           rightIcon={isReorderMode ? Check : Plus}
           onRightPress={isReorderMode ? commitReorder : openAddModal}
         />
@@ -189,10 +191,8 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
           <TouchableOpacity
             onPress={resetOrder}
             activeOpacity={0.7}
-            className="mb-3 self-center rounded-full bg-secondary px-4 py-2 border border-border shadow-xs">
-            <Text className="text-xs font-semibold text-primary">
-              Reset to default order
-            </Text>
+            className="mb-3 self-center rounded-full border border-border bg-secondary px-4 py-2 shadow-xs">
+            <Text className="text-xs font-semibold text-primary">Reset to default order</Text>
           </TouchableOpacity>
         </>
       )}

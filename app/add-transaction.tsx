@@ -1,10 +1,4 @@
-import {
-  View,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -16,6 +10,7 @@ import {
   type TransactionType,
   validateTransaction,
   formatDatePickerDate,
+  TRANSFER_CATEGORY,
 } from '@/utils/transaction';
 import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
@@ -48,8 +43,11 @@ export default function AddTransactionScreen() {
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [title, setTitle] = useState('');
-  const [selectedWalletId, setSelectedWalletId] = useState(
-    getSortedAccounts().find((a) => a.isDefault)?.id || (getSortedAccounts()[0]?.id ?? '')
+  const defaultWalletId =
+    getSortedAccounts().find((a) => a.isDefault)?.id || (getSortedAccounts()[0]?.id ?? '');
+  const [selectedWalletId, setSelectedWalletId] = useState(defaultWalletId);
+  const [selectedToWalletId, setSelectedToWalletId] = useState(
+    getSortedAccounts().find((a) => a.id !== defaultWalletId)?.id ?? ''
   );
   const [category, setCategory] = useState('Food');
 
@@ -67,6 +65,7 @@ export default function AddTransactionScreen() {
     setTitle,
     setCategory,
     setSelectedWalletId,
+    setSelectedToWalletId,
     setDate,
     setCalendarMonth,
   });
@@ -85,17 +84,37 @@ export default function AddTransactionScreen() {
 
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
-    setCategory(newType === 'expense' ? 'Food' : 'Salary');
+    setCategory(
+      newType === 'transfer' ? TRANSFER_CATEGORY : newType === 'expense' ? 'Food' : 'Salary'
+    );
+  };
+
+  const handleFromWalletChange = (id: string) => {
+    setSelectedWalletId(id);
+    if (id === selectedToWalletId) {
+      const next = getSortedAccounts().find((a) => a.id !== id);
+      setSelectedToWalletId(next?.id ?? '');
+    }
+  };
+
+  const handleToWalletChange = (id: string) => {
+    setSelectedToWalletId(id);
+    if (id === selectedWalletId) {
+      const next = getSortedAccounts().find((a) => a.id !== id);
+      setSelectedWalletId(next?.id ?? '');
+    }
   };
 
   const savingRef = useRef(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (savingRef.current) return;
 
     const { isValid, errorTitle, errorMessage, parsedAmount } = validateTransaction(
       amount,
-      selectedWalletId
+      selectedWalletId,
+      type,
+      selectedToWalletId
     );
 
     if (!isValid) {
@@ -109,28 +128,39 @@ export default function AddTransactionScreen() {
 
     savingRef.current = true;
     try {
-      if (editId) {
-        const tx = transactions.find((t) => t.id === editId);
-        if (tx) {
-          updateTransaction({
-            ...tx,
+      try {
+        if (editId) {
+          const tx = transactions.find((t) => t.id === editId);
+          if (tx) {
+            await updateTransaction({
+              ...tx,
+              title: title.trim() || category,
+              amount: parsedAmount!,
+              type,
+              category,
+              date: date.toISOString(),
+              walletId: selectedWalletId,
+              toWalletId: type === 'transfer' ? selectedToWalletId : undefined,
+            });
+          }
+        } else {
+          await addTransaction({
             title: title.trim() || category,
             amount: parsedAmount!,
             type,
             category,
             date: date.toISOString(),
             walletId: selectedWalletId,
+            toWalletId: type === 'transfer' ? selectedToWalletId : undefined,
           });
         }
-      } else {
-        addTransaction({
-          title: title.trim() || category,
-          amount: parsedAmount!,
-          type,
-          category,
-          date: date.toISOString(),
-          walletId: selectedWalletId,
+      } catch {
+        Toast.show({
+          type: 'error',
+          text1: 'Save Failed',
+          text2: 'Your transaction could not be saved. Please try again.',
         });
+        return;
       }
 
       // Check if the transaction exceeds the category budget
@@ -156,7 +186,9 @@ export default function AddTransactionScreen() {
           text1: editId ? 'Transaction Updated' : 'Transaction Added',
           text2: editId
             ? 'Transaction details saved successfully.'
-            : `Successfully added ${type === 'income' ? 'income' : 'expense'}!`,
+            : type === 'transfer'
+              ? 'Transfer completed successfully!'
+              : `Successfully added ${type === 'income' ? 'income' : 'expense'}!`,
         });
       }
 
@@ -172,7 +204,7 @@ export default function AddTransactionScreen() {
     setCalendarMonth(newMonth);
   };
 
-  const categoriesList = getSortedCategories(type);
+  const categoriesList = type === 'transfer' ? [] : getSortedCategories(type);
 
   return (
     <View className="flex-1 bg-transparent">
@@ -198,7 +230,10 @@ export default function AddTransactionScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag">
               <TransactionFormFields
                 type={type}
                 onTypeChange={handleTypeChange}
@@ -207,7 +242,9 @@ export default function AddTransactionScreen() {
                 title={title}
                 setTitle={setTitle}
                 selectedWalletId={selectedWalletId}
-                setSelectedWalletId={setSelectedWalletId}
+                setSelectedWalletId={handleFromWalletChange}
+                selectedToWalletId={selectedToWalletId}
+                setSelectedToWalletId={handleToWalletChange}
                 category={category}
                 setCategory={setCategory}
                 date={date}
@@ -226,14 +263,24 @@ export default function AddTransactionScreen() {
               />
 
               <TouchableOpacity
-                  onPress={handleSave}
-                  disabled={!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0}
-                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-4 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 ? 'opacity-40' : 'opacity-100'}`}
-                  activeOpacity={0.7}>
-                  <Text className="text-base font-medium text-white dark:text-black">
-                    {editId ? 'Save Changes' : 'Save Transaction'}
-                  </Text>
-                </TouchableOpacity>
+                onPress={handleSave}
+                disabled={
+                  !amount.trim() ||
+                  isNaN(parseFloat(amount)) ||
+                  parseFloat(amount) === 0 ||
+                  (type === 'transfer' &&
+                    (!selectedToWalletId || selectedToWalletId === selectedWalletId))
+                }
+                className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-4 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || (type === 'transfer' && (!selectedToWalletId || selectedToWalletId === selectedWalletId)) ? 'opacity-40' : 'opacity-100'}`}
+                activeOpacity={0.7}>
+                <Text className="text-base font-medium text-white dark:text-black">
+                  {editId
+                    ? 'Save Changes'
+                    : type === 'transfer'
+                      ? 'Complete Transfer'
+                      : 'Save Transaction'}
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
 
             {/* Safe area spacing for iOS */}

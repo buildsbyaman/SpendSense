@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import type { Transaction } from '@/utils/transaction';
-import { adjustAccountBalance, computeTransactionDelta } from '@/lib/balance';
 import { newId } from '@/lib/id';
+import { adjustAccountBalance, computeTransactionDelta, computeTransferDelta } from '@/lib/balance';
+import { type Transaction, sortTransactionsByDate } from '@/utils/transaction';
 import type { Account } from '@/utils/wallet';
 import {
   insertTransaction,
@@ -10,6 +10,26 @@ import {
   deleteTransaction as repoDeleteTransaction,
 } from '@/lib/repository';
 import type { AppCore } from './core';
+
+/**
+ * Per-wallet balance deltas for a transaction. Transfers hit two wallets
+ * (source -amount, destination +amount); income/expense hit one.
+ */
+function transactionDeltas(tx: Transaction, direction: 'apply' | 'reverse'): Map<string, number> {
+  const deltas = new Map<string, number>();
+  const add = (walletId: string | undefined, delta: number) => {
+    if (!walletId) return;
+    deltas.set(walletId, (deltas.get(walletId) ?? 0) + delta);
+  };
+
+  if (tx.type === 'transfer') {
+    add(tx.walletId, computeTransferDelta('from', tx.amount, direction));
+    add(tx.toWalletId, computeTransferDelta('to', tx.amount, direction));
+  } else {
+    add(tx.walletId, computeTransactionDelta(tx.type, tx.amount, direction));
+  }
+  return deltas;
+}
 
 export function useTransactionsState(core: AppCore) {
   const {
@@ -23,93 +43,92 @@ export function useTransactionsState(core: AppCore) {
   } = core;
 
   const addTransaction = useCallback(
-    (txData: Omit<Transaction, 'id'>) => {
+    async (txData: Omit<Transaction, 'id'>) => {
       const newTx: Transaction = { ...txData, id: newId() };
-      setTransactions((prev) => [newTx, ...prev]);
+      setTransactions((prev) => sortTransactionsByDate([newTx, ...prev]));
 
       // Compute account update outside state updater (pure computation)
-      const delta = computeTransactionDelta(txData.type, txData.amount, 'apply');
-      let updatedAccount: Account | undefined;
+      const deltas = transactionDeltas(newTx, 'apply');
       const currentAccounts = accountsRef.current;
+      const updatedAccounts: Account[] = [];
       const newAccounts = currentAccounts.map((acc) => {
-        if (acc.id === txData.walletId) {
-          updatedAccount = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
-          return updatedAccount;
-        }
-        return acc;
+        const delta = deltas.get(acc.id);
+        if (delta === undefined) return acc;
+        const updated = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
+        updatedAccounts.push(updated);
+        return updated;
       });
       setAccounts(newAccounts);
 
       // DB writes after state is committed (not inside updater)
-      insertTransaction(newTx);
-      if (updatedAccount) {
-        updateAccount(updatedAccount);
+      await insertTransaction(newTx);
+      for (const updated of updatedAccounts) {
+        await updateAccount(updated);
       }
     },
     [accountsRef, setAccounts, setTransactions, userProfile.currencySymbol]
   );
 
   const deleteTransaction = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const currentAccounts = accountsRef.current;
       const currentTransactions = transactionsRef.current;
       const tx = currentTransactions.find((t) => t.id === id);
-      let updatedAccount: Account | undefined;
+      const updatedAccounts: Account[] = [];
       if (tx) {
-        const delta = computeTransactionDelta(tx.type, tx.amount, 'reverse');
+        const deltas = transactionDeltas(tx, 'reverse');
         const newAccounts = currentAccounts.map((acc) => {
-          if (acc.id === tx.walletId) {
-            updatedAccount = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
-            return updatedAccount;
-          }
-          return acc;
+          const delta = deltas.get(acc.id);
+          if (delta === undefined) return acc;
+          const updated = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
+          updatedAccounts.push(updated);
+          return updated;
         });
         setAccounts(newAccounts);
       }
       setTransactions((prev) => prev.filter((t) => t.id !== id));
 
       // DB write after state is committed
-      repoDeleteTransaction(id);
-      if (updatedAccount) {
-        updateAccount(updatedAccount);
+      await repoDeleteTransaction(id);
+      for (const updated of updatedAccounts) {
+        await updateAccount(updated);
       }
     },
     [accountsRef, transactionsRef, setAccounts, setTransactions, userProfile.currencySymbol]
   );
 
   const updateTransactionFn = useCallback(
-    (updatedTx: Transaction) => {
+    async (updatedTx: Transaction) => {
       const currentAccounts = accountsRef.current;
       const currentTransactions = transactionsRef.current;
       const oldTx = currentTransactions.find((t) => t.id === updatedTx.id);
-      const accountUpdates = new Map<string, Account>();
+      const updatedAccounts: Account[] = [];
       if (oldTx) {
+        // Net the reversed old effect against the applied new effect so the
+        // same wallet (e.g. in-place edits) settles to a single write.
+        const netDeltas = new Map<string, number>();
+        for (const [id, delta] of transactionDeltas(oldTx, 'reverse')) {
+          netDeltas.set(id, (netDeltas.get(id) ?? 0) + delta);
+        }
+        for (const [id, delta] of transactionDeltas(updatedTx, 'apply')) {
+          netDeltas.set(id, (netDeltas.get(id) ?? 0) + delta);
+        }
         const newAccounts = currentAccounts.map((acc) => {
-          let delta = 0;
-          if (acc.id === oldTx.walletId) {
-            delta += computeTransactionDelta(oldTx.type, oldTx.amount, 'reverse');
-          }
-          if (acc.id === updatedTx.walletId) {
-            delta += computeTransactionDelta(updatedTx.type, updatedTx.amount, 'apply');
-          }
-          if (delta === 0) return acc;
+          const delta = netDeltas.get(acc.id);
+          if (delta === undefined || delta === 0) return acc;
           const updated = adjustAccountBalance(acc, delta, userProfile.currencySymbol);
-          accountUpdates.set(acc.id, updated);
+          updatedAccounts.push(updated);
           return updated;
         });
         setAccounts(newAccounts);
       }
       // Re-sort by date (date may have changed)
-      setTransactions((prev) =>
-        [...prev.map((t) => (t.id === updatedTx.id ? updatedTx : t))].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        )
-      );
+      setTransactions((prev) => sortTransactionsByDate(prev.map((t) => (t.id === updatedTx.id ? updatedTx : t))));
 
       // DB writes after state is committed
-      updateTransaction(updatedTx);
-      for (const updated of accountUpdates.values()) {
-        updateAccount(updated);
+      await updateTransaction(updatedTx);
+      for (const updated of updatedAccounts) {
+        await updateAccount(updated);
       }
     },
     [accountsRef, transactionsRef, setAccounts, setTransactions, userProfile.currencySymbol]

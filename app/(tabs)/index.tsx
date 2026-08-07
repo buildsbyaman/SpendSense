@@ -4,7 +4,19 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
 import { getCategoryDetails } from '@/utils/transaction';
-import { ArrowUpRight, ArrowDownLeft, ArrowRight, Plus, Receipt, Wallet, Tags, PiggyBank, Repeat, TrendingUp } from 'lucide-react-native';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowRight,
+  ArrowLeftRight,
+  Plus,
+  Receipt,
+  Wallet,
+  Tags,
+  PiggyBank,
+  Repeat,
+  TrendingUp,
+} from 'lucide-react-native';
 import { router } from 'expo-router';
 import { parseBalance, formatNumber } from '@/utils/wallet';
 import { useTabNavigation } from '@/context/TabNavigationContext';
@@ -44,12 +56,18 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
   );
 
   const totalIncome = useMemo(
-    () => currentMonthTransactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+    () =>
+      currentMonthTransactions
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0),
     [currentMonthTransactions]
   );
 
   const totalExpense = useMemo(
-    () => currentMonthTransactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+    () =>
+      currentMonthTransactions
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0),
     [currentMonthTransactions]
   );
 
@@ -72,9 +90,9 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
       </View>
 
       {/* Net Balance Card (Fixed at top) */}
-      <View className="px-5 mb-5">
+      <View className="mb-5 px-5">
         <View className="rounded-xl border border-border bg-surface py-5 shadow-xs">
-          <View className="px-6 mb-4">
+          <View className="mb-4 px-6">
             <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
             <Text className="text-3xl font-bold text-foreground">
               {userProfile.currencySymbol}
@@ -86,7 +104,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           <View className="mb-5 h-[1px] bg-divider" />
 
           {/* Quick Income/Expense Summary */}
-          <View className="flex-row px-6 mb-5">
+          <View className="mb-5 flex-row px-6">
             <View className="flex-1 flex-row items-center gap-3">
               <View className="bg-income/10 dark:bg-income/20 h-9 w-9 items-center justify-center rounded-full">
                 <Icon as={ArrowDownLeft} size={18} className="text-income" />
@@ -125,17 +143,17 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                 onPress={() => navigateTab('categories', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
                   <Icon as={Tags} size={14} className="text-primary" />
                 </View>
                 <Text className="text-sm font-semibold text-foreground">Categories</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 onPress={() => navigateTab('budgets', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
                   <Icon as={PiggyBank} size={14} className="text-primary" />
                 </View>
                 <Text className="text-sm font-semibold text-foreground">Budgets</Text>
@@ -151,7 +169,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                 onPress={() => navigateTab('analytics', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
                   <Icon as={TrendingUp} size={14} className="text-primary" />
                 </View>
                 <Text className="text-sm font-semibold text-foreground">Analytics</Text>
@@ -161,7 +179,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                 onPress={() => navigateTab('subscriptions', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary/60">
+                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
                   <Icon as={Repeat} size={14} className="text-primary" />
                 </View>
                 <Text className="text-sm font-semibold text-foreground">Subscriptions</Text>
@@ -172,7 +190,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
       </View>
 
       {/* Recent Activity Header (Fixed at top) */}
-      <View className="flex-row items-center justify-between px-5 mb-4">
+      <View className="mb-4 flex-row items-center justify-between px-5">
         <Text className="text-lg font-semibold text-foreground">Recent Activity</Text>
         {transactions.length > 0 && (
           <TouchableOpacity
@@ -197,7 +215,6 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
         keyboardDismissMode="on-drag">
         {/* Recent Transactions Section */}
         <View className="gap-4">
-
           {recentTransactions.length === 0 ? (
             accounts.length === 0 ? (
               <View className="items-center justify-center">
@@ -225,7 +242,10 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           ) : (
             <View className="overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-xs">
               {recentTransactions.map((tx, idx) => {
-                const { icon, color } = getCategoryDetails(tx.category, tx.title, customCategories);
+                const isTransfer = tx.type === 'transfer';
+                const { icon, color } = isTransfer
+                  ? { icon: ArrowLeftRight, color: '#8e8e93' }
+                  : getCategoryDetails(tx.category, tx.title, customCategories);
                 const isLast = idx === recentTransactions.length - 1;
 
                 return (
@@ -238,20 +258,26 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
                           <Icon as={icon} size={18} color={color} />
                         </View>
                         <View className="flex-1">
-                          <Text
-                            className="text-base font-medium text-foreground"
-                            numberOfLines={1}>
+                          <Text className="text-base font-medium text-foreground" numberOfLines={1}>
                             {tx.title}
                           </Text>
                           <Text className="mt-0.5 text-xs text-muted" numberOfLines={1}>
-                            {getWalletName(tx.walletId)} • {tx.category}
+                            {isTransfer
+                              ? `${getWalletName(tx.walletId)} → ${getWalletName(tx.toWalletId ?? '')}`
+                              : `${getWalletName(tx.walletId)} • ${tx.category}`}
                           </Text>
                         </View>
                       </View>
 
                       <Text
-                        className={`text-base font-semibold ${tx.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                        {tx.type === 'income' ? '+' : '-'}
+                        className={`text-base font-semibold ${
+                          isTransfer
+                            ? 'text-muted'
+                            : tx.type === 'income'
+                              ? 'text-income'
+                              : 'text-expense'
+                        }`}>
+                        {tx.type === 'income' ? '+' : isTransfer ? '' : '-'}
                         {userProfile.currencySymbol}
                         {formatNumber(tx.amount)}
                       </Text>
@@ -263,7 +289,7 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
             </View>
           )}
           {recentTransactions.length > 0 && (
-            <Text className="text-center text-xs text-muted mt-2 font-medium">
+            <Text className="mt-2 text-center text-xs font-medium text-muted">
               {transactions.length > 20
                 ? 'Showing up to 20 recent transactions'
                 : 'Reached the end of recent activity'}

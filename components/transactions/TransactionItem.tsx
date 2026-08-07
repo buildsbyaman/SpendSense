@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { ChevronDown, ChevronUp, ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
+import {
+  ChevronDown,
+  ChevronUp,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ArrowLeftRight,
+} from 'lucide-react-native';
 import {
   type Transaction,
   type TransactionType,
@@ -43,7 +49,14 @@ export function TransactionItem({
 
   const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);
 
-  const { icon, color } = getCategoryDetails(transaction.category, transaction.title, customCategories);
+  const isTransfer = transaction.type === 'transfer';
+  const { icon, color } = isTransfer
+    ? { icon: ArrowLeftRight, color: '#8e8e93' }
+    : getCategoryDetails(transaction.category, transaction.title, customCategories);
+
+  const subtitle = isTransfer
+    ? `${getWalletName(transaction.walletId)} → ${getWalletName(transaction.toWalletId ?? '')}`
+    : `${getWalletName(transaction.walletId)} • ${transaction.category}`;
 
   // --- Normal row view ---
   const rowView = (
@@ -62,15 +75,21 @@ export function TransactionItem({
             {transaction.title}
           </Text>
           <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>
-            {getWalletName(transaction.walletId)} • {transaction.category}
+            {subtitle}
           </Text>
         </View>
       </View>
 
       <View className="flex-row items-center gap-3">
         <Text
-          className={`text-base font-semibold ${transaction.type === 'income' ? 'text-income' : 'text-expense'}`}>
-          {transaction.type === 'income' ? '+' : '-'}
+          className={`text-base font-semibold ${
+            isTransfer
+              ? 'text-muted'
+              : transaction.type === 'income'
+                ? 'text-income'
+                : 'text-expense'
+          }`}>
+          {transaction.type === 'income' ? '+' : isTransfer ? '' : '-'}
           {userProfile.currencySymbol}
           {formatNumber(transaction.amount)}
         </Text>

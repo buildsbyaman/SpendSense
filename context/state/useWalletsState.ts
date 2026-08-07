@@ -88,12 +88,14 @@ export function useWalletsState(core: AppCore) {
 
       // Reassign transactions + subscriptions in state and DB
       setTransactions((prev) =>
-        prev.map((tx) => (tx.walletId === id ? { ...tx, walletId: targetWallet.id } : tx))
+        prev.map((tx) => ({
+          ...tx,
+          walletId: tx.walletId === id ? targetWallet.id : tx.walletId,
+          toWalletId: tx.toWalletId === id ? targetWallet.id : tx.toWalletId,
+        }))
       );
       setSubscriptions((prev) =>
-        prev.map((sub) =>
-          sub.wallet_id === id ? { ...sub, wallet_id: targetWallet.id } : sub
-        )
+        prev.map((sub) => (sub.wallet_id === id ? { ...sub, wallet_id: targetWallet.id } : sub))
       );
       await reassignTransactionsWallet(id, targetWallet.id);
       await reassignSubscriptionsWallet(id, targetWallet.id);
@@ -141,7 +143,14 @@ export function useWalletsState(core: AppCore) {
 
       return { blocked: false, newDefaultName: isDefault ? targetWallet.name : undefined };
     },
-    [accountsRef, setAccounts, setTransactions, setSubscriptions, setWalletOrder, userProfile.currencySymbol]
+    [
+      accountsRef,
+      setAccounts,
+      setTransactions,
+      setSubscriptions,
+      setWalletOrder,
+      userProfile.currencySymbol,
+    ]
   );
 
   const setDefaultWallet = useCallback(

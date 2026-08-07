@@ -10,9 +10,9 @@ export interface AppContextType {
   updateWallet: (updated: Account) => void;
   deleteWallet: (id: string) => Promise<{ blocked: boolean; newDefaultName?: string }>;
   setDefaultWallet: (id: string) => void;
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
-  deleteTransaction: (id: string) => void;
-  updateTransaction: (updated: Transaction) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  updateTransaction: (updated: Transaction) => Promise<void>;
   clearAllData: () => void;
   seedDemoData: () => Promise<void>;
   userProfile: {

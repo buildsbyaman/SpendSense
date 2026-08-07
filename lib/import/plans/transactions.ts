@@ -17,7 +17,13 @@ export function processTransactionsTable(table: ExportedTable, ctx: PlanContext)
     const dateStr = String(row['Date'] ?? '');
     const dateISO = String(row['Date ISO'] ?? '').trim();
     const walletName = String(row['Wallet'] ?? '').trim();
-    if (!title || !typeStr || (typeStr !== 'income' && typeStr !== 'expense')) {
+    const toWalletName = String(row['To Wallet'] ?? '').trim();
+    const isTransfer = typeStr === 'transfer';
+    if (
+      !title ||
+      !typeStr ||
+      (typeStr !== 'income' && typeStr !== 'expense' && typeStr !== 'transfer')
+    ) {
       plan.transactions.dropped++;
       continue;
     }
@@ -43,6 +49,15 @@ export function processTransactionsTable(table: ExportedTable, ctx: PlanContext)
       continue;
     }
 
+    let toWalletId: string | null = null;
+    if (isTransfer) {
+      toWalletId = resolveWallet(toWalletName, ctx.existingAccounts, plan, ctx.balanceLookup);
+      if (!toWalletId) {
+        plan.transactions.dropped++;
+        continue;
+      }
+    }
+
     const tx: Transaction = {
       id: newId(),
       title,
@@ -51,9 +66,10 @@ export function processTransactionsTable(table: ExportedTable, ctx: PlanContext)
       category,
       date,
       walletId,
+      toWalletId: toWalletId ?? undefined,
     };
 
-    const key = `${tx.title}|${tx.category}|${tx.date.slice(0, 10)}|${tx.walletId}`;
+    const key = `${tx.title}|${tx.category}|${tx.date.slice(0, 10)}|${tx.walletId}|${tx.toWalletId ?? ''}`;
     const bucket = existingTxsMap.get(key) ?? [];
     const existing = bucket.find((e) => Math.abs(e.amount - tx.amount) < 0.01);
     if (existing) {

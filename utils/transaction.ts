@@ -14,7 +14,18 @@ export interface Transaction {
   category: string;
   date: string; // ISO string format
   walletId: string; // References Account.id
+  toWalletId?: string; // Destination Account.id for transfers
 }
+
+/**
+ * Sorts transactions newest-first by date. Shared by create, edit, and load so
+ * a transaction always keeps its chronological place (never jumps to the top
+ * on create and back down on edit).
+ */
+export const sortTransactionsByDate = (transactions: Transaction[]): Transaction[] =>
+  [...transactions].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
 
 /**
  * Sanitizes the raw input amount to prevent negative signs and multiple decimals.
@@ -30,7 +41,9 @@ export const sanitizeAmountInput = (text: string): string => {
  */
 export const validateTransaction = (
   amountText: string,
-  walletId: string
+  walletId: string,
+  type?: TransactionType,
+  toWalletId?: string
 ): { isValid: boolean; errorTitle?: string; errorMessage?: string; parsedAmount?: number } => {
   const parsedAmount = parseFloat(amountText.replace(/[^0-9.]/g, ''));
   if (isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -47,6 +60,23 @@ export const validateTransaction = (
       errorTitle: 'Wallet Required',
       errorMessage: 'Please add a wallet first before creating a transaction',
     };
+  }
+
+  if (type === 'transfer') {
+    if (!toWalletId) {
+      return {
+        isValid: false,
+        errorTitle: 'Destination Wallet Required',
+        errorMessage: 'Please choose a wallet to transfer to',
+      };
+    }
+    if (toWalletId === walletId) {
+      return {
+        isValid: false,
+        errorTitle: 'Same Wallet',
+        errorMessage: 'From and To wallets must be different for a transfer',
+      };
+    }
   }
 
   return { isValid: true, parsedAmount };

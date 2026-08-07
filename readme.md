@@ -27,12 +27,13 @@ SpendSense is a local-first personal finance tracker built with React Native and
 ## Features
 
 - **Local-first storage** -- all transactions, categories, budgets, and settings are saved on-device in SQLite. No backend, no sign-up, no data sent anywhere.
-- **Multi-wallet support** -- create and manage multiple wallets (bank accounts, cash, credit cards, etc.). Set a default wallet. Balances update automatically as transactions are added.
-- **Transaction management** -- add, edit, and delete transactions. Assign each to a wallet, pick a category, and choose a date with quick selectors (today, yesterday, or a calendar).
+- **Multi-wallet support** -- create and manage multiple wallets (bank accounts, cash, credit cards, etc.). Set a default wallet. Balances update automatically as transactions are added. Move money between wallets with transfers.
+- **Transaction management** -- add, edit, and delete income, expense, and transfer transactions. Assign each to a wallet, pick a category, and choose a date with quick selectors (today, yesterday, or a calendar).
+- **Transfers** -- move money between two wallets in one step. Pick a From and To wallet; both balances update automatically, and transfers are excluded from income/expense totals, budgets, and analytics.
 - **Budgets** -- set spending limits per category. Watch progress bars fill up in real time. Receive a warning when a transaction pushes you over budget.
 - **Subscriptions** -- track recurring bills with a billing cycle (weekly, monthly, yearly) and next billing date. See upcoming obligations at a glance.
 - **Custom categories** -- create, rename, and assign icons to your own spending and income categories. Drag to reorder them to match your habits.
-- **Analytics dashboard** -- category donut chart, monthly bar chart, income vs. expenses, savings rate, trend lines, and a month navigator to compare over time.
+- **Analytics dashboard** -- category donut chart, monthly bar chart, income vs. expenses, savings rate, trend lines, and a month navigator to compare over time. Transfers are excluded from these figures.
 - **Currency settings** -- choose from nine preset currencies or define a custom one. Provide a conversion rate to revalue all existing data in a single pass.
 - **Import** -- bring in data from JSON, Excel (.xlsx), or a previously exported SpendSense PDF.
 - **Export** -- export your data to PDF, JSON, or Excel (.xlsx). Select which tables to include, filter by date range and transaction type, and share via the OS share sheet.
@@ -49,7 +50,7 @@ A five-tab bottom bar with a centered "+" button for quick transaction entry:
 | Tab          | Icon            | Purpose                                                                                 |
 | ------------ | --------------- | --------------------------------------------------------------------------------------- |
 | Home         | LayoutDashboard | Welcome header, net balance, income vs. expenses, quick stats, link to analytics        |
-| Transactions | ArrowUpDown     | Full transaction list with search, filter, and sort                                     |
+| Transactions | ArrowUpDown     | Full transaction list with search, type filter (All/Expense/Income/Transfer), and sort |
 | Add          | Plus            | Opens a bottom-sheet modal to create a new transaction                                  |
 | Wallets      | Wallet          | Create, edit, and delete wallets. Set a default wallet.                                 |
 | Profile      | User            | Settings hub -- manage subscriptions, categories, budgets, currency, import, and export |
@@ -80,8 +81,8 @@ Additional screens are reachable from the Profile tab (Manage section):
 
 - Select which tables to include (Transactions, Budgets, Wallets, Subscriptions, Categories, etc.)
 - Filter by date range (from, to, or both)
-- Filter by transaction type (Expense, Income, or both)
-- Filter by category
+- Choose export format: PDF, JSON, or Excel (.xlsx)
+- Transactions export includes a To Wallet column for transfers, so From/To links survive the export -> import round-trip
 - All exports are generated locally and shared via the OS share sheet
 
 ---
@@ -129,7 +130,7 @@ A layered React Context architecture split by domain:
 
 ### Data Access
 
-- **`lib/database.ts`** -- Singleton database initialization with WAL mode and a sequential migration system (12 versions via `PRAGMA user_version`).
+- **`lib/database.ts`** -- Singleton database initialization with WAL mode and a sequential migration system (13 versions via `PRAGMA user_version`).
 - **`lib/db/*`** -- Split by entity (account, transaction, category, profile, budget, subscription, reset). Each module exports async CRUD functions.
 - **`lib/repository.ts`** -- Barrel re-export for clean imports.
 
@@ -148,7 +149,7 @@ SpendSense uses **SQLite** via `expo-sqlite` with an async API and WAL mode enab
 | Table | Purpose |
 | --- | --- |
 | `accounts` | Wallets (bank, card, digital) with balance, type, default flag |
-| `transactions` | Income/expense records with amount, category, date, wallet FK |
+| `transactions` | Income/expense/transfer records with amount, category, date, wallet FK, optional to-wallet FK |
 | `profile` | Singleton row: name, currency symbol/code, avatar, onboarding state |
 | `custom_categories` | User-created categories with icon and color |
 | `deleted_default_categories` | Tracks removed default category names |
@@ -159,7 +160,7 @@ SpendSense uses **SQLite** via `expo-sqlite` with an async API and WAL mode enab
 
 ### Migrations
 
-The database uses a 12-version forward-only migration system tracked via `PRAGMA user_version`. New installations start at version 12. Existing installations migrate incrementally on launch. All migrations are idempotent.
+The database uses a 13-version forward-only migration system tracked via `PRAGMA user_version`. New installations start at version 13. Existing installations migrate incrementally on launch. All migrations are idempotent.
 
 ---
 
@@ -302,7 +303,7 @@ components/                       UI components organized by domain
   wallets/                          WalletItem, WalletList, delete modal, options menu
 
 lib/                              Core business logic and data layer
-  database.ts                       SQLite setup, WAL mode, 12-version migration system
+  database.ts                       SQLite setup, WAL mode, 13-version migration system
   db/                               Split data-access modules (9 files)
     index.ts                          Barrel re-export
     types.ts                          DB type alias

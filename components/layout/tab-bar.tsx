@@ -33,12 +33,16 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
   const bottomOffset = insets.bottom > 0 ? insets.bottom + 8 : 20;
 
   return (
-    <View style={[styles.outer, { bottom: bottomOffset }]}>
+    <View style={[styles.outer, { bottom: 0 }]}>
       {/* ── Glass capsule ── */}
       <BlurView
         style={[
           styles.capsule,
-          { backgroundColor: glassBg, borderColor: glassBorder },
+          { 
+            backgroundColor: glassBg, 
+            borderTopColor: glassBorder,
+            paddingBottom: bottomOffset-12,
+          },
         ]}
         tint={glassTint}
         intensity={Platform.OS === 'android' ? 35 : 45}
@@ -92,8 +96,8 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
 const styles = StyleSheet.create({
   outer: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 0,
+    right: 0,
     zIndex: 50,
     elevation: 50,
   },
@@ -101,9 +105,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderRadius: 32,
-    borderWidth: 1,
-    height: 64,
+    borderRadius: 0,
+    borderTopWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 20,

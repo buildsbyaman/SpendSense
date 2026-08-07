@@ -12,7 +12,7 @@ export function buildTransactionsTable(
 
   return {
     title: 'Transactions',
-    columns: ['Date', 'Title', 'Category', 'Type', 'Amount', 'Wallet', 'Date ISO'],
+    columns: ['Date', 'Title', 'Category', 'Type', 'Amount', 'Wallet', 'To Wallet', 'Date ISO'],
     rows: [...txs]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((tx) => ({
@@ -22,6 +22,7 @@ export function buildTransactionsTable(
         Type: tx.type,
         Amount: fmtMoney(tx.amount, symbol),
         Wallet: walletName(tx.walletId),
+        'To Wallet': tx.toWalletId ? walletName(tx.toWalletId) : '',
         'Date ISO': tx.date,
       })),
   };

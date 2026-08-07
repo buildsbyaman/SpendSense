@@ -11,6 +11,7 @@ interface TransactionRow {
   category: string;
   date: string;
   wallet_id: string;
+  to_wallet_id: string | null;
 }
 
 function rowToTransaction(row: TransactionRow): Transaction {
@@ -22,6 +23,7 @@ function rowToTransaction(row: TransactionRow): Transaction {
     category: row.category,
     date: row.date,
     walletId: row.wallet_id,
+    toWalletId: row.to_wallet_id ?? undefined,
   };
 }
 
@@ -36,27 +38,29 @@ export async function fetchTransactions(): Promise<Transaction[]> {
 export async function insertTransaction(tx: Transaction): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'INSERT INTO transactions (id, title, amount, type, category, date, wallet_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO transactions (id, title, amount, type, category, date, wallet_id, to_wallet_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     tx.id,
     tx.title,
     tx.amount,
     tx.type,
     tx.category,
     tx.date,
-    tx.walletId
+    tx.walletId,
+    tx.toWalletId ?? null
   );
 }
 
 export async function updateTransaction(tx: Transaction): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'UPDATE transactions SET title = ?, amount = ?, type = ?, category = ?, date = ?, wallet_id = ? WHERE id = ?',
+    'UPDATE transactions SET title = ?, amount = ?, type = ?, category = ?, date = ?, wallet_id = ?, to_wallet_id = ? WHERE id = ?',
     tx.title,
     tx.amount,
     tx.type,
     tx.category,
     tx.date,
     tx.walletId,
+    tx.toWalletId ?? null,
     tx.id
   );
 }
@@ -73,6 +77,11 @@ export async function reassignTransactionsWallet(
   const db = await getDatabase();
   await db.runAsync(
     'UPDATE transactions SET wallet_id = ? WHERE wallet_id = ?',
+    toWalletId,
+    fromWalletId
+  );
+  await db.runAsync(
+    'UPDATE transactions SET to_wallet_id = ? WHERE to_wallet_id = ?',
     toWalletId,
     fromWalletId
   );

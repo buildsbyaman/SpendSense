@@ -26,12 +26,7 @@ interface Props {
   onRequestClose: () => void;
 }
 
-export function CategoryFormModal({
-  visible,
-  editingCategory,
-  activeTab,
-  onRequestClose,
-}: Props) {
+export function CategoryFormModal({ visible, editingCategory, activeTab, onRequestClose }: Props) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const { addCustomCategory, updateCustomCategory, getSortedCategories } = useApp();
@@ -91,20 +86,20 @@ export function CategoryFormModal({
             text2: `"${trimmed}" has been saved.`,
           });
         }
-    } else {
-      // Add new custom category
-      const exists = getSortedCategories(activeTab).some(
-        (c) => c.name.toLowerCase() === trimmed.toLowerCase()
-      );
-      if (exists) {
-        Toast.show({
-          type: 'info',
-          text1: 'Category Exists',
-          text2: `A category named "${trimmed}" already exists.`,
-        });
-        return;
-      }
-      addCustomCategory({
+      } else {
+        // Add new custom category
+        const exists = getSortedCategories(activeTab as 'expense' | 'income').some(
+          (c) => c.name.toLowerCase() === trimmed.toLowerCase()
+        );
+        if (exists) {
+          Toast.show({
+            type: 'info',
+            text1: 'Category Exists',
+            text2: `A category named "${trimmed}" already exists.`,
+          });
+          return;
+        }
+        addCustomCategory({
           name: trimmed,
           type: activeTab,
           icon: selectedIconName,
@@ -146,9 +141,7 @@ export function CategoryFormModal({
                 ? 'Edit Category'
                 : `New ${activeTab === 'expense' ? 'Expense' : 'Income'} Category`}
             </Text>
-            <TouchableOpacity
-              onPress={onRequestClose}
-              className="rounded-full bg-secondary p-2.5">
+            <TouchableOpacity onPress={onRequestClose} className="rounded-full bg-secondary p-2.5">
               <Icon as={X} size={20} className="text-foreground" />
             </TouchableOpacity>
           </View>
@@ -162,7 +155,7 @@ export function CategoryFormModal({
                   onChangeText={setCategoryName}
                   placeholder="e.g. Dog Food, Water Bill"
                   placeholderTextColor={placeholderColor}
-                  className={`text-foreground rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base dark:bg-gray-900 ${
+                  className={`rounded-full border-2 bg-gray-50 px-5 py-3.5 text-base text-foreground dark:bg-gray-900 ${
                     focusedInput === 'name' ? 'border-primary' : 'border-transparent'
                   }`}
                   onFocus={() => setFocusedInput('name')}
@@ -207,7 +200,9 @@ export function CategoryFormModal({
                         size={20}
                         color={selectedIconName === iconObj.name ? selectedColor : undefined}
                         className={
-                          selectedIconName === iconObj.name ? undefined : 'text-foreground opacity-60'
+                          selectedIconName === iconObj.name
+                            ? undefined
+                            : 'text-foreground opacity-60'
                         }
                       />
                     </TouchableOpacity>

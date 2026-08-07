@@ -23,7 +23,7 @@ export function buildWeeklySeries(
       const day = d.getDate();
       const weekIdx = Math.min(Math.floor((day - 1) / 7), 4);
       if (tx.type === 'income') series[weekIdx].income += tx.amount;
-      else series[weekIdx].expense += tx.amount;
+      else if (tx.type === 'expense') series[weekIdx].expense += tx.amount;
     }
   }
   return series;
@@ -49,7 +49,7 @@ export function buildDailySeries(
     if (d >= from && d <= to) {
       const idx = d.getDate() - 1;
       if (tx.type === 'income') series[idx].income += tx.amount;
-      else series[idx].expense += tx.amount;
+      else if (tx.type === 'expense') series[idx].expense += tx.amount;
     }
   }
   return series;
@@ -80,7 +80,7 @@ export function buildYearlyWeekSeries(
     if (d >= from && d <= to) {
       const weekIdx = Math.min(Math.floor((d.getTime() - yearStart) / (7 * 86400000)), 51);
       if (tx.type === 'income') series[weekIdx].income += tx.amount;
-      else series[weekIdx].expense += tx.amount;
+      else if (tx.type === 'expense') series[weekIdx].expense += tx.amount;
     }
   }
   return series;
@@ -111,7 +111,7 @@ export function buildMonthlySeries(
       const monthIdx = d.getMonth();
       if (monthIdx <= maxMonth) {
         if (tx.type === 'income') series[monthIdx].income += tx.amount;
-        else series[monthIdx].expense += tx.amount;
+        else if (tx.type === 'expense') series[monthIdx].expense += tx.amount;
       }
     }
   }

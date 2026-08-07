@@ -41,7 +41,7 @@ export function sumByType(transactions: Transaction[]): {
   let expense = 0;
   for (const tx of transactions) {
     if (tx.type === 'income') income += tx.amount;
-    else expense += tx.amount;
+    else if (tx.type === 'expense') expense += tx.amount;
   }
   return { income, expense };
 }

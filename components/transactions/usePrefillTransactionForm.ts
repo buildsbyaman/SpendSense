@@ -7,6 +7,7 @@ export interface TransactionFormSetters {
   setTitle: (v: string) => void;
   setCategory: (v: string) => void;
   setSelectedWalletId: (v: string) => void;
+  setSelectedToWalletId: (v: string) => void;
   setDate: (v: Date) => void;
   setCalendarMonth: (v: Date) => void;
 }
@@ -34,6 +35,7 @@ export function usePrefillTransactionForm(
       setters.setTitle(tx.title === tx.category ? '' : tx.title);
       setters.setCategory(tx.category);
       setters.setSelectedWalletId(tx.walletId);
+      setters.setSelectedToWalletId(tx.toWalletId ?? '');
       setters.setDate(new Date(tx.date));
       setters.setCalendarMonth(new Date(tx.date));
     }

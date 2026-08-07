@@ -49,7 +49,11 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 
-export type TransactionType = 'income' | 'expense';
+export type TransactionType = 'income' | 'expense' | 'transfer';
+
+// Sentinel category used for transfers (money moved between the user's own
+// wallets). Never rendered as a spending category or counted in analytics.
+export const TRANSFER_CATEGORY = 'Transfer';
 
 export interface CustomCategory {
   id: string;

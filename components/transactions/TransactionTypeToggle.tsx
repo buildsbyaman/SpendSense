@@ -13,6 +13,7 @@ export default function TransactionTypeToggle({ type, onChange }: TransactionTyp
       options={[
         { label: 'Expense', value: 'expense' },
         { label: 'Income', value: 'income' },
+        { label: 'Transfer', value: 'transfer' },
       ]}
       selectedValue={type}
       onChange={onChange}

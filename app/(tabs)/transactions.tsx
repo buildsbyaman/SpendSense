@@ -36,7 +36,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
       }
     });
   }, [addListener]);
-  const [filter, setFilter] = useState<'all' | 'expense' | 'income'>('all');
+  const [filter, setFilter] = useState<'all' | 'expense' | 'income' | 'transfer'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState<Date | null>(() => {
     const d = new Date();
@@ -109,17 +109,13 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   // Quick stats
   const totalIncome = useMemo(
     () =>
-      visibleTransactions
-        .filter((t) => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0),
+      visibleTransactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
     [visibleTransactions]
   );
 
   const totalExpense = useMemo(
     () =>
-      visibleTransactions
-        .filter((t) => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0),
+      visibleTransactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
     [visibleTransactions]
   );
 
@@ -187,11 +183,12 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
             />
 
             <View className="mb-4 mt-2">
-              <AnimatedSegment<'all' | 'expense' | 'income'>
+              <AnimatedSegment<'all' | 'expense' | 'income' | 'transfer'>
                 options={[
                   { label: 'All', value: 'all' },
                   { label: 'Expense', value: 'expense' },
                   { label: 'Income', value: 'income' },
+                  { label: 'Transfer', value: 'transfer' },
                 ]}
                 selectedValue={filter}
                 onChange={setFilter}
@@ -249,14 +246,22 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
         message={`Are you sure you want to delete "${pendingDelete?.title}"? This will reverse the wallet balance adjustment.`}
         confirmText="Delete"
         destructive
-        onConfirm={() => {
+        onConfirm={async () => {
           if (pendingDelete) {
-            deleteTransaction(pendingDelete.id);
-            Toast.show({
-              type: 'success',
-              text1: 'Transaction Deleted',
-              text2: 'Wallet balance has been reverted.',
-            });
+            try {
+              await deleteTransaction(pendingDelete.id);
+              Toast.show({
+                type: 'success',
+                text1: 'Transaction Deleted',
+                text2: 'Wallet balance has been reverted.',
+              });
+            } catch {
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: 'Your transaction could not be deleted. Please try again.',
+              });
+            }
           }
           setPendingDelete(null);
         }}

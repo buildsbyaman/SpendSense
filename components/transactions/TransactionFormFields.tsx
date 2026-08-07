@@ -17,6 +17,8 @@ interface Props {
   setTitle: (v: string) => void;
   selectedWalletId: string;
   setSelectedWalletId: (v: string) => void;
+  selectedToWalletId: string;
+  setSelectedToWalletId: (v: string) => void;
   category: string;
   setCategory: (v: string) => void;
   date: Date;
@@ -40,6 +42,8 @@ export function TransactionFormFields({
   setTitle,
   selectedWalletId,
   setSelectedWalletId,
+  selectedToWalletId,
+  setSelectedToWalletId,
   category,
   setCategory,
   date,
@@ -53,6 +57,11 @@ export function TransactionFormFields({
   setFocusedInput,
   userProfile,
 }: Props) {
+  const isTransfer = type === 'transfer';
+  const toAccounts = isTransfer
+    ? sortedAccounts.filter((a) => a.id !== selectedWalletId)
+    : sortedAccounts;
+
   return (
     <View className="gap-5">
       <TransactionTypeToggle type={type} onChange={onTypeChange} />
@@ -78,16 +87,22 @@ export function TransactionFormFields({
 
       <View>
         <Text className="mb-2 ml-1 text-sm text-muted">
-          {type === 'expense'
-            ? 'What was this for? (Optional)'
-            : 'Source / Description (Optional)'}
+          {isTransfer
+            ? 'Note (Optional)'
+            : type === 'expense'
+              ? 'What was this for? (Optional)'
+              : 'Source / Description (Optional)'}
         </Text>
         <TextInput
           value={title}
           onChangeText={setTitle}
           className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'title' ? 'border-primary' : 'border-border'}`}
           placeholder={
-            type === 'expense' ? 'e.g. Starbucks Coffee' : 'e.g. Freelance project, Bonus'
+            isTransfer
+              ? 'e.g. Top up UPI wallet'
+              : type === 'expense'
+                ? 'e.g. Starbucks Coffee'
+                : 'e.g. Freelance project, Bonus'
           }
           placeholderTextColor={placeholderColor}
           onFocus={() => setFocusedInput('title')}
@@ -95,27 +110,57 @@ export function TransactionFormFields({
         />
       </View>
 
-      <View>
-        <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet</Text>
-        <WalletSelector
-          accounts={accounts}
-          sortedAccounts={sortedAccounts}
-          selectedWalletId={selectedWalletId}
-          onSelect={setSelectedWalletId}
-          emptyMessage="Create a wallet first"
-          onEmptyAction={() => router.push('/add-wallet')}
-        />
-      </View>
+      {isTransfer ? (
+        <>
+          <View>
+            <Text className="mb-2 ml-1 text-sm text-muted">From Wallet</Text>
+            <WalletSelector
+              accounts={accounts}
+              sortedAccounts={sortedAccounts}
+              selectedWalletId={selectedWalletId}
+              onSelect={setSelectedWalletId}
+              emptyMessage="Create a wallet first"
+              onEmptyAction={() => router.push('/add-wallet')}
+            />
+          </View>
 
-      <View>
-        <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
-        <CategorySelector
-          categories={categoriesList as Array<{ name: string; icon?: string; color?: string }>}
-          selected={category}
-          onSelect={setCategory}
-          withMeta
-        />
-      </View>
+          <View>
+            <Text className="mb-2 ml-1 text-sm text-muted">To Wallet</Text>
+            <WalletSelector
+              accounts={accounts}
+              sortedAccounts={toAccounts}
+              selectedWalletId={selectedToWalletId}
+              onSelect={setSelectedToWalletId}
+              emptyMessage="Create a wallet first"
+              onEmptyAction={() => router.push('/add-wallet')}
+            />
+          </View>
+        </>
+      ) : (
+        <>
+          <View>
+            <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet</Text>
+            <WalletSelector
+              accounts={accounts}
+              sortedAccounts={sortedAccounts}
+              selectedWalletId={selectedWalletId}
+              onSelect={setSelectedWalletId}
+              emptyMessage="Create a wallet first"
+              onEmptyAction={() => router.push('/add-wallet')}
+            />
+          </View>
+
+          <View>
+            <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
+            <CategorySelector
+              categories={categoriesList as Array<{ name: string; icon?: string; color?: string }>}
+              selected={category}
+              onSelect={setCategory}
+              withMeta
+            />
+          </View>
+        </>
+      )}
 
       <View>
         <Text className="mb-2 ml-1 text-sm text-muted">Date</Text>
