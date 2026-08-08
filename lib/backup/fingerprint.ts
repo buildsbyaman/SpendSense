@@ -7,17 +7,13 @@ import { NativeModules } from 'react-native';
  */
 export async function getSigningSha1(): Promise<string | null> {
   const module = NativeModules.SigningFingerprint as
-    | { getSha1?: (cb: (err: unknown, value?: string) => void) => void }
+    | { getSha1?: () => Promise<string> }
     | undefined;
   const getSha1 = module?.getSha1;
   if (!getSha1) return null;
-  return new Promise<string | null>((resolve) => {
-    getSha1((err, value) => {
-      if (err) {
-        resolve(null);
-        return;
-      }
-      resolve(value ?? null);
-    });
-  });
+  try {
+    return (await getSha1()) ?? null;
+  } catch {
+    return null;
+  }
 }

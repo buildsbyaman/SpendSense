@@ -15,9 +15,9 @@ export function GranularityToggle({ options, value, onChange }: GranularityToggl
         options={options}
         selectedValue={value}
         onChange={onChange}
-        borderRadius={9999}
-        paddingVertical={4}
+        paddingVertical={6}
         fontSize={12}
+        borderRadius={10}
       />
     </View>
   );

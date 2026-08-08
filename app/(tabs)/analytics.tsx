@@ -14,9 +14,11 @@ import { TypeFilterToggle, type TypeFilter } from '@/components/analytics/TypeFi
 import { SummaryCards } from '@/components/analytics/SummaryCards';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TrendChart } from '@/components/analytics/TrendChart';
+import { TrendBarChart } from '@/components/analytics/TrendBarChart';
 import { CategoryDonut } from '@/components/analytics/CategoryDonut';
 import { SectionCard } from '@/components/analytics/SectionCard';
 import { GranularityToggle } from '@/components/analytics/GranularityToggle';
+import { ChartTypeToggle } from '@/components/analytics/ChartTypeToggle';
 
 import {
   filterByMonth,
@@ -51,6 +53,7 @@ export default function AnalyticsScreen() {
   const [month, setMonth] = useState<number | null>(now.getMonth());
   const [type, setType] = useState<TypeFilter>('expense');
   const [granularity, setGranularity] = useState<'days' | 'weeks' | 'months'>('weeks');
+  const [chart, setChart] = useState<'line' | 'bar'>('line');
 
   const scopeTxs = useMemo(
     () =>
@@ -145,31 +148,38 @@ export default function AnalyticsScreen() {
             <SectionCard
               title="Trend"
               headerRight={
-                <GranularityToggle
-                  options={
-                    month !== null
-                      ? [
-                          { label: 'Days', value: 'days' },
-                          { label: 'Weeks', value: 'weeks' },
-                        ]
-                      : [
-                          { label: 'Weeks', value: 'weeks' },
-                          { label: 'Months', value: 'months' },
-                        ]
-                  }
-                  value={
-                    month !== null
-                      ? granularity === 'days'
-                        ? 'days'
-                        : 'weeks'
-                      : granularity === 'weeks'
-                        ? 'weeks'
-                        : 'months'
-                  }
-                  onChange={(v) => setGranularity(v as 'days' | 'weeks' | 'months')}
-                />
+                <View className="flex-row items-center gap-2">
+                  <ChartTypeToggle value={chart} onChange={setChart} />
+                  <GranularityToggle
+                    options={
+                      month !== null
+                        ? [
+                            { label: 'Days', value: 'days' },
+                            { label: 'Weeks', value: 'weeks' },
+                          ]
+                        : [
+                            { label: 'Weeks', value: 'weeks' },
+                            { label: 'Months', value: 'months' },
+                          ]
+                    }
+                    value={
+                      month !== null
+                        ? granularity === 'days'
+                          ? 'days'
+                          : 'weeks'
+                        : granularity === 'weeks'
+                          ? 'weeks'
+                          : 'months'
+                    }
+                    onChange={(v) => setGranularity(v as 'days' | 'weeks' | 'months')}
+                  />
+                </View>
               }>
-              <TrendChart data={trendSeries} type={type} />
+              {chart === 'bar' ? (
+                <TrendBarChart data={trendSeries} type={type} />
+              ) : (
+                <TrendChart data={trendSeries} type={type} />
+              )}
             </SectionCard>
 
             {/* 3. By Category */}

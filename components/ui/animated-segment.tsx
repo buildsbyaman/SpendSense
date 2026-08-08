@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, LayoutChangeEvent } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import Animated, {
@@ -47,9 +47,16 @@ export default function AnimatedSegment<T extends string>({
     mass: 0.8,
   };
 
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
     if (toggleWidth > 0 && options.length > 0) {
-      toggleX.value = withSpring((toggleWidth / options.length) * activeIndex, SPRING_CONFIG);
+      if (!hasInitialized.current) {
+        toggleX.value = (toggleWidth / options.length) * activeIndex;
+        hasInitialized.current = true;
+      } else {
+        toggleX.value = withSpring((toggleWidth / options.length) * activeIndex, SPRING_CONFIG);
+      }
     }
   }, [activeIndex, toggleWidth, options.length]);
 
@@ -93,9 +100,6 @@ export default function AnimatedSegment<T extends string>({
         onLayout={(e: LayoutChangeEvent) => {
           const w = e.nativeEvent.layout.width - 8;
           setToggleWidth(w);
-          if (options.length > 0) {
-            toggleX.value = withSpring((w / options.length) * activeIndex, SPRING_CONFIG);
-          }
         }}>
         <View style={{ flexDirection: 'row', position: 'relative' }}>
           {toggleWidth > 0 && (

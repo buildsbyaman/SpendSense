@@ -618,21 +618,6 @@ export default function BackupScreen() {
             </View>
           )}
         </View>
-
-        {/* ── Info ── */}
-        <View className="rounded-xl border border-border bg-surface p-6 shadow-xs">
-          <View className="mb-3 flex-row items-center gap-2">
-            <Icon as={ShieldCheck} size={16} className="text-primary" />
-            <Text className="text-sm font-medium text-foreground">Privacy</Text>
-          </View>
-          <Text className="text-xs leading-5 text-muted">
-            Backups are stored in your own Google Drive under the{' '}
-            <Text className="font-medium text-foreground">drive.file</Text> scope, so SpendSense can
-            only see the files it creates. Password-protected backups are encrypted with AES-256
-            before uploading; the password is never stored and cannot be recovered if forgotten.
-            Restoring replaces all current data on this device.
-          </Text>
-        </View>
       </ScrollView>
 
       <PasswordModal

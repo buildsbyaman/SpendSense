@@ -77,8 +77,8 @@ export function TrendChart({ data, type }: TrendChartProps) {
       endSpacing={endSpacing}
       noOfSections={4}
       maxValue={maxVal + visualOffset}
-      yAxisColor="transparent"
-      xAxisColor="transparent"
+      yAxisColor={colors.grid}
+      xAxisColor={colors.grid}
       yAxisTextStyle={{ color: colors.axisLabel, fontSize: 10 }}
       xAxisLabelTextStyle={{ color: colors.axisLabel, fontSize: 10 }}
       formatYLabel={(v: string) =>
