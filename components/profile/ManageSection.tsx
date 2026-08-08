@@ -9,6 +9,7 @@ import {
   DollarSign,
   Download,
   FileUp,
+  Cloud,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTabNavigation } from '@/context/TabNavigationContext';
@@ -16,7 +17,14 @@ import { useTabNavigation } from '@/context/TabNavigationContext';
 interface ManageRow {
   label: string;
   icon: any;
-  route: '/subscriptions' | '/categories' | '/budgets' | '/currency' | '/export' | '/import';
+  route:
+    | '/subscriptions'
+    | '/categories'
+    | '/budgets'
+    | '/currency'
+    | '/export'
+    | '/import'
+    | '/backup';
   isTab?: boolean;
 }
 
@@ -27,6 +35,7 @@ const rows: ManageRow[] = [
   { label: 'Currency Settings', icon: DollarSign, route: '/currency', isTab: true },
   { label: 'Import', icon: FileUp, route: '/import', isTab: true },
   { label: 'Export', icon: Download, route: '/export', isTab: true },
+  { label: 'Backup', icon: Cloud, route: '/backup' },
 ];
 
 export function ManageSection() {

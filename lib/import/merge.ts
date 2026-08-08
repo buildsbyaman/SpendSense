@@ -71,7 +71,7 @@ export function buildImportPlan(
   const existingTxsMap = new Map<string, Transaction[]>();
   if (!isReplace) {
     for (const t of current.transactions) {
-      const key = `${t.title}|${t.category}|${t.date.slice(0, 10)}|${t.walletId}`;
+      const key = `${t.title}|${t.category}|${t.date.slice(0, 10)}|${t.walletId}|${t.toWalletId ?? ''}`;
       const arr = existingTxsMap.get(key) ?? [];
       arr.push(t);
       existingTxsMap.set(key, arr);

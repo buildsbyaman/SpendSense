@@ -62,7 +62,7 @@ export function formatPlanSummary(plan: ImportPlan): string {
   if (totalSkip > 0) summary += ` | Skip: ${totalSkip} existing`;
   if (totalUpdate > 0) summary += ` | Overwrite: ${totalUpdate}`;
   if (totalDropped > 0) summary += ` | Dropped: ${totalDropped} invalid`;
-  if (plan.replace) summary = `Replace all data → ${summary}`;
+  if (plan.replace) summary = `Replace all data | ${summary}`;
   if (
     plan.replace &&
     plan.replaceTypes.includes('wallets') &&

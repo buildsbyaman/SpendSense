@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy — SpendSense</title>
-  <meta name="description" content="SpendSense privacy policy. Your data never leaves your device — unless you choose to back it up to your own Google Drive. No collection, no tracking, no nonsense." />
+  <title>Terms of Service — SpendSense</title>
+  <meta name="description" content="SpendSense terms of service. Free forever, no account needed, your data stays yours. Plain-language rules for using the app." />
   <link rel="icon" href="./assets/images/Fav2.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -68,6 +68,23 @@
       text-decoration: none;
       color: var(--text-primary);
     }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text-primary); }
 
     .nav-back {
       display: inline-flex;
@@ -194,6 +211,18 @@
       margin-top: 12px;
     }
 
+    .section-body a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .section-body a:hover {
+      border-bottom-color: var(--accent);
+    }
+
     /* ── Divider ── */
     hr {
       border: none;
@@ -313,7 +342,10 @@
         padding: 0 16px;
       }
 
-      .page-footer-inner,
+      .nav-links {
+        display: none;
+      }
+
       .footer-bottom {
         flex-direction: column;
         align-items: center;
@@ -344,10 +376,10 @@
       <img src="./assets/images/Fav2.svg" alt="SpendSense Logo" style="width:32px;height:32px;border-radius:8px;display:block;" />
       SpendSense
     </a>
-    <a href="./index.html" class="nav-back">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg>
-      <span>Back to home</span>
-    </a>
+    <ul class="nav-links">
+      <li><a href="./privacy.html">Privacy Policy</a></li>
+      <li><a href="./index.html" class="nav-back"><span>Back to home</span></a></li>
+    </ul>
   </div>
 </nav>
 
@@ -357,27 +389,25 @@
   <!-- Header -->
   <div class="page-header">
     <div class="page-eyebrow">Legal</div>
-    <h1 class="page-title">Privacy Policy</h1>
+    <h1 class="page-title">Terms of Service</h1>
     <p class="page-subtitle">
-      We wrote this in plain language because that's what you deserve. The short version: your data never leaves your phone — unless you choose to back it up to your own Google Drive. The long version follows below.
+      Plain-language rules for using SpendSense. The short version: it's free, it's for your own finances, and your data stays yours.
     </p>
     <div class="page-meta">
-      <span class="meta-chip"><span class="meta-chip-dot"></span>No data collected</span>
+      <span class="meta-chip"><span class="meta-chip-dot"></span>Free forever · No account required</span>
       <span class="meta-chip">Last updated: August 2026</span>
       <span class="meta-chip">Effective: August 2026</span>
     </div>
   </div>
 
-
-
   <!-- Sections -->
 
   <div class="policy-section">
     <div class="section-num">01</div>
-    <div class="section-heading">Who we are</div>
+    <div class="section-heading">Acceptance of these terms</div>
     <div class="section-body">
-      <p>SpendSense is a personal finance tracker app developed by <strong>buildsbyaman</strong>. The app is designed as a single-user, fully offline tool to help you understand where your money goes.</p>
-      <p>We are not a company with a legal entity, privacy officer, or data processing infrastructure. This policy exists because it's the right thing to publish — not because we're legally required to describe data pipelines we don't have.</p>
+      <p>By downloading, installing, or using SpendSense (the "app"), you agree to these Terms of Service. If you don't agree with any part of them, please don't use the app.</p>
+      <p>We develop and maintain SpendSense as <strong>buildsbyaman</strong>. There is no account, no sign-up, and no subscription — so by using the app you accept these terms directly, without any separate registration step.</p>
     </div>
   </div>
 
@@ -385,12 +415,10 @@
 
   <div class="policy-section">
     <div class="section-num">02</div>
-    <div class="section-heading">Data we collect</div>
+    <div class="section-heading">The service we provide</div>
     <div class="section-body">
-      <p><strong>None.</strong></p>
-      <p>SpendSense does not collect or transmit your personal data to any server we operate. All information you enter into the app — transactions, budgets, wallet names, categories, everything — is stored exclusively in a local SQLite database on your own device.</p>
-      <p>The single exception is the <strong>optional Google Drive backup</strong> described below, which stores a copy of your data in your own Google Drive only when you choose to enable it. We do not run those backups through any server of ours.</p>
-      <p>We cannot see your data. We have no access to it. Even if we wanted to (we don't), we have no technical mechanism to retrieve it.</p>
+      <p>SpendSense is a personal finance tracker designed as a single-user, offline-first tool. It lets you record transactions, manage wallets, set budgets, track subscriptions, and view spending analytics — with all data stored locally on your own device.</p>
+      <p>The app is provided <strong>free of charge</strong>. There is no paid tier, no premium subscription, and no in-app purchases today.</p>
     </div>
   </div>
 
@@ -398,10 +426,10 @@
 
   <div class="policy-section">
     <div class="section-num">03</div>
-    <div class="section-heading">Analytics & tracking</div>
+    <div class="section-heading">Eligibility</div>
     <div class="section-body">
-      <p>SpendSense contains <strong>zero analytics SDKs</strong>, crash reporters, heatmap tools, or advertising networks. We do not use Firebase, Mixpanel, Amplitude, Segment, Sentry, or any similar service.</p>
-      <p>We have no idea how many people use the app, how often they open it, or what features they use. That's intentional. We built SpendSense for you, not to understand you as a data point.</p>
+      <p>SpendSense may be used by anyone. Because the app collects no personal data and requires no account, there are no age-based restrictions or verification steps on our side.</p>
+      <p>You are responsible for ensuring the device you use the app on belongs to you or that you're authorised to use it.</p>
     </div>
   </div>
 
@@ -409,11 +437,10 @@
 
   <div class="policy-section">
     <div class="section-num">04</div>
-    <div class="section-heading">Internet & permissions</div>
+    <div class="section-heading">License &amp; permitted use</div>
     <div class="section-body">
-      <p>SpendSense works fully offline and makes no network calls on its own. There is no background sync, no analytics, and no crash reporting of any kind.</p>
-      <p>The only optional online feature is the <strong>Google Drive backup</strong> (section 05 below), which runs only when you start it. On supported devices the app can also use Face ID to lock the app, at your request.</p>
-      <p>The only reason the app might access your files is to let you export your data (as a PDF, Excel, or JSON file). Exports use your phone's share sheet — no storage permission is required. No data is sent anywhere during this process — the file goes only to your device.</p>
+      <p>We grant you a non-exclusive, non-transferable, revocable license to use SpendSense for your <strong>personal, non-commercial</strong> purposes. The app remains our intellectual property.</p>
+      <p>You may not reverse-engineer, decompile, or copy the app, except as permitted by law. You may not resell, redistribute, or offer the app as a service to third parties.</p>
     </div>
   </div>
 
@@ -421,12 +448,10 @@
 
   <div class="policy-section">
     <div class="section-num">05</div>
-    <div class="section-heading">Third-party services</div>
+    <div class="section-heading">Your responsibilities</div>
     <div class="section-body">
-      <p>SpendSense integrates with exactly one third-party service — and only because you choose to use it.</p>
-      <p><strong>Google Drive backup.</strong> If you enable it, the app signs in to your Google account ("Sign in with Google") and stores backup files in your own Google Drive under Google's <em>drive.file</em> scope. We never receive, see, or store those files on any server of ours — they live under your Google account and can be deleted by you at any time. Google's own Privacy Policy and Terms of Service govern that part of the service. Backups can be protected with a password you choose; without that password, the backup cannot be restored.</p>
-      <p>No other third-party services collect your data. There are no payment processors, advertising networks, social platforms, or data brokers.</p>
-      <p>This website (the marketing page you're reading right now) loads fonts from Google Fonts. That request reveals your IP address to Google's font servers, which is a standard CDN trade-off. The website itself sets no cookies and runs no analytics.</p>
+      <p>You are responsible for the accuracy of the financial information you enter. SpendSense is a record-keeping and budgeting tool — it does not provide financial, legal, or tax advice.</p>
+      <p>You agree not to use the app in any way that violates applicable laws, interferes with the app's operation, or attempts to access it through unauthorised means.</p>
     </div>
   </div>
 
@@ -434,13 +459,10 @@
 
   <div class="policy-section">
     <div class="section-num">06</div>
-    <div class="section-heading">Your data, your control</div>
+    <div class="section-heading">Your data &amp; privacy</div>
     <div class="section-body">
-      <p>Because all data lives on your device, you have absolute control over it at all times:</p>
-      <p><strong>To export it:</strong> Use the Export tab in the app to save your data as a PDF, Excel (.xlsx), or JSON file to your phone's storage.</p>
-      <p><strong>To delete it:</strong> Uninstall SpendSense from your device. This permanently removes the local database and all associated data. There is no recovery option because there is no backup on our side.</p>
-      <p><strong>Google Drive backups:</strong> if you've used the optional backup feature, remember those files are stored in your Google Drive — uninstalling the app does not remove them. Delete them from your Drive (or from the Backup screen in the app) when you no longer need them.</p>
-      <p>There is no account to delete, no "right to erasure" request to submit, and no support email to write to. Your data is entirely self-contained.</p>
+      <p>We do not collect, transmit, or store your financial data on any server. Everything you enter stays in a local database on your device. For full details, see our <a href="./privacy.html">Privacy Policy</a>.</p>
+      <p><strong>Optional Google Drive backup.</strong> If you choose to enable it, the app can back up your data to <strong>your own Google Drive</strong> using Google's <em>drive.file</em> scope. Those backup files live under your Google account — not on our servers. You can password-encrypt them for extra protection, and you can delete them at any time.</p>
     </div>
   </div>
 
@@ -448,9 +470,9 @@
 
   <div class="policy-section">
     <div class="section-num">07</div>
-    <div class="section-heading">Children's privacy</div>
+    <div class="section-heading">Intellectual property</div>
     <div class="section-body">
-      <p>Since we collect no data from anyone, we by definition collect no data from children. SpendSense is a general-purpose budgeting tool appropriate for users of all ages. We have no age-gate mechanism because we have no accounts, sign-ups, or profiles.</p>
+      <p>SpendSense, including its code, design, branding, and content, is owned by <strong>buildsbyaman</strong> and protected by applicable copyright and trademark laws. Your financial data belongs to you, and we make no claim to it.</p>
     </div>
   </div>
 
@@ -458,10 +480,10 @@
 
   <div class="policy-section">
     <div class="section-num">08</div>
-    <div class="section-heading">Changes to this policy</div>
+    <div class="section-heading">Disclaimer of warranties</div>
     <div class="section-body">
-      <p>If this policy changes, the updated version will be posted on this page with a revised "Last updated" date. Given that our policy is essentially "we collect nothing," we don't anticipate significant changes.</p>
-      <p>We will never change this policy in a way that begins collecting data without clearly announcing it on this page and in the app itself.</p>
+      <p>The app is provided <strong>"as is"</strong> and <strong>"as available"</strong>, without warranties of any kind, whether express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, or non-infringement.</p>
+      <p>We do not warrant that the app will be uninterrupted, error-free, or that any data you enter will always be retrievable. A local-only app means your data is only as safe as your device.</p>
     </div>
   </div>
 
@@ -469,10 +491,21 @@
 
   <div class="policy-section">
     <div class="section-num">09</div>
-    <div class="section-heading">Contact</div>
+    <div class="section-heading">Limitation of liability</div>
     <div class="section-body">
-      <p>Questions about this privacy policy? Reach out to <strong>buildsbyaman</strong> — you can find contact information in the app store listing or on GitHub.</p>
-      <p>We genuinely welcome feedback about privacy. It's something we take seriously, even though (or especially because) our implementation of it is simply "do nothing."</p>
+      <p>To the maximum extent permitted by law, <strong>buildsbyaman</strong> shall not be liable for any indirect, incidental, special, consequential, or punitive damages — including lost profits, lost data, or financial losses arising from your use of the app.</p>
+      <p>You use SpendSense at your own risk. For important financial records, we recommend using the built-in export feature and, if you enable it, the optional Google Drive backup.</p>
+    </div>
+  </div>
+
+  <hr />
+
+  <div class="policy-section">
+    <div class="section-num">10</div>
+    <div class="section-heading">Changes, governing law &amp; contact</div>
+    <div class="section-body">
+      <p>We may update these terms from time to time. The latest version will always be posted on this page with a revised "Last updated" date. Continued use of the app after changes constitutes acceptance of the updated terms.</p>
+      <p>These terms are governed by the laws applicable in the developer's jurisdiction. Questions about these terms? Reach out to <strong>buildsbyaman</strong> — you can find contact information in the app store listing or on GitHub.</p>
     </div>
   </div>
 

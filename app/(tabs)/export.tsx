@@ -108,17 +108,18 @@ export default function ExportScreen() {
     });
   }, []);
 
-  let dateLabel = 'All Time';
+  let dateLabel = 'Any Date';
   if (rangeFrom && rangeTo) {
     if (rangeFrom.toDateString() === rangeTo.toDateString()) {
-      dateLabel = formatDatePickerDate(rangeFrom);
+      dateLabel = formatDatePickerDate(rangeFrom, true);
     } else {
-      dateLabel = `${formatDatePickerDate(rangeFrom)} - ${formatDatePickerDate(rangeTo)}`;
+      const sameYear = rangeFrom.getFullYear() === rangeTo.getFullYear();
+      dateLabel = `${formatDatePickerDate(rangeFrom, !sameYear)} - ${formatDatePickerDate(rangeTo, true)}`;
     }
   } else if (rangeFrom) {
-    dateLabel = `From ${formatDatePickerDate(rangeFrom)}`;
+    dateLabel = `From ${formatDatePickerDate(rangeFrom, true)}`;
   } else if (rangeTo) {
-    dateLabel = `Until ${formatDatePickerDate(rangeTo)}`;
+    dateLabel = `Until ${formatDatePickerDate(rangeTo, true)}`;
   }
 
   const handleExport = useCallback(async () => {
@@ -147,6 +148,23 @@ export default function ExportScreen() {
       return;
     }
 
+    // Period exports limit transactions/subscriptions to the range, but wallet
+    // balances are always the current full totals. Warn so a restore into an
+    // empty app won't silently produce balances that don't match the rows.
+    const hasRange = rangeFrom !== null || rangeTo !== null;
+    const includesWalletData =
+      selectedTypes.includes('alldata') ||
+      selectedTypes.includes('wallets') ||
+      selectedTypes.includes('balances');
+    if (hasRange && includesWalletData) {
+      Toast.show({
+        type: 'info',
+        text1: 'Period Export',
+        text2:
+          'Wallet balances are current totals; only transactions in the selected range are included.',
+      });
+    }
+
     setExporting(true);
     try {
       const periodLabel = dateLabel.replace(/[^a-zA-Z0-9]/g, '');
@@ -173,7 +191,7 @@ export default function ExportScreen() {
     } finally {
       setExporting(false);
     }
-  }, [selectedTypes, tables, totalRows, dateLabel, format, userProfile]);
+  }, [selectedTypes, tables, totalRows, dateLabel, format, userProfile, rangeFrom, rangeTo]);
 
   const fmtDateShort = (d: Date | null) =>
     d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -270,11 +288,12 @@ export default function ExportScreen() {
         calendarMonth={calendarMonth}
         onNavigateMonth={(dir) => {
           setCalendarMonth((prev) => {
-            const d = new Date(prev);
-            d.setMonth(d.getMonth() + (dir === 'next' ? 1 : -1));
-            return d;
+            const next = new Date(prev);
+            next.setMonth(prev.getMonth() + (dir === 'next' ? 1 : -1));
+            return next;
           });
         }}
+        onChangeMonth={setCalendarMonth}
       />
     </KeyboardAvoidingView>
   );

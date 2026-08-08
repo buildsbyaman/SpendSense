@@ -297,6 +297,7 @@ export default function AddTransactionScreen() {
         onSelectDate={setDate}
         calendarMonth={calendarMonth}
         onNavigateMonth={navigateMonth}
+        onChangeMonth={setCalendarMonth}
       />
     </View>
   );

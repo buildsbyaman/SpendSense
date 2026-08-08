@@ -18,6 +18,7 @@ interface TransactionDatePickerModalProps {
   initialFrom?: Date | null;
   initialTo?: Date | null;
   onSelectRange?: (range: { from: Date | null; to: Date | null }) => void;
+  onChangeMonth?: (date: Date) => void;
 }
 
 export default function TransactionDatePickerModal({
@@ -31,16 +32,23 @@ export default function TransactionDatePickerModal({
   initialFrom = null,
   initialTo = null,
   onSelectRange,
+  onChangeMonth,
 }: TransactionDatePickerModalProps) {
   const [rangeFrom, setRangeFrom] = useState<Date | null>(null);
   const [rangeTo, setRangeTo] = useState<Date | null>(null);
   const [rangeStep, setRangeStep] = useState<'from' | 'to'>('from');
+  const [showYearPicker, setShowYearPicker] = useState(false);
+  const [yearPage, setYearPage] = useState(0);
 
   useEffect(() => {
     if (visible && mode === 'range') {
       setRangeFrom(initialFrom);
       setRangeTo(initialTo);
       setRangeStep('from');
+    }
+    if (!visible) {
+      setShowYearPicker(false);
+      setYearPage(0);
     }
   }, [visible, initialFrom, initialTo, mode]);
 
@@ -66,7 +74,7 @@ export default function TransactionDatePickerModal({
 
   const handleConfirm = () => {
     if (mode === 'range' && onSelectRange && (rangeFrom || rangeTo)) {
-      onSelectRange({ from: rangeFrom, to: rangeTo });
+      onSelectRange({ from: rangeFrom, to: rangeTo ?? rangeFrom });
     }
     onClose();
   };
@@ -108,75 +116,109 @@ export default function TransactionDatePickerModal({
           <View className="bg-surface rounded-2xl border border-border w-full p-6 gap-4 max-w-[340px] shadow-2xl">
           {/* Calendar Header */}
           <View className="flex-row justify-between items-center pb-2">
-            <TouchableOpacity onPress={() => onNavigateMonth('prev')} className="p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
+            <TouchableOpacity onPress={() => showYearPicker ? setYearPage(p => p - 1) : onNavigateMonth('prev')} className="p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
               <Icon as={ChevronLeft} size={20} className="text-foreground" />
             </TouchableOpacity>
-            <Text className="font-bold text-base text-foreground">
-              {calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-            </Text>
-            <TouchableOpacity onPress={() => onNavigateMonth('next')} className="p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
+            <TouchableOpacity onPress={() => setShowYearPicker(!showYearPicker)}>
+              <Text className="font-bold text-base text-foreground">
+                {showYearPicker 
+                  ? `${currentYear + yearPage * 12 - 4} - ${currentYear + yearPage * 12 + 7}` 
+                  : calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => showYearPicker ? setYearPage(p => p + 1) : onNavigateMonth('next')} className="p-2.5" hitSlop={{top:6,bottom:6,left:4,right:4}}>
               <Icon as={ChevronRight} size={20} className="text-foreground" />
             </TouchableOpacity>
           </View>
 
-          {/* Days of Week */}
-          <View className="flex-row mb-1">
-            {daysOfWeek.map((day) => (
-              <View key={day} className="w-[14.28%] items-center">
-                <Text className="text-[10px] text-muted font-bold uppercase">{day}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Calendar Days Grid */}
-          <View className="flex-row flex-wrap">
-            {daysArray.map((day, idx) => {
-              if (!day) {
-                return <View key={`empty-${idx}`} className="w-[14.28%] h-9" />;
-              }
-              let isSelected = false;
-              let isRangeStart = false;
-              let isRangeEnd = false;
-              let isInRange = false;
-
-              if (mode === 'single' && date) {
-                isSelected = date.toDateString() === day.toDateString();
-              } else if (mode === 'range') {
-                if (rangeFrom && rangeFrom.toDateString() === day.toDateString()) {
-                  isSelected = true;
-                  isRangeStart = true;
-                }
-                if (rangeTo && rangeTo.toDateString() === day.toDateString()) {
-                  isSelected = true;
-                  isRangeEnd = true;
-                }
-                if (rangeFrom && rangeTo && day > rangeFrom && day < rangeTo) {
-                  isInRange = true;
-                }
-              }
-              
-              const isToday = new Date().toDateString() === day.toDateString();
-              
-              return (
-                <TouchableOpacity
-                  key={day.toISOString()}
-                  onPress={() => handleDayPress(day)}
-                  className="w-[14.28%] h-9 items-center justify-center my-0.5 relative"
-                  activeOpacity={0.7}
-                >
-                  {isInRange && <View className="absolute w-full h-8 bg-primary opacity-20" />}
-                  {isRangeStart && rangeTo && <View className="absolute w-1/2 h-8 right-0 bg-primary opacity-20" />}
-                  {isRangeEnd && rangeFrom && <View className="absolute w-1/2 h-8 left-0 bg-primary opacity-20" />}
-
-                  <View className={`w-8 h-8 rounded-full items-center justify-center ${isSelected ? 'bg-primary' : isToday && !isInRange ? 'bg-secondary' : ''}`}>
-                    <Text className={`text-xs font-semibold ${isSelected ? 'text-white dark:text-black' : isToday && !isInRange ? 'text-primary' : 'text-foreground'}`}>
-                      {day.getDate()}
-                    </Text>
+          {showYearPicker ? (
+            <View className="flex-row flex-wrap py-2">
+              {Array.from({ length: 12 }).map((_, i) => {
+                const year = currentYear + yearPage * 12 - 4 + i;
+                const isSelected = year === currentYear;
+                return (
+                  <TouchableOpacity
+                    key={year}
+                    onPress={() => {
+                      if (onChangeMonth) {
+                        onChangeMonth(new Date(year, currentMonth, 1));
+                      }
+                      setShowYearPicker(false);
+                      setYearPage(0);
+                    }}
+                    className="w-[33.33%] h-12 items-center justify-center my-1"
+                  >
+                    <View className={`w-20 h-10 rounded-xl items-center justify-center ${isSelected ? 'bg-primary' : 'bg-secondary'}`}>
+                      <Text className={`text-sm font-semibold ${isSelected ? 'text-white dark:text-black' : 'text-foreground'}`}>
+                        {year}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
+            <>
+              {/* Days of Week */}
+              <View className="flex-row mb-1">
+                {daysOfWeek.map((day) => (
+                  <View key={day} className="w-[14.28%] items-center">
+                    <Text className="text-[10px] text-muted font-bold uppercase">{day}</Text>
                   </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                ))}
+              </View>
+
+              {/* Calendar Days Grid */}
+              <View className="flex-row flex-wrap">
+                {daysArray.map((day, idx) => {
+                  if (!day) {
+                    return <View key={`empty-${idx}`} className="w-[14.28%] h-9" />;
+                  }
+                  let isSelected = false;
+                  let isRangeStart = false;
+                  let isRangeEnd = false;
+                  let isInRange = false;
+
+                  if (mode === 'single' && date) {
+                    isSelected = date.toDateString() === day.toDateString();
+                  } else if (mode === 'range') {
+                    if (rangeFrom && rangeFrom.toDateString() === day.toDateString()) {
+                      isSelected = true;
+                      isRangeStart = true;
+                    }
+                    if (rangeTo && rangeTo.toDateString() === day.toDateString()) {
+                      isSelected = true;
+                      isRangeEnd = true;
+                    }
+                    if (rangeFrom && rangeTo && day > rangeFrom && day < rangeTo) {
+                      isInRange = true;
+                    }
+                  }
+                  
+                  const isToday = new Date().toDateString() === day.toDateString();
+                  
+                  return (
+                    <TouchableOpacity
+                      key={day.toISOString()}
+                      onPress={() => handleDayPress(day)}
+                      className="w-[14.28%] h-9 items-center justify-center my-0.5 relative"
+                      activeOpacity={0.7}
+                    >
+                      {isInRange && <View className="absolute w-full h-8 bg-primary opacity-20" />}
+                      {isRangeStart && rangeTo && <View className="absolute w-1/2 h-8 right-0 bg-primary opacity-20" />}
+                      {isRangeEnd && rangeFrom && <View className="absolute w-1/2 h-8 left-0 bg-primary opacity-20" />}
+
+                      <View className={`w-8 h-8 rounded-full items-center justify-center ${isSelected ? 'bg-primary' : isToday && !isInRange ? 'bg-secondary' : ''}`}>
+                        <Text className={`text-xs font-semibold ${isSelected ? 'text-white dark:text-black' : isToday && !isInRange ? 'text-primary' : 'text-foreground'}`}>
+                          {day.getDate()}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          )}
 
           {/* Modal Actions */}
           {mode === 'range' && (

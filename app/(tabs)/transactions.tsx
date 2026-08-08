@@ -146,13 +146,14 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   const dateLabel = useMemo(() => {
     if (dateFrom && dateTo) {
       if (dateFrom.toDateString() === dateTo.toDateString()) {
-        return formatDatePickerDate(dateFrom);
+        return formatDatePickerDate(dateFrom, true);
       }
-      return `${formatDatePickerDate(dateFrom)} - ${formatDatePickerDate(dateTo)}`;
+      const sameYear = dateFrom.getFullYear() === dateTo.getFullYear();
+      return `${formatDatePickerDate(dateFrom, !sameYear)} - ${formatDatePickerDate(dateTo, true)}`;
     } else if (dateFrom) {
-      return `From ${formatDatePickerDate(dateFrom)}`;
+      return `From ${formatDatePickerDate(dateFrom, true)}`;
     } else if (dateTo) {
-      return `Until ${formatDatePickerDate(dateTo)}`;
+      return `Until ${formatDatePickerDate(dateTo, true)}`;
     }
     return 'Any Date';
   }, [dateFrom, dateTo]);
@@ -215,6 +216,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
           onToggleExpand={toggleTransactionExpand}
           onDelete={handleDelete}
           getWalletName={getWalletName}
+          onClearFilters={handleClearAll}
         />
       </ScrollView>
 
@@ -229,6 +231,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
           setDateTo(to);
         }}
         calendarMonth={calendarMonth}
+        onChangeMonth={setCalendarMonth}
         onNavigateMonth={(direction) => {
           const newMonth = new Date(calendarMonth);
           if (direction === 'prev') {

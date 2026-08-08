@@ -242,6 +242,7 @@ export default function AddSubscriptionScreen() {
           newMonth.setMonth(calendarMonth.getMonth() + (direction === 'next' ? 1 : -1));
           setCalendarMonth(newMonth);
         }}
+        onChangeMonth={setCalendarMonth}
       />
 
       <TransactionDatePickerModal
@@ -255,6 +256,7 @@ export default function AddSubscriptionScreen() {
           newMonth.setMonth(endCalendarMonth.getMonth() + (direction === 'next' ? 1 : -1));
           setEndCalendarMonth(newMonth);
         }}
+        onChangeMonth={setEndCalendarMonth}
       />
     </View>
   );

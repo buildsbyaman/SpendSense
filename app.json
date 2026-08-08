@@ -46,7 +46,8 @@
         {
           "faceIDPermission": "Allow SpendSense to use Face ID to unlock the app."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
