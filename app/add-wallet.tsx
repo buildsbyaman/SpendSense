@@ -6,6 +6,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  BackHandler,
 } from 'react-native';
 
 import { Text } from '@/components/ui/text';
@@ -63,6 +64,16 @@ export default function AddWalletScreen() {
   const handleClose = () => {
     sheetRef.current?.close();
   };
+
+  // Hardware back should behave exactly like the X button: animate the sheet
+  // closed, then pop the route via onClosed → handleNavigateBack.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [handleClose]);
 
   const savingRef = useRef(false);
 
@@ -298,7 +309,7 @@ export default function AddWalletScreen() {
                 </TouchableOpacity>
               )}
               <TouchableOpacity
-                className={`items-center justify-center rounded-[6px] bg-primary py-4 flex-1 ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
+                className={`flex-1 items-center justify-center rounded-[6px] bg-primary py-4 ${!newName.trim() || !newBalance.trim() ? 'opacity-40' : 'opacity-100'}`}
                 onPress={handleSave}
                 activeOpacity={0.7}>
                 <Text className="text-base font-medium text-white dark:text-black">

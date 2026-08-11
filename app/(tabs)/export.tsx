@@ -11,6 +11,7 @@ import { useApp } from '@/context/AppContext';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { ChipSelector } from '@/components/ui/ChipSelector';
+import { ToggleRow } from '@/components/ui/ToggleRow';
 
 import {
   type ExportType,
@@ -45,6 +46,7 @@ export default function ExportScreen() {
   const [rangeFrom, setRangeFrom] = useState<Date | null>(null);
   const [rangeTo, setRangeTo] = useState<Date | null>(null);
   const [format, setFormat] = useState<ExportFormat>('json');
+  const [includeAvatar, setIncludeAvatar] = useState(true);
   const [exporting, setExporting] = useState(false);
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -61,8 +63,9 @@ export default function ExportScreen() {
         to: rangeTo ?? undefined,
       },
       format,
+      includeAvatar,
     }),
-    [selectedTypes, rangeFrom, rangeTo, format]
+    [selectedTypes, rangeFrom, rangeTo, format, includeAvatar]
   );
 
   const tables = useMemo<ExportedTable[]>(
@@ -216,6 +219,26 @@ export default function ExportScreen() {
           <Text className="mb-4 text-sm font-medium text-muted">What to export</Text>
           <ChipSelector items={DATA_TYPES} selected={selectedTypes} onToggle={toggleType} />
         </View>
+
+        {/* ── Profile picture ── */}
+        {userProfile.avatar ? (
+          <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
+            <ToggleRow
+              label="Include Profile Picture"
+              hint={
+                format !== 'json'
+                  ? 'Only included in JSON backups.'
+                  : 'Embeds your profile picture in the backup.'
+              }
+              value={includeAvatar}
+              onChange={setIncludeAvatar}
+              disabled={
+                format !== 'json' ||
+                !(selectedTypes.includes('alldata') || selectedTypes.includes('profile'))
+              }
+            />
+          </View>
+        ) : null}
 
         {/* ── Time period ── */}
         <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">

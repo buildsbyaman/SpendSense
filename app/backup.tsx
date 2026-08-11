@@ -21,6 +21,7 @@ import { useApp } from '@/context/AppContext';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PasswordModal } from '@/components/backup/PasswordModal';
+import { ToggleRow } from '@/components/ui/ToggleRow';
 
 import { buildExportData, type ExportedTable } from '@/lib/export/buildExportData';
 import { type ExportSelection } from '@/lib/export/buildExportData';
@@ -71,16 +72,19 @@ function formatBytes(size: string | null): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-const BACKUP_SELECTION: ExportSelection = {
-  types: ['alldata'],
-  period: { mode: 'all' },
-  format: 'json',
-};
+const BACKUP_TYPES = ['alldata'] as const;
 
 // Restore always replaces the full database. The concrete list (rather than
 // 'alldata') is deliberate: buildImportPlan strips 'alldata' from replaceTypes,
 // and applyImportPlan only clears tables when replaceTypes is non-empty.
-const RESTORE_TYPES = ['wallets', 'transactions', 'subscriptions', 'budgets', 'categories', 'profile'];
+const RESTORE_TYPES = [
+  'wallets',
+  'transactions',
+  'subscriptions',
+  'budgets',
+  'categories',
+  'profile',
+];
 
 export default function BackupScreen() {
   const insets = useSafeAreaInsets();
@@ -120,9 +124,21 @@ export default function BackupScreen() {
 
   const [deleteTarget, setDeleteTarget] = useState<DriveBackupFile | null>(null);
 
+  const [includeAvatar, setIncludeAvatar] = useState(true);
+
+  const backupSelection = useMemo<ExportSelection>(
+    () => ({
+      types: [...BACKUP_TYPES],
+      period: { mode: 'all' },
+      format: 'json',
+      includeAvatar,
+    }),
+    [includeAvatar]
+  );
+
   const tables = useMemo<ExportedTable[]>(
     () =>
-      buildExportData(BACKUP_SELECTION, {
+      buildExportData(backupSelection, {
         transactions,
         accounts,
         budgets,
@@ -134,6 +150,7 @@ export default function BackupScreen() {
         walletOrder,
       }),
     [
+      backupSelection,
       transactions,
       accounts,
       budgets,
@@ -458,8 +475,8 @@ export default function BackupScreen() {
             <Text className="text-sm leading-5 text-muted">
               Backup is disabled until a Google OAuth client ID is added in{' '}
               <Text className="font-medium text-foreground">lib/backup/config.ts</Text>.
-              Instructions are included in that file: create a free Google Cloud project, enable
-              the Drive API, and add an Android OAuth client with package{' '}
+              Instructions are included in that file: create a free Google Cloud project, enable the
+              Drive API, and add an Android OAuth client with package{' '}
               <Text className="font-medium text-foreground">com.buildsbyaman.spendsense</Text>.
             </Text>
           </View>
@@ -507,6 +524,14 @@ export default function BackupScreen() {
 
           {configured && account && (
             <>
+              <View className="mb-4 rounded-xl border border-border bg-background px-4 py-3">
+                <ToggleRow
+                  label="Include Profile Picture"
+                  hint="Embeds your profile picture in the backup."
+                  value={includeAvatar}
+                  onChange={setIncludeAvatar}
+                />
+              </View>
               <TouchableOpacity
                 onPress={handleBackupNow}
                 disabled={backingUp || busy}
@@ -538,7 +563,10 @@ export default function BackupScreen() {
           <View className="mb-4 flex-row items-center justify-between">
             <Text className="text-sm font-medium text-muted">Restore from a backup</Text>
             {configured && account && (
-              <TouchableOpacity onPress={loadBackups} disabled={listing || busy} activeOpacity={0.7}>
+              <TouchableOpacity
+                onPress={loadBackups}
+                disabled={listing || busy}
+                activeOpacity={0.7}>
                 <Icon as={RefreshCw} size={16} className="text-muted" />
               </TouchableOpacity>
             )}
@@ -587,7 +615,10 @@ export default function BackupScreen() {
                   </Text>
                 </View>
                 {busyAction === `delete-${file.id}` || busyAction === `restore-${file.id}` ? (
-                  <ActivityIndicator size="small" color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                  <ActivityIndicator
+                    size="small"
+                    color={colorScheme === 'dark' ? '#fff' : '#000'}
+                  />
                 ) : (
                   <>
                     <TouchableOpacity
@@ -596,7 +627,7 @@ export default function BackupScreen() {
                       }}
                       disabled={busy}
                       activeOpacity={0.7}
-                      className="rounded-lg bg-primary/10 px-3 py-2 dark:bg-primary/20">
+                      className="bg-primary/10 dark:bg-primary/20 rounded-lg px-3 py-2">
                       <Text className="text-xs font-semibold text-primary">Restore</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -636,7 +667,9 @@ export default function BackupScreen() {
           setPasswordError(null);
           setRestoreSource(null);
         }}
-        onSubmit={passwordMode === 'create' ? handleBackupPasswordSubmit : handleRestorePasswordSubmit}
+        onSubmit={
+          passwordMode === 'create' ? handleBackupPasswordSubmit : handleRestorePasswordSubmit
+        }
       />
 
       <ConfirmDialog

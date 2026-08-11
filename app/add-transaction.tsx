@@ -1,4 +1,11 @@
-import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  BackHandler,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -81,6 +88,16 @@ export default function AddTransactionScreen() {
   const handleClose = () => {
     sheetRef.current?.close();
   };
+
+  // Hardware back should behave exactly like the X button: animate the sheet
+  // closed, then pop the route via onClosed → handleNavigateBack.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [handleClose]);
 
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);

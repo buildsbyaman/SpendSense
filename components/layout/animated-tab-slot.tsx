@@ -26,6 +26,7 @@ import CategoriesScreen from '@/app/(tabs)/categories';
 import CurrencyScreen from '@/app/currency';
 import ExportScreen from '@/app/(tabs)/export';
 import ImportScreen from '@/app/(tabs)/import';
+import BackupScreen from '@/app/backup';
 
 // Only the 4 tab bar tabs — determines horizontal slide order
 const MAIN_TABS = ['index', 'transactions', 'wallets', 'profile'];
@@ -46,18 +47,19 @@ const SUB_SCREENS: Record<string, React.ComponentType<{ referrer?: string }>> = 
   currency: React.memo(CurrencyScreen),
   export: React.memo(ExportScreen),
   import: React.memo(ImportScreen),
+  backup: React.memo(BackupScreen),
 };
 
 const SPRING_CONFIG = {
-  damping: 28,
-  stiffness: 280,
-  mass: 0.7,
+  damping: 26,
+  stiffness: 170,
+  mass: 0.9,
   overshootClamping: false,
 };
 
-// Deterministic, short slide for the sub-screen overlay (no spring tail)
+// Deterministic slide for the sub-screen overlay (no spring tail)
 const OVERLAY_ANIMATION = {
-  duration: 220,
+  duration: 340,
   easing: Easing.out(Easing.cubic),
 };
 
@@ -155,7 +157,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
             // screens never sweep through the viewport, then fade it in.
             translateX.value = -index * width;
             rowFade.value = 0;
-            rowFade.value = withTiming(1, { duration: 180 });
+            rowFade.value = withTiming(1, { duration: 280 });
           } else {
             // Adjacent tab — slide directly to the clicked tab.
             rowFade.value = 1;

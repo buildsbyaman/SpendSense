@@ -27,7 +27,8 @@ export function buildExportData(selection: ExportSelection, state: AppState): Ex
   const periodTxs = filterByPeriod(state.transactions, period);
 
   const wantAll = types.includes('alldata');
-  const want = (kind: string) => wantAll || types.includes(kind as ExportSelection['types'][number]);
+  const want = (kind: string) =>
+    wantAll || types.includes(kind as ExportSelection['types'][number]);
 
   const tables: ExportedTable[] = [];
 
@@ -61,8 +62,11 @@ export function buildExportData(selection: ExportSelection, state: AppState): Ex
   }
   if (want('profile')) {
     // Only the JSON format can carry a full-resolution avatar back into the
-    // importer losslessly; XLSX/PDF omit it (see buildProfileTable).
-    tables.push(buildProfileTable(state.profile, selection.format === 'json'));
+    // importer losslessly; XLSX/PDF omit it (see buildProfileTable). The user
+    // decides whether the picture rides along with the JSON backup.
+    tables.push(
+      buildProfileTable(state.profile, selection.format === 'json' && !!selection.includeAvatar)
+    );
   }
 
   return tables;

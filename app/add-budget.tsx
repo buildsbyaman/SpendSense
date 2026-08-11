@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -60,6 +61,16 @@ export default function AddBudgetScreen() {
   const handleClose = () => {
     sheetRef.current?.close();
   };
+
+  // Hardware back should behave exactly like the X button: animate the sheet
+  // closed, then pop the route via onClosed → handleNavigateBack.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [handleClose]);
 
   const savingRef = useRef(false);
 

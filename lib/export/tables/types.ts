@@ -24,6 +24,7 @@ export interface ExportSelection {
     to?: Date;
   };
   format: 'json' | 'xlsx' | 'pdf';
+  includeAvatar?: boolean;
 }
 
 export interface ExportedTable {

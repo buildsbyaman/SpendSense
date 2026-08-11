@@ -1,4 +1,4 @@
-import { View, LayoutAnimation, TouchableOpacity } from 'react-native';
+import { View, LayoutAnimation, TouchableOpacity, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -125,6 +125,18 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
     });
   };
 
+  // Hardware back cancels reorder mode instead of exiting the app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isReorderMode) {
+        cancelReorder();
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [isReorderMode, cancelReorder]);
+
   const resetOrder = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const balanceSorted = [...accounts].sort(
@@ -138,7 +150,7 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
 
   const TotalBalanceHeader = () => (
-    <View className="mx-5 mb-3 rounded-xl border border-border bg-surface ">
+    <View className="mx-5 mb-3 rounded-xl border border-border bg-surface">
       <View className="px-6 py-5">
         <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
         <Text className="text-3xl font-bold text-foreground">

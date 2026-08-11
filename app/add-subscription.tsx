@@ -1,4 +1,11 @@
-import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  BackHandler,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -88,6 +95,16 @@ export default function AddSubscriptionScreen() {
     sheetRef.current?.close();
   };
 
+  // Hardware back should behave exactly like the X button: animate the sheet
+  // closed, then pop the route via onClosed → handleNavigateBack.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [handleClose]);
+
   const savingRef = useRef(false);
 
   const handleSave = async () => {
@@ -176,7 +193,10 @@ export default function AddSubscriptionScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag">
               <SubscriptionFormFields
                 name={name}
                 setName={setName}
@@ -211,19 +231,19 @@ export default function AddSubscriptionScreen() {
               />
 
               <TouchableOpacity
-                  onPress={handleSave}
-                  disabled={
-                    !amount.trim() ||
-                    isNaN(parseFloat(amount)) ||
-                    parseFloat(amount) === 0 ||
-                    !name.trim()
-                  }
-                  className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-4 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
-                  activeOpacity={0.7}>
-                  <Text className="text-base font-medium text-white dark:text-black">
-                    {editId ? 'Save Changes' : 'Save Subscription'}
-                  </Text>
-                </TouchableOpacity>
+                onPress={handleSave}
+                disabled={
+                  !amount.trim() ||
+                  isNaN(parseFloat(amount)) ||
+                  parseFloat(amount) === 0 ||
+                  !name.trim()
+                }
+                className={`mt-8 items-center justify-center rounded-[6px] bg-primary py-4 ${!amount.trim() || isNaN(parseFloat(amount)) || parseFloat(amount) === 0 || !name.trim() ? 'opacity-40' : 'opacity-100'}`}
+                activeOpacity={0.7}>
+                <Text className="text-base font-medium text-white dark:text-black">
+                  {editId ? 'Save Changes' : 'Save Subscription'}
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
 
             <View style={{ height: insets.bottom }} />

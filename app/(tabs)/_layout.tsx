@@ -4,7 +4,7 @@ import { AnimatedTabSlot } from '@/components/layout/animated-tab-slot';
 import { useState, useCallback, useEffect } from 'react';
 import { TabNavigationProvider, useTabNavigation } from '@/context/TabNavigationContext';
 import { useApp } from '@/context/AppContext';
-import { Redirect } from 'expo-router';
+import { Redirect, usePathname } from 'expo-router';
 
 const SUB_TO_PARENT: Record<string, string> = {
   analytics: 'index',
@@ -14,12 +14,19 @@ const SUB_TO_PARENT: Record<string, string> = {
   currency: 'profile',
   export: 'profile',
   import: 'profile',
+  backup: 'profile',
 };
+
+// Routes that live inside the state-driven tabs group. The focused pathname
+// only changes from these when a pushed route (add-*, backup, onboarding) is
+// presented on top, so the hardware-back handler must not intercept those.
+const TABS_PATHS = ['/', '/transactions', '/wallets', '/profile'];
 
 function TabLayoutInner() {
   const [activeTab, setActiveTab] = useState('index');
   const { addListener, navigate, lastParams } = useTabNavigation();
   const { ready, userProfile } = useApp();
+  const pathname = usePathname();
 
   useEffect(() => {
     const remove = addListener((tabName) => setActiveTab(tabName));
@@ -28,10 +35,10 @@ function TabLayoutInner() {
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      const parent =
-        lastParams.current.referrer === 'home'
-          ? 'index'
-          : SUB_TO_PARENT[activeTab];
+      // A pushed route (add-*, backup, …) is focused on top of the tabs
+      // group — let the native stack handle the back press.
+      if (!TABS_PATHS.includes(pathname)) return false;
+      const parent = lastParams.current.referrer === 'home' ? 'index' : SUB_TO_PARENT[activeTab];
       if (parent) {
         navigate(parent);
         return true;
@@ -39,11 +46,14 @@ function TabLayoutInner() {
       return false;
     });
     return () => sub.remove();
-  }, [activeTab, navigate]);
+  }, [activeTab, navigate, pathname]);
 
-  const handleTabChange = useCallback((name: string) => {
-    navigate(name);
-  }, [navigate]);
+  const handleTabChange = useCallback(
+    (name: string) => {
+      navigate(name);
+    },
+    [navigate]
+  );
 
   if (!ready) return null;
   if (!userProfile.hasOnboarded) return <Redirect href="/onboarding" />;
