@@ -64,29 +64,38 @@ export interface CustomCategory {
 }
 
 export interface TransactionCategory {
+  id: string;
   name: string;
   icon: LucideIcon;
   color: string;
 }
 
 export const EXPENSE_CATEGORIES: TransactionCategory[] = [
-  { name: 'Food', icon: Utensils, color: '#f59e0b' }, // amber
-  { name: 'Shopping', icon: ShoppingBag, color: '#ec4899' }, // pink
-  { name: 'Transport', icon: Car, color: '#3b82f6' }, // blue
-  { name: 'Bills', icon: FileText, color: '#6366f1' }, // indigo
-  { name: 'Entertainment', icon: Film, color: '#8b5cf6' }, // violet
-  { name: 'Medical', icon: Heart, color: '#ef4444' }, // red
-  { name: 'Miscellaneous', icon: Layers, color: '#06b6d4' }, // cyan
-  { name: 'Others', icon: HelpCircle, color: '#6b7280' }, // gray
+  { id: 'default-food', name: 'Food', icon: Utensils, color: '#f59e0b' }, // amber
+  { id: 'default-shopping', name: 'Shopping', icon: ShoppingBag, color: '#ec4899' }, // pink
+  { id: 'default-transport', name: 'Transport', icon: Car, color: '#3b82f6' }, // blue
+  { id: 'default-bills', name: 'Bills', icon: FileText, color: '#6366f1' }, // indigo
+  { id: 'default-entertainment', name: 'Entertainment', icon: Film, color: '#8b5cf6' }, // violet
+  { id: 'default-medical', name: 'Medical', icon: Heart, color: '#ef4444' }, // red
+  { id: 'default-miscellaneous', name: 'Miscellaneous', icon: Layers, color: '#06b6d4' }, // cyan
+  { id: 'default-others-expense', name: 'Others', icon: HelpCircle, color: '#6b7280' }, // gray
 ];
 
 export const INCOME_CATEGORIES: TransactionCategory[] = [
-  { name: 'Salary', icon: DollarSign, color: '#10b981' }, // emerald
-  { name: 'Business', icon: Briefcase, color: '#3b82f6' }, // blue
-  { name: 'Investment', icon: TrendingUp, color: '#8b5cf6' }, // violet
-  { name: 'Gift', icon: Gift, color: '#ec4899' }, // pink
-  { name: 'Others', icon: HelpCircle, color: '#6b7280' }, // gray
+  { id: 'default-salary', name: 'Salary', icon: DollarSign, color: '#10b981' }, // emerald
+  { id: 'default-business', name: 'Business', icon: Briefcase, color: '#3b82f6' }, // blue
+  { id: 'default-investment', name: 'Investment', icon: TrendingUp, color: '#8b5cf6' }, // violet
+  { id: 'default-gift', name: 'Gift', icon: Gift, color: '#ec4899' }, // pink
+  { id: 'default-others-income', name: 'Others', icon: HelpCircle, color: '#6b7280' }, // gray
 ];
+
+/**
+ * Lowercased names of every default category. Used to detect when a rename is
+ * editing a default category so the old default can be retired in the same pass.
+ */
+export const DEFAULT_CATEGORY_NAMES: ReadonlySet<string> = new Set(
+  [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].map((c) => c.name.toLowerCase())
+);
 
 const COMBINED_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
 

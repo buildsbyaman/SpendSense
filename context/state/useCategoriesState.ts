@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
 import type { CustomCategory } from '@/utils/transaction';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/utils/transaction';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, DEFAULT_CATEGORY_NAMES } from '@/utils/transaction';
 import { newId } from '@/lib/id';
 import {
   insertCustomCategory,
   deleteCustomCategory as repoDeleteCustomCategory,
   reassignTransactionsCategory,
+  reassignSubscriptionsCategory,
   updateBudgetsCategory,
   insertDeletedDefaultCategory,
   saveCategoryOrder,
@@ -22,6 +23,7 @@ export function useCategoriesState(core: AppCore) {
     setCategoryOrder,
     setTransactions,
     setBudgets,
+    setSubscriptions,
   } = core;
 
   const addCustomCategory = useCallback(
@@ -45,7 +47,9 @@ export function useCategoriesState(core: AppCore) {
   const updateCustomCategory = useCallback(
     async (updatedCat: CustomCategory, oldName?: string) => {
       if (oldName && oldName !== updatedCat.name) {
+        const wasDefault = DEFAULT_CATEGORY_NAMES.has(oldName.toLowerCase());
         await reassignTransactionsCategory(oldName, updatedCat.name);
+        await reassignSubscriptionsCategory(oldName, updatedCat.name);
         await updateBudgetsCategory(oldName, updatedCat.name);
         setTransactions((prev) =>
           prev.map((t) => (t.category === oldName ? { ...t, category: updatedCat.name } : t))
@@ -53,13 +57,43 @@ export function useCategoriesState(core: AppCore) {
         setBudgets((prev) =>
           prev.map((b) => (b.category === oldName ? { ...b, category: updatedCat.name } : b))
         );
+        setSubscriptions((prev) =>
+          prev.map((s) => (s.category === oldName ? { ...s, category: updatedCat.name } : s))
+        );
+
+        // Keep the reorder data in sync so a renamed category keeps its place.
+        if (updatedCat.type === 'expense' || updatedCat.type === 'income') {
+          const orderList = categoryOrder[updatedCat.type];
+          if (orderList && orderList.length > 0) {
+            const nextOrder = orderList.map((n) => (n === oldName ? updatedCat.name : n));
+            if (nextOrder.join('\u0000') !== orderList.join('\u0000')) {
+              saveCategoryOrder(updatedCat.type, nextOrder);
+              setCategoryOrder((prev) => ({ ...prev, [updatedCat.type]: nextOrder }));
+            }
+          }
+        }
+
+        // A rename that started from a default category retires the old default
+        // so its name disappears everywhere (it becomes a custom category now).
+        if (wasDefault) {
+          await insertDeletedDefaultCategory(oldName);
+          setDeletedDefaultCategories((prev) =>
+            prev.includes(oldName) ? prev : [...prev, oldName]
+          );
+        }
       }
-      setCustomCategories((prev) =>
-        prev.map((c) => (c.id === updatedCat.id ? updatedCat : c))
-      );
+      setCustomCategories((prev) => prev.map((c) => (c.id === updatedCat.id ? updatedCat : c)));
       await insertCustomCategory(updatedCat);
     },
-    [setTransactions, setBudgets, setCustomCategories]
+    [
+      setTransactions,
+      setBudgets,
+      setSubscriptions,
+      setCustomCategories,
+      setDeletedDefaultCategories,
+      categoryOrder,
+      setCategoryOrder,
+    ]
   );
 
   const deleteCustomCategory = useCallback(
@@ -95,7 +129,9 @@ export function useCategoriesState(core: AppCore) {
       setTransactions((prev) =>
         prev.map((t) => (t.category === name ? { ...t, category: 'Others' } : t))
       );
-      setBudgets((prev) => prev.map((b) => (b.category === name ? { ...b, category: 'Others' } : b)));
+      setBudgets((prev) =>
+        prev.map((b) => (b.category === name ? { ...b, category: 'Others' } : b))
+      );
       await insertDeletedDefaultCategory(name);
       setDeletedDefaultCategories((prev) => [...prev, name]);
     },
@@ -115,13 +151,19 @@ export function useCategoriesState(core: AppCore) {
       const defaultCats = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
       const activeDefault = defaultCats
         .filter((c) => !deletedDefaultCategories.includes(c.name))
-        .map((c) => ({ name: c.name, isDefault: true }) as any);
+        .map((c) => ({ id: c.id, name: c.name, isDefault: true }) as any);
 
       const activeCustom = customCategories.filter(
         (c) =>
           c.type === type &&
-          // Exclude custom categories that shadow a default name
-          !defaultCats.some((d) => d.name.toLowerCase() === c.name.toLowerCase())
+          // Exclude custom categories that shadow an ACTIVE default name. A custom
+          // whose name matches a deleted default is shown so renamed defaults
+          // don't silently vanish.
+          !defaultCats.some(
+            (d) =>
+              !deletedDefaultCategories.includes(d.name) &&
+              d.name.toLowerCase() === c.name.toLowerCase()
+          )
       );
       const combined = [...activeDefault, ...activeCustom];
 

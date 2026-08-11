@@ -1,14 +1,12 @@
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity, LayoutAnimation } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
-import { getCategoryDetails } from '@/utils/transaction';
 import {
   ArrowUpRight,
   ArrowDownLeft,
   ArrowRight,
-  ArrowLeftRight,
   Plus,
   Receipt,
   Wallet,
@@ -21,13 +19,16 @@ import { router } from 'expo-router';
 import { parseBalance, formatNumber } from '@/utils/wallet';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { Avatar } from '@/components/ui/avatar';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { TransactionItem } from '@/components/transactions/TransactionItem';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import Toast from 'react-native-toast-message';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { EmptyState } from '@/components/ui/EmptyState';
-export default function HomeScreen(_props: { isActive?: boolean }) {
+export default function HomeScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { accounts, transactions, userProfile, customCategories } = useApp();
+  const { accounts, transactions, userProfile, deleteTransaction } = useApp();
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -44,6 +45,19 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
 
   // Recent 20 transactions
   const recentTransactions = transactions.slice(0, 20);
+  const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      setExpandedTransactionId(null);
+    }
+  }, [isActive]);
+
+  const toggleTransactionExpand = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedTransactionId((prev) => (prev === id ? null : id));
+  };
 
   const now = new Date();
   const currentMonthTransactions = useMemo(
@@ -241,51 +255,18 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
             )
           ) : (
             <View className="overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-xs">
-              {recentTransactions.map((tx, idx) => {
-                const isTransfer = tx.type === 'transfer';
-                const { icon, color } = isTransfer
-                  ? { icon: ArrowLeftRight, color: '#8e8e93' }
-                  : getCategoryDetails(tx.category, tx.title, customCategories);
-                const isLast = idx === recentTransactions.length - 1;
-
-                return (
-                  <View key={tx.id}>
-                    <View className="flex-row items-center justify-between px-5 py-5">
-                      <View className="mr-2 flex-1 flex-row items-center gap-3.5">
-                        <View
-                          className="h-10 w-10 items-center justify-center rounded-full"
-                          style={{ backgroundColor: `${color}15` }}>
-                          <Icon as={icon} size={18} color={color} />
-                        </View>
-                        <View className="flex-1">
-                          <Text className="text-base font-medium text-foreground" numberOfLines={1}>
-                            {tx.title}
-                          </Text>
-                          <Text className="mt-0.5 text-xs text-muted" numberOfLines={1}>
-                            {isTransfer
-                              ? `${getWalletName(tx.walletId)} → ${getWalletName(tx.toWalletId ?? '')}`
-                              : `${getWalletName(tx.walletId)} • ${tx.category}`}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <Text
-                        className={`text-base font-semibold ${
-                          isTransfer
-                            ? 'text-muted'
-                            : tx.type === 'income'
-                              ? 'text-income'
-                              : 'text-expense'
-                        }`}>
-                        {tx.type === 'income' ? '+' : isTransfer ? '' : '-'}
-                        {userProfile.currencySymbol}
-                        {formatNumber(tx.amount)}
-                      </Text>
-                    </View>
-                    {!isLast && <View className="h-[1px] bg-divider" />}
-                  </View>
-                );
-              })}
+              {recentTransactions.map((tx, idx) => (
+                <TransactionItem
+                  key={tx.id}
+                  transaction={tx}
+                  accounts={accounts}
+                  getWalletName={getWalletName}
+                  isExpanded={expandedTransactionId === tx.id}
+                  onToggleExpand={() => toggleTransactionExpand(tx.id)}
+                  onDelete={() => setPendingDelete({ id: tx.id, title: tx.title })}
+                  isLast={idx === recentTransactions.length - 1}
+                />
+              ))}
             </View>
           )}
           {recentTransactions.length > 0 && (
@@ -297,6 +278,34 @@ export default function HomeScreen(_props: { isActive?: boolean }) {
           )}
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={pendingDelete !== null}
+        title="Delete Transaction"
+        message={`Are you sure you want to delete "${pendingDelete?.title}"? This will reverse the wallet balance adjustment.`}
+        confirmText="Delete"
+        destructive
+        onConfirm={async () => {
+          if (pendingDelete) {
+            try {
+              await deleteTransaction(pendingDelete.id);
+              Toast.show({
+                type: 'success',
+                text1: 'Transaction Deleted',
+                text2: 'Wallet balance has been reverted.',
+              });
+            } catch {
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: 'Your transaction could not be deleted. Please try again.',
+              });
+            }
+          }
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </View>
   );
 }

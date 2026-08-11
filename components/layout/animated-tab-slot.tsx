@@ -1,8 +1,17 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, StyleSheet, useWindowDimensions, LayoutChangeEvent } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, clamp, runOnJS } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  clamp,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useTabNavigation } from '@/context/TabNavigationContext';
+import { useAppState } from '@/hooks/useAppState';
 
 import IndexScreen from '@/app/(tabs)/index';
 import TransactionsScreen from '@/app/(tabs)/transactions';
@@ -22,21 +31,21 @@ import ImportScreen from '@/app/(tabs)/import';
 const MAIN_TABS = ['index', 'transactions', 'wallets', 'profile'];
 
 const MAIN_SCREENS: Record<string, React.ComponentType<{ isActive?: boolean }>> = {
-  index: IndexScreen,
-  transactions: TransactionsScreen,
-  wallets: WalletsScreen,
-  profile: ProfileScreen,
+  index: React.memo(IndexScreen),
+  transactions: React.memo(TransactionsScreen),
+  wallets: React.memo(WalletsScreen),
+  profile: React.memo(ProfileScreen),
 };
 
 // Sub-screens that appear as vertical slide-up overlays
 const SUB_SCREENS: Record<string, React.ComponentType<{ referrer?: string }>> = {
-  analytics: AnalyticsScreen,
-  budgets: BudgetsScreen,
-  subscriptions: SubscriptionsScreen,
-  categories: CategoriesScreen,
-  currency: CurrencyScreen,
-  export: ExportScreen,
-  import: ImportScreen,
+  analytics: React.memo(AnalyticsScreen),
+  budgets: React.memo(BudgetsScreen),
+  subscriptions: React.memo(SubscriptionsScreen),
+  categories: React.memo(CategoriesScreen),
+  currency: React.memo(CurrencyScreen),
+  export: React.memo(ExportScreen),
+  import: React.memo(ImportScreen),
 };
 
 const SPRING_CONFIG = {
@@ -44,6 +53,12 @@ const SPRING_CONFIG = {
   stiffness: 280,
   mass: 0.7,
   overshootClamping: false,
+};
+
+// Deterministic, short slide for the sub-screen overlay (no spring tail)
+const OVERLAY_ANIMATION = {
+  duration: 220,
+  easing: Easing.out(Easing.cubic),
 };
 
 interface AnimatedTabSlotProps {
@@ -58,13 +73,19 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
   const [layoutWidth, setLayoutWidth] = useState(windowWidth);
   const [layoutHeight, setLayoutHeight] = useState(windowHeight);
 
-  useEffect(() => {
-    setLayoutWidth(windowWidth);
-    setLayoutHeight(windowHeight);
-  }, [windowWidth, windowHeight]);
-
   const activeWidth = layoutWidth > 0 ? layoutWidth : windowWidth;
   const activeHeight = layoutHeight > 0 ? layoutHeight : windowHeight;
+
+  const activeTabRef = useRef(activeTab);
+  const activeWidthRef = useRef(activeWidth);
+  const activeHeightRef = useRef(activeHeight);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+  useEffect(() => {
+    activeWidthRef.current = activeWidth;
+    activeHeightRef.current = activeHeight;
+  }, [activeWidth, activeHeight]);
 
   // Horizontal row translation for main tabs
   const translateX = useSharedValue(0);
@@ -97,64 +118,97 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
         nextIndex = Math.round(startIdx + offsetTabs);
       }
       nextIndex = Math.min(MAIN_TABS.length - 1, Math.max(0, nextIndex));
-      translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
-      runOnJS(navigateRef.current)(MAIN_TABS[nextIndex]);
+      if (nextIndex === startIdx) {
+        // Snap back to the current tab — no tab change, so animate here.
+        translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
+      } else {
+        // Tab change — let the effect animate exactly once.
+        runOnJS(navigateRef.current)(MAIN_TABS[nextIndex]);
+      }
     });
 
   // Vertical overlay for sub-screens
   const overlayY = useSharedValue(activeHeight);
   const [activeSubScreen, setActiveSubScreen] = useState<string | null>(null);
   const prevActiveTab = useRef(activeTab);
-  const clearSubScreenTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rowFade = useSharedValue(1);
 
   useEffect(() => {
-    // Clean up any pending timeout from previous effect
-    if (clearSubScreenTimeout.current) {
-      clearTimeout(clearSubScreenTimeout.current);
-      clearSubScreenTimeout.current = null;
-    }
-
     const isMainTab = MAIN_TABS.includes(activeTab);
-    const wasSubScreen = !MAIN_TABS.includes(prevActiveTab.current);
+    const prevTabName = prevActiveTab.current;
+    const wasSubScreen = !MAIN_TABS.includes(prevTabName);
+    const tabChanged = prevTabName !== activeTab;
     prevActiveTab.current = activeTab;
+    const width = activeWidthRef.current;
+    const height = activeHeightRef.current;
 
     if (isMainTab) {
-      // Slide main row to the correct tab
       const index = MAIN_TABS.indexOf(activeTab);
       activeTabIndex.value = index;
-      translateX.value = withSpring(-index * activeWidth, SPRING_CONFIG);
 
-      // If coming back from a sub-screen, slide the overlay away
-      if (wasSubScreen) {
-        overlayY.value = withSpring(activeHeight, {
-          ...SPRING_CONFIG,
-          damping: 32,
-        });
-        clearSubScreenTimeout.current = setTimeout(() => setActiveSubScreen(null), 400);
+      if (tabChanged) {
+        if (MAIN_TABS.includes(prevTabName)) {
+          const prevIndex = MAIN_TABS.indexOf(prevTabName);
+          const distance = Math.abs(index - prevIndex);
+          if (distance > 1) {
+            // Multi-tab jump — snap straight to the target so intermediate
+            // screens never sweep through the viewport, then fade it in.
+            translateX.value = -index * width;
+            rowFade.value = 0;
+            rowFade.value = withTiming(1, { duration: 180 });
+          } else {
+            // Adjacent tab — slide directly to the clicked tab.
+            rowFade.value = 1;
+            translateX.value = withSpring(-index * width, SPRING_CONFIG);
+          }
+        } else {
+          // Coming back from a sub-screen — row is already at the right spot.
+          rowFade.value = 1;
+          translateX.value = -index * width;
+        }
+
+        // If coming back from a sub-screen, slide the overlay away
+        if (wasSubScreen) {
+          overlayY.value = withTiming(height, OVERLAY_ANIMATION, (finished) => {
+            if (finished) {
+              runOnJS(setActiveSubScreen)(null);
+            }
+          });
+        }
       }
     } else {
       // Sub-screen — show overlay sliding up from bottom
       setActiveSubScreen(activeTab);
-      overlayY.value = activeHeight;
+      overlayY.value = height;
+      overlayY.value = withTiming(0, OVERLAY_ANIMATION);
+    }
+  }, [activeTab]);
+
+  useAppState(undefined, () => {
+    const tab = activeTabRef.current;
+    const width = activeWidthRef.current;
+    const height = activeHeightRef.current;
+    if (MAIN_TABS.includes(tab)) {
+      const index = MAIN_TABS.indexOf(tab);
+      activeTabIndex.value = index;
+      translateX.value = withSpring(-index * width, SPRING_CONFIG);
+      overlayY.value = withSpring(height, { ...SPRING_CONFIG, damping: 32 });
+      setActiveSubScreen(null);
+    } else {
       overlayY.value = withSpring(0, SPRING_CONFIG);
     }
-
-    return () => {
-      if (clearSubScreenTimeout.current) {
-        clearTimeout(clearSubScreenTimeout.current);
-      }
-    };
-  }, [activeTab, activeWidth, activeHeight]);
+  });
 
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     const { width: w, height: h } = e.nativeEvent.layout;
     if (w > 0 && h > 0) {
-      setLayoutWidth(w);
-      setLayoutHeight(h);
+      setLayoutWidth((prev) => (prev !== w ? w : prev));
+      setLayoutHeight((prev) => (prev !== h ? h : prev));
     }
   }, []);
 
   const rowStyle = useAnimatedStyle(() => ({
+    opacity: rowFade.value,
     transform: [{ translateX: translateX.value }],
   }));
 
@@ -167,30 +221,25 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
   return (
     <GestureDetector gesture={pan}>
       <View style={styles.container} onLayout={handleLayout}>
-      {/* Horizontal main tab row */}
-      <Animated.View
-        style={[
-          styles.row,
-          { width: activeWidth * MAIN_TABS.length },
-          rowStyle,
-        ]}>
-        {MAIN_TABS.map((tabName) => {
-          const Screen = MAIN_SCREENS[tabName];
-          return (
-            <View key={tabName} style={[styles.screen, { width: activeWidth }]}>
-              <Screen isActive={activeTab === tabName} />
-            </View>
-          );
-        })}
-      </Animated.View>
-
-      {/* Sub-screen overlay */}
-      {SubScreen && (
-        <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]}>
-          <SubScreen referrer={lastParams.current.referrer} />
+        {/* Horizontal main tab row */}
+        <Animated.View style={[styles.row, { width: activeWidth * MAIN_TABS.length }, rowStyle]}>
+          {MAIN_TABS.map((tabName) => {
+            const Screen = MAIN_SCREENS[tabName];
+            return (
+              <View key={tabName} style={[styles.screen, { width: activeWidth }]}>
+                <Screen isActive={activeTab === tabName} />
+              </View>
+            );
+          })}
         </Animated.View>
-      )}
-    </View>
+
+        {/* Sub-screen overlay */}
+        {SubScreen && (
+          <Animated.View style={[StyleSheet.absoluteFill, overlayStyle, styles.overlay]}>
+            <SubScreen referrer={lastParams.current.referrer} />
+          </Animated.View>
+        )}
+      </View>
     </GestureDetector>
   );
 }
@@ -206,5 +255,11 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1,
+  },
+  overlay: {
+    zIndex: 4,
+    // Force its own compositing layer so the screens below never re-render
+    // during the slide animation (avoids a visible flutter on Android).
+    elevation: 4,
   },
 });

@@ -187,6 +187,7 @@ export default function AnalyticsScreen() {
               <CategoryDonut
                 data={categoryData}
                 totalLabel={type === 'income' ? 'Income' : 'Expenses'}
+                onSelectCategory={(name) => navigateTab('transactions', { category: name, type })}
               />
             </SectionCard>
           </>

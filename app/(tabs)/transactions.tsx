@@ -11,10 +11,12 @@ import {
   searchTransactions,
   filterTransactionsByDateRange,
   formatDatePickerDate,
+  getCategoryIcon,
+  getCategoryColor,
 } from '@/utils/transaction';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
-import { ChevronDown, Plus } from 'lucide-react-native';
+import { ChevronDown, Plus, type LucideIcon } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import Toast from 'react-native-toast-message';
 import TransactionFilterBar from '@/components/transactions/TransactionFilterBar';
@@ -26,17 +28,24 @@ import { TransactionListSection } from '@/components/transactions/TransactionLis
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { transactions, accounts, deleteTransaction, userProfile } = useApp();
+  const { transactions, accounts, deleteTransaction, userProfile, getSortedCategories } = useApp();
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    return addListener((tabName) => {
+    return addListener((tabName, params) => {
       if (tabName === 'transactions') {
         scrollRef.current?.scrollTo({ y: 0, animated: false });
+        if (params?.category) {
+          setCategoryFilter(params.category);
+          if (params.type === 'expense' || params.type === 'income') {
+            setFilter(params.type);
+          }
+        }
       }
     });
   }, [addListener]);
   const [filter, setFilter] = useState<'all' | 'expense' | 'income' | 'transfer'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState<Date | null>(() => {
     const d = new Date();
@@ -71,19 +80,44 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     [accounts]
   );
 
-  // The whole filter → date → search → group pipeline is memoized so it only
-  // re-runs when its inputs actually change, not on every keystroke/render.
+  // The whole filter → category → date → search → group pipeline is memoized so
+  // it only re-runs when its inputs actually change, not on every keystroke/render.
   const visibleTransactions = useMemo(() => {
     // 1. Type filter
     const typeFiltered = transactions.filter((tx) => {
       if (filter === 'all') return true;
       return tx.type === filter;
     });
-    // 2. Date filter
-    const dateFiltered = filterTransactionsByDateRange(typeFiltered, dateFrom, dateTo);
-    // 3. Search filter
+    // 2. Category filter
+    const categoryFiltered = categoryFilter
+      ? typeFiltered.filter((tx) => tx.category === categoryFilter)
+      : typeFiltered;
+    // 3. Date filter
+    const dateFiltered = filterTransactionsByDateRange(categoryFiltered, dateFrom, dateTo);
+    // 4. Search filter
     return searchTransactions(dateFiltered, searchQuery, getWalletName);
-  }, [transactions, filter, dateFrom, dateTo, searchQuery, getWalletName]);
+  }, [transactions, filter, categoryFilter, dateFrom, dateTo, searchQuery, getWalletName]);
+
+  // Category chips shown under the type segment. Reflects the active type filter
+  // so users only ever pick categories that exist for that type.
+  const filterCategories = useMemo(() => {
+    if (filter === 'transfer') return [];
+    const types: ('expense' | 'income')[] = filter === 'all' ? ['expense', 'income'] : [filter];
+    const seen = new Set<string>();
+    const items: { name: string; icon: LucideIcon; color: string }[] = [];
+    for (const type of types) {
+      for (const cat of getSortedCategories(type)) {
+        if (seen.has(cat.name)) continue;
+        seen.add(cat.name);
+        items.push({
+          name: cat.name,
+          icon: getCategoryIcon(cat.name, undefined, 'icon' in cat ? cat.icon : undefined),
+          color: getCategoryColor(cat.name, 'color' in cat ? cat.color : undefined),
+        });
+      }
+    }
+    return items;
+  }, [filter, getSortedCategories]);
 
   // Group transactions by date (pure + stable identity so it can be hoisted)
   const grouped = useMemo(() => {
@@ -130,13 +164,15 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   const hasActiveFilter = useMemo(
     () =>
       filter !== 'all' ||
+      categoryFilter !== null ||
       searchQuery.length > 0 ||
       (!isDefaultDate() && (dateFrom !== null || dateTo !== null)),
-    [filter, searchQuery, dateFrom, dateTo, isDefaultDate]
+    [filter, categoryFilter, searchQuery, dateFrom, dateTo, isDefaultDate]
   );
 
   const handleClearAll = useCallback(() => {
     setFilter('all');
+    setCategoryFilter(null);
     setSearchQuery('');
     const d = new Date();
     setDateFrom(new Date(d.getFullYear(), d.getMonth(), 1));
@@ -192,9 +228,61 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                   { label: 'Transfer', value: 'transfer' },
                 ]}
                 selectedValue={filter}
-                onChange={setFilter}
+                onChange={(v) => {
+                  setFilter(v);
+                  if (v !== filter) setCategoryFilter(null);
+                }}
               />
             </View>
+
+            {/* Category filter chips */}
+            {filterCategories.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+                <View className="flex-row items-center gap-2 py-1">
+                  <TouchableOpacity
+                    onPress={() => setCategoryFilter(null)}
+                    activeOpacity={0.7}
+                    className={`rounded-xl border px-3 py-2.5 ${
+                      categoryFilter === null
+                        ? 'bg-primary/10 dark:bg-primary/15 border-primary'
+                        : 'border-border bg-surface'
+                    }`}>
+                    <Text
+                      className={`text-sm font-semibold ${
+                        categoryFilter === null ? 'text-primary' : 'text-foreground'
+                      }`}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  {filterCategories.map((cat) => {
+                    const isSelected = categoryFilter === cat.name;
+                    return (
+                      <TouchableOpacity
+                        key={cat.name}
+                        onPress={() => setCategoryFilter(isSelected ? null : cat.name)}
+                        activeOpacity={0.7}
+                        className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${
+                          isSelected
+                            ? 'bg-primary/10 dark:bg-primary/15 border-primary'
+                            : 'border-border bg-surface'
+                        }`}>
+                        <View
+                          className="h-7 w-7 items-center justify-center rounded-full"
+                          style={{ backgroundColor: `${cat.color}15` }}>
+                          <Icon as={cat.icon} size={12} color={cat.color} />
+                        </View>
+                        <Text
+                          className={`text-sm font-semibold ${
+                            isSelected ? 'text-primary' : 'text-foreground'
+                          }`}>
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            )}
           </>
         )}
 

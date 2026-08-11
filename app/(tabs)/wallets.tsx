@@ -138,15 +138,14 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
 
   const TotalBalanceHeader = () => (
-    <View>
-      <View className="px-6 pt-6 pb-5">
+    <View className="mx-5 mb-3 rounded-xl border border-border bg-surface ">
+      <View className="px-6 py-5">
         <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
         <Text className="text-3xl font-bold text-foreground">
           {userProfile.currencySymbol}
           {formatNumber(totalBalance)}
         </Text>
       </View>
-      <View className="h-[1px] bg-divider" />
     </View>
   );
 
@@ -171,13 +170,13 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
           <TouchableOpacity
             onPress={resetOrder}
             activeOpacity={0.7}
-            className="mb-3 self-center rounded-full bg-secondary px-4 py-2 border border-border shadow-xs">
-            <Text className="text-xs font-semibold text-primary">
-              Reset order
-            </Text>
+            className="mb-3 self-center rounded-full border border-border bg-secondary px-4 py-2 shadow-xs">
+            <Text className="text-xs font-semibold text-primary">Reset order</Text>
           </TouchableOpacity>
         </>
       )}
+
+      <TotalBalanceHeader />
 
       <View
         className="flex-1"
@@ -199,7 +198,6 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
           onEditClick={isReorderMode ? () => {} : handleEditClick}
           reorderMode={isReorderMode}
           onReorderEnd={setDraftOrder}
-          listHeader={<TotalBalanceHeader />}
           maxHeight={availableHeight}
         />
       </View>
