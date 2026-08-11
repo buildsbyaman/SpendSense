@@ -18,6 +18,7 @@ import { type TransactionType, AVAILABLE_ICONS, AVAILABLE_PALETTE } from '@/util
 import { type CategoryItemData } from '@/components/categories/CategoryItem';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
+import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
 
 interface Props {
   visible: boolean;
@@ -38,6 +39,12 @@ export function CategoryFormModal({ visible, editingCategory, activeTab, onReque
   const [selectedIconName, setSelectedIconName] = useState('Tag');
   const [selectedColor, setSelectedColor] = useState(AVAILABLE_PALETTE[0]);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  const sheetRef = React.useRef<SlideSheetHandle>(null);
+
+  const handleClose = () => {
+    sheetRef.current?.close();
+  };
 
   // Re-sync local fields each time the modal opens so edits/creates always
   // start from the target category (or a clean slate for new categories).
@@ -112,7 +119,7 @@ export function CategoryFormModal({ visible, editingCategory, activeTab, onReque
         });
       }
 
-      onRequestClose();
+      handleClose();
     } catch (err) {
       Toast.show({
         type: 'error',
@@ -122,26 +129,23 @@ export function CategoryFormModal({ visible, editingCategory, activeTab, onReque
     }
   };
 
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 justify-end bg-black/50 dark:bg-black/70">
-        {/* Background touch area to close */}
-        <TouchableOpacity
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-          activeOpacity={1}
-          onPress={onRequestClose}
-        />
+  if (!visible) return null;
 
-        <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
+  return (
+    <Modal visible={visible} transparent animationType="none">
+      <SlideSheet ref={sheetRef} onClosed={onRequestClose}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1 justify-end">
+
+          <View className="rounded-t-[32px] bg-background p-6 pb-12" style={{ maxHeight: '90%' }}>
           <View className="mb-6 flex-row items-center justify-between">
             <Text variant="h2">
               {editingCategory
                 ? 'Edit Category'
                 : `New ${activeTab === 'expense' ? 'Expense' : 'Income'} Category`}
             </Text>
-            <TouchableOpacity onPress={onRequestClose} className="rounded-full bg-secondary p-2.5">
+            <TouchableOpacity onPress={handleClose} className="rounded-full bg-secondary p-2.5">
               <Icon as={X} size={20} className="text-foreground" />
             </TouchableOpacity>
           </View>
@@ -173,7 +177,7 @@ export function CategoryFormModal({ visible, editingCategory, activeTab, onReque
                       style={{ backgroundColor: hex }}
                       className={`h-10 w-10 items-center justify-center rounded-full border ${
                         selectedColor === hex
-                          ? 'border-[3px] border-white shadow-md'
+                          ? 'border-[3px] border-black dark:border-white shadow-md'
                           : 'border-gray-200/50 dark:border-gray-800/50 opacity-80'
                       }`}
                     />
@@ -227,7 +231,8 @@ export function CategoryFormModal({ visible, editingCategory, activeTab, onReque
           {/* Safe area spacing for iOS */}
           <View style={{ height: insets.bottom }} />
         </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SlideSheet>
     </Modal>
   );
 }

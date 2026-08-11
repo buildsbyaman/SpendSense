@@ -167,10 +167,20 @@ export function useCategoriesState(core: AppCore) {
       );
       const combined = [...activeDefault, ...activeCustom];
 
-      const orderList = categoryOrder[type];
-      if (!orderList || orderList.length === 0) return combined;
+      // Deduplicate by name (case-insensitive). Defaults come first so they
+      // win over any custom entry that somehow shares the same name.
+      const seen = new Set<string>();
+      const deduped = combined.filter((c) => {
+        const key = c.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
-      return combined.sort((a, b) => {
+      const orderList = categoryOrder[type];
+      if (!orderList || orderList.length === 0) return deduped;
+
+      return deduped.sort((a, b) => {
         const idxA = orderList.indexOf(a.name);
         const idxB = orderList.indexOf(b.name);
         if (idxA !== -1 && idxB !== -1) return idxA - idxB;

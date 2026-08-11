@@ -14,7 +14,7 @@ export function CategorySelector({ categories, selected, onSelect, withMeta }: P
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View className="flex-row gap-2.5 py-1">
-        {categories.map((cat) => {
+        {categories.map((cat, index) => {
           const isSelected = selected === cat.name;
           const CatIcon = withMeta
             ? getCategoryIcon(cat.name, undefined, cat.icon)
@@ -22,7 +22,7 @@ export function CategorySelector({ categories, selected, onSelect, withMeta }: P
           const color = withMeta ? getCategoryColor(cat.name, cat.color) : undefined;
           return (
             <TouchableOpacity
-              key={cat.name}
+              key={`${cat.name}-${index}`}
               onPress={() => onSelect(cat.name)}
               className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${
                 isSelected

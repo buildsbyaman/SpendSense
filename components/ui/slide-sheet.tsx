@@ -1,5 +1,6 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import Animated, { SlideInDown, SlideOutDown, runOnJS } from 'react-native-reanimated';
+import { StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 export interface SlideSheetHandle {
   close: () => void;
@@ -30,15 +31,27 @@ export const SlideSheet = forwardRef<SlideSheetHandle, SlideSheetProps>(
     if (!open) return null;
 
     return (
-      <Animated.View
-        style={{ flex: 1 }}
-        entering={SlideInDown.duration(320)}
-        exiting={SlideOutDown.duration(260).withCallback(() => {
-          'worklet';
-          runOnJS(handleAnimDone)();
-        })}>
-        {children}
-      </Animated.View>
+      <>
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(200)}>
+          <TouchableWithoutFeedback onPress={close}>
+            <Animated.View style={StyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
+        </Animated.View>
+
+        <Animated.View
+          style={{ flex: 1 }}
+          pointerEvents="box-none"
+          entering={SlideInDown.duration(320)}
+          exiting={SlideOutDown.duration(260).withCallback(() => {
+            'worklet';
+            handleAnimDone();
+          })}>
+          {children}
+        </Animated.View>
+      </>
     );
   },
 );

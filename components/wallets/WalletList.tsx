@@ -40,13 +40,19 @@ export function WalletList({
 }: WalletListProps) {
   if (accounts.length === 0) {
     return (
-      <EmptyState
-        icon={Wallet}
-        title="No Wallets Yet"
-        description="Add your first wallet to start tracking your balances and transactions."
-        buttonText="Add Your First Wallet"
-        onButtonPress={onAddFirstWallet}
-      />
+      <View
+        className="overflow-hidden rounded-xl border border-border bg-surface pb-6"
+        style={{ marginHorizontal: 20 }}>
+        {listHeader}
+        <EmptyState
+          icon={Wallet}
+          title="No Wallets Yet"
+          description="Add your first wallet to start tracking your balances and transactions."
+          buttonText="Add Your First Wallet"
+          onButtonPress={onAddFirstWallet}
+          className="mt-12 items-center justify-center px-6"
+        />
+      </View>
     );
   }
 
@@ -60,6 +66,7 @@ export function WalletList({
         flexShrink: 1,
         ...(maxHeight && maxHeight > 0 ? { maxHeight } : {}),
       }}>
+      {listHeader}
       <DraggableFlatList
         ref={listRef}
         data={accounts}
@@ -80,7 +87,6 @@ export function WalletList({
             />
           </ScaleDecorator>
         )}
-        ListHeaderComponent={listHeader}
         ItemSeparatorComponent={ItemSeparator}
         showsVerticalScrollIndicator={false}
         style={maxHeight && maxHeight > 0 ? { maxHeight } : undefined}

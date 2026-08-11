@@ -5,8 +5,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withDelay,
   clamp,
-  runOnJS,
   Easing,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -57,11 +57,9 @@ const SPRING_CONFIG = {
   overshootClamping: false,
 };
 
-// Deterministic slide for the sub-screen overlay (no spring tail)
-const OVERLAY_ANIMATION = {
-  duration: 340,
-  easing: Easing.out(Easing.cubic),
-};
+// Sub-screen overlay animation — simple ease-out/in
+const OVERLAY_IN = { duration: 300, easing: Easing.out(Easing.cubic) };
+const OVERLAY_OUT = { duration: 240, easing: Easing.in(Easing.cubic) };
 
 interface AnimatedTabSlotProps {
   activeTab: string;
@@ -93,6 +91,12 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
   const translateX = useSharedValue(0);
   const activeTabIndex = useSharedValue(0);
 
+  const gestureNavigatedTabs = useRef(new Set<string>());
+  const handleGestureNavigation = useCallback((tab: string) => {
+    gestureNavigatedTabs.current.add(tab);
+    navigateRef.current(tab);
+  }, []);
+
   // Swipe gesture
   const startX = useSharedValue(0);
   const isMainTab = MAIN_TABS.includes(activeTab);
@@ -110,22 +114,33 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
     })
     .onEnd((e) => {
       const startIdx = clamp(activeTabIndex.value, 0, MAIN_TABS.length - 1);
-      const offsetTabs = -e.translationX / activeWidth;
+      // Current position in tabs — computed from the actual row offset (which
+      // includes startX), so mid-animation swipes resolve to the right target.
+      const currentTabs = clamp(-translateX.value / activeWidth, 0, MAIN_TABS.length - 1);
       let nextIndex: number;
       if (e.velocityX < -400) {
-        nextIndex = Math.floor(startIdx + offsetTabs) + 1;
+        nextIndex = Math.min(MAIN_TABS.length - 1, startIdx + 1);
       } else if (e.velocityX > 400) {
-        nextIndex = Math.ceil(startIdx + offsetTabs) - 1;
+        nextIndex = Math.max(0, startIdx - 1);
       } else {
-        nextIndex = Math.round(startIdx + offsetTabs);
+        nextIndex = clamp(Math.round(currentTabs), 0, MAIN_TABS.length - 1);
       }
-      nextIndex = Math.min(MAIN_TABS.length - 1, Math.max(0, nextIndex));
-      if (nextIndex === startIdx) {
-        // Snap back to the current tab — no tab change, so animate here.
-        translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
-      } else {
-        // Tab change — let the effect animate exactly once.
-        runOnJS(navigateRef.current)(MAIN_TABS[nextIndex]);
+      activeTabIndex.value = nextIndex;
+      translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
+      if (nextIndex !== startIdx) {
+        handleGestureNavigation(MAIN_TABS[nextIndex]);
+      }
+    })
+    .onFinalize((_, success) => {
+      // Safety net: if the gesture was cancelled and onEnd never settled the
+      // row (e.g. a competing scroll view steals the touch), spring to the
+      // nearest snapped position so it can never stay stuck in between tabs.
+      if (!success) {
+        const width = activeWidth;
+        const currentTabs = clamp(-translateX.value / width, 0, MAIN_TABS.length - 1);
+        const nearest = clamp(Math.round(currentTabs), 0, MAIN_TABS.length - 1);
+        activeTabIndex.value = nearest;
+        translateX.value = withSpring(-nearest * width, SPRING_CONFIG);
       }
     });
 
@@ -145,6 +160,13 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
     const height = activeHeightRef.current;
 
     if (isMainTab) {
+      if (gestureNavigatedTabs.current.has(activeTab)) {
+        gestureNavigatedTabs.current.delete(activeTab);
+        return;
+      } else {
+        gestureNavigatedTabs.current.clear();
+      }
+
       const index = MAIN_TABS.indexOf(activeTab);
       activeTabIndex.value = index;
 
@@ -171,18 +193,19 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
 
         // If coming back from a sub-screen, slide the overlay away
         if (wasSubScreen) {
-          overlayY.value = withTiming(height, OVERLAY_ANIMATION, (finished) => {
+          overlayY.value = withTiming(height, OVERLAY_OUT, (finished) => {
             if (finished) {
-              runOnJS(setActiveSubScreen)(null);
+              setActiveSubScreen(null);
             }
           });
         }
       }
     } else {
-      // Sub-screen — show overlay sliding up from bottom
+      // Sub-screen — show overlay offscreen, then slide up after 1 frame
+      // so React finishes mounting the component before the animation starts.
       setActiveSubScreen(activeTab);
       overlayY.value = height;
-      overlayY.value = withTiming(0, OVERLAY_ANIMATION);
+      overlayY.value = withDelay(16, withTiming(0, OVERLAY_IN));
     }
   }, [activeTab]);
 
@@ -194,10 +217,10 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
       const index = MAIN_TABS.indexOf(tab);
       activeTabIndex.value = index;
       translateX.value = withSpring(-index * width, SPRING_CONFIG);
-      overlayY.value = withSpring(height, { ...SPRING_CONFIG, damping: 32 });
+      overlayY.value = height;
       setActiveSubScreen(null);
     } else {
-      overlayY.value = withSpring(0, SPRING_CONFIG);
+      overlayY.value = 0;
     }
   });
 

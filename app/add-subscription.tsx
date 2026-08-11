@@ -175,12 +175,7 @@ export default function AddSubscriptionScreen() {
       <SlideSheet ref={sheetRef} onClosed={handleNavigateBack}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 justify-end bg-black/50 dark:bg-black/70">
-          <TouchableOpacity
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            activeOpacity={1}
-            onPress={handleClose}
-          />
+          className="flex-1 justify-end">
 
           <View
             className="rounded-t-2xl border-t border-border bg-background p-6 pb-12"

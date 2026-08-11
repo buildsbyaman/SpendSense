@@ -150,14 +150,12 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
 
   const TotalBalanceHeader = () => (
-    <View className="mx-5 mb-3 rounded-xl border border-border bg-surface">
-      <View className="px-6 py-5">
-        <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
-        <Text className="text-3xl font-bold text-foreground">
-          {userProfile.currencySymbol}
-          {formatNumber(totalBalance)}
-        </Text>
-      </View>
+    <View className="border-b border-border bg-surface px-6 py-5">
+      <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
+      <Text className="text-3xl font-bold text-foreground">
+        {userProfile.currencySymbol}
+        {formatNumber(totalBalance)}
+      </Text>
     </View>
   );
 
@@ -188,8 +186,6 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
         </>
       )}
 
-      <TotalBalanceHeader />
-
       <View
         className="flex-1"
         style={{
@@ -200,6 +196,7 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
           if (height > 0) setAvailableHeight(height);
         }}>
         <WalletList
+          listHeader={<TotalBalanceHeader />}
           listRef={listRef}
           accounts={isReorderMode ? draftOrder : sortedAccounts}
           expandedWalletId={isReorderMode ? null : expandedWalletId}

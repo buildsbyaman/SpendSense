@@ -2,6 +2,7 @@ import { View, BackHandler } from 'react-native';
 import { TabBar } from '@/components/layout/tab-bar';
 import { AnimatedTabSlot } from '@/components/layout/animated-tab-slot';
 import { useState, useCallback, useEffect } from 'react';
+import { useAppState } from '@/hooks/useAppState';
 import { TabNavigationProvider, useTabNavigation } from '@/context/TabNavigationContext';
 import { useApp } from '@/context/AppContext';
 import { Redirect, usePathname } from 'expo-router';
@@ -47,6 +48,13 @@ function TabLayoutInner() {
     });
     return () => sub.remove();
   }, [activeTab, navigate, pathname]);
+
+  // When the app returns from the background, always reset to the home tab.
+  // This ensures activeTab state is never stale after a resume, which cascades
+  // correctly to the TabBar highlight and AnimatedTabSlot animation.
+  useAppState(undefined, useCallback(() => {
+    navigate('index');
+  }, [navigate]));
 
   const handleTabChange = useCallback(
     (name: string) => {

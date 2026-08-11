@@ -4,7 +4,6 @@ import {
   useAnimatedStyle,
   withSpring,
   interpolate,
-  runOnJS,
 } from 'react-native-reanimated';
 
 export type ModalAnimationType = 'scale' | 'slide' | 'scale-origin';
@@ -36,7 +35,7 @@ export function useModalAnimation({
     } else if (isRendered) {
       progress.value = withSpring(0, { damping, stiffness, mass }, (finished) => {
         if (finished) {
-          runOnJS(setIsRendered)(false);
+          setIsRendered(false);
         }
       });
     }
