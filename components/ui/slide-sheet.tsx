@@ -1,6 +1,6 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { StyleSheet, TouchableWithoutFeedback } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, runOnJS } from 'react-native-reanimated';
 
 export interface SlideSheetHandle {
   close: () => void;
@@ -47,7 +47,7 @@ export const SlideSheet = forwardRef<SlideSheetHandle, SlideSheetProps>(
           entering={SlideInDown.duration(320)}
           exiting={SlideOutDown.duration(260).withCallback(() => {
             'worklet';
-            handleAnimDone();
+            runOnJS(handleAnimDone)();
           })}>
           {children}
         </Animated.View>

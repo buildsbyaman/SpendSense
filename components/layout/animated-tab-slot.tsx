@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
   withDelay,
   clamp,
+  runOnJS,
   Easing,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -128,7 +129,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
       activeTabIndex.value = nextIndex;
       translateX.value = withSpring(-nextIndex * activeWidth, SPRING_CONFIG);
       if (nextIndex !== startIdx) {
-        handleGestureNavigation(MAIN_TABS[nextIndex]);
+        runOnJS(handleGestureNavigation)(MAIN_TABS[nextIndex]);
       }
     })
     .onFinalize((_, success) => {
@@ -195,7 +196,7 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
         if (wasSubScreen) {
           overlayY.value = withTiming(height, OVERLAY_OUT, (finished) => {
             if (finished) {
-              setActiveSubScreen(null);
+              runOnJS(setActiveSubScreen)(null);
             }
           });
         }
