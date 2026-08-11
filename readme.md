@@ -5,7 +5,7 @@
 <h1 align="center">SpendSense</h1>
 
 <p align="center">
-  A personal finance tracker that stores everything on your device. No accounts, no cloud, no data leaves your phone.
+  A personal finance tracker that stores everything on your device. Local-first and private, with optional end-to-end encrypted backups to your own Google Drive.
 </p>
 
 <p align="center">
@@ -20,23 +20,28 @@
 
 ## Overview
 
-SpendSense is a local-first personal finance tracker built with React Native and Expo. Every transaction, budget, subscription, and setting lives in a SQLite database on your device. There is no server, no API key, no cloud dependency. You own your data.
+SpendSense is a local-first personal finance tracker built with React Native and Expo. Every transaction, budget, subscription, and setting lives in a SQLite database on your device. There is no server, no API key, no cloud dependency — you own your data. Optional features such as biometric screen locking and encrypted Google Drive backups keep your data private and safe, and can be turned on from Settings.
 
 ---
 
 ## Features
 
 - **Local-first storage** -- all transactions, categories, budgets, and settings are saved on-device in SQLite. No backend, no sign-up, no data sent anywhere.
+- **Swipe navigation** -- swipe left or right to move between Home, Transactions, Wallets, and Profile with a springy slide animation. Sub-screens slide up as overlays.
 - **Multi-wallet support** -- create and manage multiple wallets (bank accounts, cash, credit cards, etc.). Set a default wallet. Balances update automatically as transactions are added. Move money between wallets with transfers.
 - **Transaction management** -- add, edit, and delete income, expense, and transfer transactions. Assign each to a wallet, pick a category, and choose a date with quick selectors (today, yesterday, or a calendar).
+- **Category filter** -- filter the transaction list by category chips, or tap a slice in the analytics donut chart to jump straight to that category.
 - **Transfers** -- move money between two wallets in one step. Pick a From and To wallet; both balances update automatically, and transfers are excluded from income/expense totals, budgets, and analytics.
 - **Budgets** -- set spending limits per category. Watch progress bars fill up in real time. Receive a warning when a transaction pushes you over budget.
 - **Subscriptions** -- track recurring bills with a billing cycle (weekly, monthly, yearly) and next billing date. See upcoming obligations at a glance.
 - **Custom categories** -- create, rename, and assign icons to your own spending and income categories. Drag to reorder them to match your habits.
-- **Analytics dashboard** -- category donut chart, monthly bar chart, income vs. expenses, savings rate, trend lines, and a month navigator to compare over time. Transfers are excluded from these figures.
+- **Analytics dashboard** -- category donut chart, income vs. expenses with month-over-month deltas, savings rate, and a trend chart that switches between line and bar views with daily/weekly/monthly granularity. A month/year navigator lets you compare over time. Transfers are excluded from these figures.
+- **Screen lock** -- lock the app behind Face ID, fingerprint, or your device PIN/pattern. SpendSense locks automatically whenever it leaves the screen and prompts to unlock on return.
+- **Google Drive backup** -- sign in with Google and store password-protected, encrypted backups in your own Drive (the same access model as WhatsApp). List, restore, or delete previous backups from the Backup screen.
 - **Currency settings** -- choose from nine preset currencies or define a custom one. Provide a conversion rate to revalue all existing data in a single pass.
 - **Import** -- bring in data from JSON, Excel (.xlsx), or a previously exported SpendSense PDF.
 - **Export** -- export your data to PDF, JSON, or Excel (.xlsx). Select which tables to include, filter by date range and transaction type, and share via the OS share sheet.
+- **Profile photo** -- set an avatar from your photo library, and choose whether it rides along in JSON backups and exports.
 - **Light and dark themes** -- toggle between a light and dark theme. Your preference is saved locally and restored on launch. The app follows the system setting by default.
 - **Onboarding** -- a guided first-run flow sets up your name, currency, and profile avatar.
 - **Demo data** -- load a realistic set of sample transactions, wallets, and budgets to explore the app before entering your own data.
@@ -45,26 +50,24 @@ SpendSense is a local-first personal finance tracker built with React Native and
 
 ## Navigation
 
-A five-tab bottom bar with a centered "+" button for quick transaction entry:
+A floating glass capsule bottom bar with four tabs and a centered "+" button for quick transaction entry. Swipe left/right anywhere in the content area to move between the four tabs.
 
-| Tab          | Icon            | Purpose                                                                                 |
-| ------------ | --------------- | --------------------------------------------------------------------------------------- |
-| Home         | LayoutDashboard | Welcome header, net balance, income vs. expenses, quick stats, link to analytics        |
-| Transactions | ArrowUpDown     | Full transaction list with search, type filter (All/Expense/Income/Transfer), and sort |
-| Add          | Plus            | Opens a bottom-sheet modal to create a new transaction                                  |
-| Wallets      | Wallet          | Create, edit, and delete wallets. Set a default wallet.                                 |
-| Profile      | User            | Settings hub -- manage subscriptions, categories, budgets, currency, import, and export |
+| Tab          | Icon           | Purpose                                                                                                |
+| ------------ | -------------- | ------------------------------------------------------------------------------------------------------ |
+| Home         | Home           | Greeting, total balance, income vs. expenses, quick actions, recent activity                           |
+| Transactions | ArrowRightLeft | Full transaction list with search, type filter (All/Expense/Income/Transfer), category chips, and sort |
+| Add          | Plus           | Opens a bottom-sheet modal to create a new transaction                                                 |
+| Wallets      | Wallet         | Create, edit, and delete wallets. Set a default wallet.                                                |
+| Profile      | User           | Settings hub -- profile, dark mode, app lock, and the Manage section                                   |
 
-Additional screens are reachable from the Profile tab (Manage section):
+### Sub-screens
 
-| Section           | Purpose                                                   |
-| ----------------- | --------------------------------------------------------- |
-| Subscriptions     | View, add, and manage recurring bills                     |
-| Categories        | Create, rename, reorder, and icon-pick custom categories  |
-| Budgets           | Set per-category spending limits and monitor progress     |
-| Currency Settings | Change your base currency and optionally revalue all data |
-| Import            | Import data from JSON, Excel, or SpendSense PDF           |
-| Export            | Export data to PDF, JSON, or Excel with filters           |
+Screens outside the four-tab row open as animated slide-up overlays and navigate back to where you came from:
+
+| Access point     | Screens                                                              |
+| ---------------- | -------------------------------------------------------------------- |
+| Home quick links | Categories, Budgets, Subscriptions, Analytics (back returns to Home) |
+| Profile → Manage | Currency Settings, Import, Export, Backup (back returns to Profile)  |
 
 ---
 
@@ -87,6 +90,24 @@ Additional screens are reachable from the Profile tab (Manage section):
 
 ---
 
+## Backup and Restore
+
+Two ways to protect your data:
+
+### Local backup files
+
+From the Backup screen you can save the full database (transactions, wallets, budgets, subscriptions, categories, and profile) to a `.spendbackup` file shared via the OS share sheet. You can optionally protect the file with a password -- it is then encrypted with **scrypt + AES-GCM** so it can only be opened by someone who knows the password. Restoring from a local file replaces the entire database, so a confirmation is always required.
+
+### Google Drive backup
+
+- Sign in with your Google account (OAuth, `drive.file` scope -- the same access model as WhatsApp). The app can only see the backup files it creates in your own Drive.
+- One tap uploads a backup, and backups can be encrypted with a password you choose.
+- The Backup screen lists every SpendSense backup in your Drive, so you can restore an older version or delete backups you no longer need.
+- Works with any signed-in Google account and does not require a server or billing.
+- Currently available on **Android** builds signed with a registered OAuth client ID (see `lib/backup/config.ts`).
+
+---
+
 ## Tech Stack
 
 | Layer                    | Technology                                                |
@@ -103,8 +124,12 @@ Additional screens are reachable from the Profile tab (Manage section):
 | Drag and reorder         | react-native-draggable-flatlist                           |
 | Toasts                   | react-native-toast-message                                |
 | File picking             | expo-document-picker, expo-image-picker, expo-sharing     |
-| Animations               | React Native Reanimated 4                                 |
+| Animations               | React Native Reanimated 4 + react-native-worklets         |
+| Gestures                 | react-native-gesture-handler                              |
 | Blur effects             | expo-blur                                                 |
+| Biometrics               | expo-local-authentication                                 |
+| Google Drive backup      | expo-auth-session, expo-secure-store, expo-web-browser    |
+| Backup encryption        | @noble/ciphers (AES-GCM), @noble/hashes (scrypt)          |
 | Persistence              | @react-native-async-storage/async-storage                 |
 | React                    | React 19 + React Native Web                               |
 | Language                 | TypeScript 6 (strict mode)                                |
@@ -130,7 +155,7 @@ A layered React Context architecture split by domain:
 
 ### Data Access
 
-- **`lib/database.ts`** -- Singleton database initialization with WAL mode and a sequential migration system (13 versions via `PRAGMA user_version`).
+- **`lib/database.ts`** -- Singleton database initialization with WAL mode and a sequential migration system (14 versions via `PRAGMA user_version`).
 - **`lib/db/*`** -- Split by entity (account, transaction, category, profile, budget, subscription, reset). Each module exports async CRUD functions.
 - **`lib/repository.ts`** -- Barrel re-export for clean imports.
 
@@ -146,21 +171,21 @@ SpendSense uses **SQLite** via `expo-sqlite` with an async API and WAL mode enab
 
 ### Tables
 
-| Table | Purpose |
-| --- | --- |
-| `accounts` | Wallets (bank, card, digital) with balance, type, default flag |
-| `transactions` | Income/expense/transfer records with amount, category, date, wallet FK, optional to-wallet FK |
-| `profile` | Singleton row: name, currency symbol/code, avatar, onboarding state |
-| `custom_categories` | User-created categories with icon and color |
-| `deleted_default_categories` | Tracks removed default category names |
-| `category_order` | JSON array of category names per type (expense/income) |
-| `wallet_order` | JSON array of wallet IDs for drag-to-reorder |
-| `budgets` | Per-category spending limits |
-| `subscriptions` | Recurring bills with cycle, next billing date, optional end date |
+| Table                        | Purpose                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `accounts`                   | Wallets (bank, card, digital) with balance, type, default flag                                |
+| `transactions`               | Income/expense/transfer records with amount, category, date, wallet FK, optional to-wallet FK |
+| `profile`                    | Singleton row: name, currency symbol/code, avatar, onboarding state                           |
+| `custom_categories`          | User-created categories with icon and color                                                   |
+| `deleted_default_categories` | Tracks removed default category names                                                         |
+| `category_order`             | JSON array of category names per type (expense/income)                                        |
+| `wallet_order`               | JSON array of wallet IDs for drag-to-reorder                                                  |
+| `budgets`                    | Per-category spending limits                                                                  |
+| `subscriptions`              | Recurring bills with cycle, next billing date, optional end date                              |
 
 ### Migrations
 
-The database uses a 13-version forward-only migration system tracked via `PRAGMA user_version`. New installations start at version 13. Existing installations migrate incrementally on launch. All migrations are idempotent.
+The database uses a 14-version forward-only migration system tracked via `PRAGMA user_version`. New installations start at version 14. Existing installations migrate incrementally on launch. All migrations are idempotent, and a self-healing guard re-adds the `transactions.to_wallet_id` column on every launch if it is ever missing.
 
 ---
 
@@ -176,12 +201,24 @@ The import subsystem includes several protections against crafted or malicious f
 - **File size cap** -- Files up to 20 MB accepted
 - **File type validation** -- Only JSON, Excel (.xlsx), and SpendSense PDF formats accepted
 
+### App Lock
+
+- Optional screen lock that uses the device's built-in authentication (Face ID, fingerprint, PIN, or pattern)
+- Lock preference is stored in the OS secure store (`expo-secure-store`), never in the database
+- SpendSense locks instantly when it leaves the foreground and re-prompts on return
+
+### Backup encryption
+
+- Password-protected backups are encrypted with **scrypt** (key derivation) and **AES-GCM** (authenticated encryption)
+- The correct password is required to restore; a wrong password is rejected on load
+- Google Drive backups use the `drive.file` scope, so the app can only read and write the backup files it creates in your own account
+
 ### Data Privacy
 
 - All data is stored on-device only
-- No accounts, no login, no registration
+- No accounts, no login, no registration (except an optional, voluntary Google Drive sign-in for backups)
 - No analytics SDKs or tracking
-- No network requests (entirely offline)
+- Fully offline by default -- the only optional network access is Google Drive backup, which uploads your backup solely to your own Drive account
 - Exports are generated locally and shared via the OS share sheet
 
 ---
@@ -221,17 +258,17 @@ Press `i` for iOS, `a` for Android, or `w` for web.
 
 ## Environment Variables
 
-| Variable | Purpose | Required |
-| --- | --- | --- |
+| Variable               | Purpose                                                                                                        | Required      |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- | ------------- |
 | `EXPO_PUBLIC_DEV_MODE` | Set to `'1'` to enable developer tools (hidden demo data loading). Must be combined with `__DEV__` being true. | No (dev only) |
 
-No API keys, backend URLs, or secrets are used. The app is fully offline.
+No API keys, backend URLs, or secrets are required at build time. Google Drive backup uses public OAuth client IDs baked into the binary (see `lib/backup/config.ts`); the app itself makes no network requests except when you opt in to Drive backup.
 
 ---
 
 ## Dev Tools
 
-A hidden developer tools menu is available behind a **5-tap gesture** on the profile screen. It is guarded by both the `__DEV__` build flag and the `EXPO_PUBLIC_DEV_MODE` environment variable, so it never appears in production builds.
+A hidden developer tools menu is available behind a **5-tap gesture** on the Settings header title (Profile tab). It is guarded by both the `__DEV__` build flag and the `EXPO_PUBLIC_DEV_MODE` environment variable, so it never appears in production builds. When enabled it adds a **Load Demo Data** option below the Manage section.
 
 ---
 
@@ -272,17 +309,18 @@ app/                              Expo Router file-based screens
   +not-found.tsx                    404 screen
   onboarding.tsx                    First-run setup flow
   currency.tsx                      Currency settings + conversion
+  backup.tsx                        Backup/restore: local files + Google Drive
   add-transaction.tsx               Bottom-sheet modal (create/edit transaction)
   add-wallet.tsx                    Bottom-sheet modal (new wallet)
   add-budget.tsx                    Bottom-sheet modal (new budget)
   add-subscription.tsx              Bottom-sheet modal (new subscription)
   (tabs)/                           Tab-navigated screens
-    _layout.tsx                       Animated tab slot + glassmorphic bottom bar
-    index.tsx                         Home -- net balance, income/expense summary
-    transactions.tsx                  Transaction list with search, filter, sort
+    _layout.tsx                       Animated tab slot (swipe) + glass capsule bar
+    index.tsx                         Home -- balance, income/expense, quick actions
+    transactions.tsx                  Transaction list with search, filters, category chips
     wallets.tsx                       Wallet management
-    profile.tsx                       Settings hub
-    analytics.tsx                     Charts and breakdowns
+    profile.tsx                       Settings hub (profile, theme, app lock)
+    analytics.tsx                     Charts and breakdowns (line/bar, granularity)
     subscriptions.tsx                 Recurring bill tracking
     budgets.tsx                       Per-category budget limits
     categories.tsx                    Custom category management
@@ -291,19 +329,19 @@ app/                              Expo Router file-based screens
 
 components/                       UI components organized by domain
   layout/                           tab-bar.tsx, animated-tab-slot.tsx
-  ui/                               15 shared primitives (Button, Text, Icon, Avatar, etc.)
-  analytics/                        CategoryDonut, TrendChart, SummaryCards
+  ui/                               Shared primitives (Button, Text, Icon, Avatar, SlideSheet, ConfirmDialog, ToggleRow, AnimatedSegment, etc.)
+  analytics/                        CategoryDonut, TrendChart, TrendBarChart, SummaryCards, GranularityToggle, ChartTypeToggle
   budgets/                          Budget item/list components
   categories/                       Category management components
   currency/                         Currency preset grid, custom form, conversion
   import/                           Import wizard components
-  profile/                          ProfileCard, ManageSection, SettingsMenu, DevTools
+  profile/                          ProfileCard, ManageSection, SettingsOptionsMenu, DevToolsSection
   subscriptions/                    SubscriptionItem
-  transactions/                     TransactionItem, type toggle, date picker, filter bar
-  wallets/                          WalletItem, WalletList, delete modal, options menu
+  transactions/                     TransactionItem, filter bar, type toggle, date pickers, form fields
+  wallets/                          WalletItem, WalletList, WalletSelector, delete modal, options menu
 
 lib/                              Core business logic and data layer
-  database.ts                       SQLite setup, WAL mode, 13-version migration system
+  database.ts                       SQLite setup, WAL mode, 14-version migration system
   db/                               Split data-access modules (9 files)
     index.ts                          Barrel re-export
     types.ts                          DB type alias
@@ -317,13 +355,24 @@ lib/                              Core business logic and data layer
   repository.ts                     Barrel re-export of lib/db/*
   balance.ts                        Balance adjustment helpers
   billing.ts                        Subscription auto-billing engine (up to 24 charges)
+  biometric.ts                      Device authentication (Face ID / fingerprint / PIN)
   id.ts                             Unique ID generator (timestamp + counter + crypto)
   seed-data.ts                      Deterministic demo data generator (PRNG, seed=42)
+  subscriptionForm.ts               Subscription form helpers
   theme.ts                          Light/dark theme color definitions
   theme-persistence.ts              AsyncStorage-backed theme preference
   chart-theme.ts                    Chart color scheme
   dev-tools.ts                      Dev-only features (guarded by __DEV__ + env var)
   utils.ts                          cn() utility (clsx + tailwind-merge)
+  backup/                           Backup subsystem (5 files)
+    build.ts                          Build backup content from app state
+    format.ts                         Detect and parse .spendbackup files
+    config.ts                         Google Cloud OAuth client IDs for Drive
+    crypto.ts                         scrypt + AES-GCM encrypt/decrypt
+    fingerprint.ts                    Content fingerprinting
+  drive/                            Google Drive integration (2 files)
+    client.ts                         OAuth sign-in, tokens, account info
+    backup.ts                         List/upload/download/delete Drive backups
   export/                           Export subsystem (8 files + tables/)
     constants.ts                      Data type and format definitions
     formatters.ts                     Main export dispatcher (JSON/XLSX/PDF)
@@ -361,6 +410,7 @@ utils/                            Domain types, helpers, and calculations
 
 context/                          React Context state management
   AppContext.tsx                     Central data store (all state + persistence)
+  AppLockContext.tsx                 App-lock state (biometric lock on background)
   TabNavigationContext.tsx           Programmatic tab navigation
   types.ts                          AppContextType and UserProfile interfaces
   initSnapshot.ts                   Initial data loading + auto-billing on launch
@@ -376,6 +426,7 @@ context/                          React Context state management
     useDataManagement.ts                Refresh all, clear all, seed demo data
 
 hooks/                            Shared custom hooks
+  useAppState.ts                    App foreground/background lifecycle
   useBudgetWarning.ts               Budget over-spend detection
   useExpandAnimation.ts             Expand/collapse animation
   useModalAnimation.ts              Modal animation helpers
@@ -398,6 +449,8 @@ For the full UI/UX design system, see [`design.md`](design.md).
 - iOS (requires Xcode)
 - Android (requires Android Studio)
 - Web (any modern browser)
+
+> Google Drive backup is currently available on **Android** builds signed with a registered OAuth client ID.
 
 ---
 
