@@ -1,11 +1,16 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
-import { Home, ArrowRightLeft, Plus, Wallet, User } from 'lucide-react-native';
+import { Home, ArrowRightLeft, Plus, Wallet, User, type LucideIcon } from 'lucide-react-native';
+
+const PILL_WIDTH = 56;
+const PILL_HEIGHT = 44;
+const PILL_RADIUS = 14;
 
 interface TabBarProps {
   onTabChange?: (name: string) => void;
@@ -27,10 +32,27 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
   // Glass capsule
   const glassBg = isDark ? 'rgba(28,28,30,0.82)' : 'rgba(255,255,255,0.9)';
   const glassBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)';
-  const glassTint = isDark ? 'dark' : 'light' as const;
+  const glassTint = (isDark ? 'dark' : 'light') as 'dark' | 'light';
 
-  // Safe bottom offset so the capsule floats nicely above the home bar / screen edge
+  // Pill indicator
+  const pillBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)';
+
+  // Safe bottom offset
   const bottomOffset = insets.bottom > 0 ? insets.bottom + 8 : 20;
+
+  const renderTab = (tabName: string, IconComponent: LucideIcon) => {
+    const isActive = activeTab === tabName;
+    return (
+      <TouchableOpacity
+        key={tabName}
+        style={styles.slot}
+        onPress={() => onTabChange?.(tabName)}
+        activeOpacity={0.7}>
+        {isActive && <View style={[styles.pill, { backgroundColor: pillBg }]} />}
+        <Icon as={IconComponent} size={24} color={isActive ? active : muted} />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={[styles.outer, { bottom: 0 }]}>
@@ -38,30 +60,17 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
       <BlurView
         style={[
           styles.capsule,
-          { 
-            backgroundColor: glassBg, 
+          {
+            backgroundColor: glassBg,
             borderTopColor: glassBorder,
-            paddingBottom: bottomOffset-12,
+            paddingBottom: bottomOffset - 12,
           },
         ]}
         tint={glassTint}
         intensity={Platform.OS === 'android' ? 35 : 45}
         {...(Platform.OS === 'android' ? { experimentalBlurMethod: 'dimezisBlurView' } : {})}>
-        {/* ── Home ── */}
-        <TouchableOpacity
-          style={styles.slot}
-          onPress={() => onTabChange?.('index')}
-          activeOpacity={0.7}>
-          <Icon as={Home} size={24} color={activeTab === 'index' ? active : muted} />
-        </TouchableOpacity>
-
-        {/* ── Transactions ── */}
-        <TouchableOpacity
-          style={styles.slot}
-          onPress={() => onTabChange?.('transactions')}
-          activeOpacity={0.7}>
-          <Icon as={ArrowRightLeft} size={24} color={activeTab === 'transactions' ? active : muted} />
-        </TouchableOpacity>
+        {renderTab('index', Home)}
+        {renderTab('transactions', ArrowRightLeft)}
 
         {/* ── Add Action Button ── */}
         <TouchableOpacity
@@ -73,21 +82,8 @@ export function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
           </View>
         </TouchableOpacity>
 
-        {/* ── Wallets ── */}
-        <TouchableOpacity
-          style={styles.slot}
-          onPress={() => onTabChange?.('wallets')}
-          activeOpacity={0.7}>
-          <Icon as={Wallet} size={24} color={activeTab === 'wallets' ? active : muted} />
-        </TouchableOpacity>
-
-        {/* ── Profile ── */}
-        <TouchableOpacity
-          style={styles.slot}
-          onPress={() => onTabChange?.('profile')}
-          activeOpacity={0.7}>
-          <Icon as={User} size={24} color={activeTab === 'profile' ? active : muted} />
-        </TouchableOpacity>
+        {renderTab('wallets', Wallet)}
+        {renderTab('profile', User)}
       </BlurView>
     </View>
   );
@@ -113,6 +109,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     elevation: 12,
     paddingHorizontal: 8,
+  },
+  pill: {
+    position: 'absolute',
+    width: PILL_WIDTH,
+    height: PILL_HEIGHT,
+    borderRadius: PILL_RADIUS,
   },
   slot: {
     flex: 1,

@@ -1,11 +1,7 @@
-import { View, ScrollView, TouchableOpacity, LayoutAnimation } from 'react-native';
+import { View, ScrollView, LayoutAnimation } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
-import { Text } from '@/components/ui/text';
-import { Icon } from '@/components/ui/icon';
 import { useApp } from '@/context/AppContext';
-import { formatNumber } from '@/utils/wallet';
-import AnimatedSegment from '@/components/ui/animated-segment';
 import {
   type Transaction,
   searchTransactions,
@@ -15,8 +11,7 @@ import {
   getCategoryColor,
 } from '@/utils/transaction';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { router } from 'expo-router';
-import { ChevronDown, Plus, type LucideIcon } from 'lucide-react-native';
+import { type LucideIcon } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import Toast from 'react-native-toast-message';
 import TransactionFilterBar from '@/components/transactions/TransactionFilterBar';
@@ -24,6 +19,8 @@ import TransactionDatePickerModal from '@/components/transactions/TransactionDat
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { QuickStatsCards } from '@/components/transactions/QuickStatsCards';
 import { TransactionListSection } from '@/components/transactions/TransactionListSection';
+import FilterPopover from '@/components/transactions/FilterPopover';
+import type { FilterState } from '@/components/transactions/FilterPopover';
 
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -41,11 +38,15 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
             setFilter(params.type);
           }
         }
+        if (params?.wallet) {
+          setWalletFilter(params.wallet);
+        }
       }
     });
   }, [addListener]);
   const [filter, setFilter] = useState<'all' | 'expense' | 'income' | 'transfer'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [walletFilter, setWalletFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState<Date | null>(() => {
     const d = new Date();
@@ -59,6 +60,13 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterButtonRect, setFilterButtonRect] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const toggleTransactionExpand = useCallback((id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -92,11 +100,24 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     const categoryFiltered = categoryFilter
       ? typeFiltered.filter((tx) => tx.category === categoryFilter)
       : typeFiltered;
-    // 3. Date filter
-    const dateFiltered = filterTransactionsByDateRange(categoryFiltered, dateFrom, dateTo);
-    // 4. Search filter
+    // 3. Wallet filter
+    const walletFiltered = walletFilter
+      ? categoryFiltered.filter((tx) => tx.walletId === walletFilter)
+      : categoryFiltered;
+    // 4. Date filter
+    const dateFiltered = filterTransactionsByDateRange(walletFiltered, dateFrom, dateTo);
+    // 5. Search filter
     return searchTransactions(dateFiltered, searchQuery, getWalletName);
-  }, [transactions, filter, categoryFilter, dateFrom, dateTo, searchQuery, getWalletName]);
+  }, [
+    transactions,
+    filter,
+    categoryFilter,
+    walletFilter,
+    dateFrom,
+    dateTo,
+    searchQuery,
+    getWalletName,
+  ]);
 
   // Category chips shown under the type segment. Reflects the active type filter
   // so users only ever pick categories that exist for that type.
@@ -165,18 +186,34 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     () =>
       filter !== 'all' ||
       categoryFilter !== null ||
+      walletFilter !== null ||
       searchQuery.length > 0 ||
       (!isDefaultDate() && (dateFrom !== null || dateTo !== null)),
-    [filter, categoryFilter, searchQuery, dateFrom, dateTo, isDefaultDate]
+    [filter, categoryFilter, walletFilter, searchQuery, dateFrom, dateTo, isDefaultDate]
   );
 
   const handleClearAll = useCallback(() => {
     setFilter('all');
     setCategoryFilter(null);
+    setWalletFilter(null);
     setSearchQuery('');
     const d = new Date();
     setDateFrom(new Date(d.getFullYear(), d.getMonth(), 1));
     setDateTo(new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999));
+  }, []);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filter !== 'all') count++;
+    if (categoryFilter !== null) count++;
+    if (walletFilter !== null) count++;
+    return count;
+  }, [filter, categoryFilter, walletFilter]);
+
+  const handleFilterApply = useCallback((filters: FilterState) => {
+    setFilter(filters.filter);
+    setCategoryFilter(filters.categoryFilter);
+    setWalletFilter(filters.walletFilter);
   }, []);
 
   const dateLabel = useMemo(() => {
@@ -217,72 +254,12 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
               onDatePress={() => setIsDatePickerOpen(true)}
               hasActiveFilter={hasActiveFilter}
               onClearAll={handleClearAll}
+              onFilterPress={(rect) => {
+                setFilterButtonRect(rect);
+                setIsFilterOpen(true);
+              }}
+              activeFilterCount={activeFilterCount}
             />
-
-            <View className="mb-4 mt-2">
-              <AnimatedSegment<'all' | 'expense' | 'income' | 'transfer'>
-                options={[
-                  { label: 'All', value: 'all' },
-                  { label: 'Expense', value: 'expense' },
-                  { label: 'Income', value: 'income' },
-                  { label: 'Transfer', value: 'transfer' },
-                ]}
-                selectedValue={filter}
-                onChange={(v) => {
-                  setFilter(v);
-                  if (v !== filter) setCategoryFilter(null);
-                }}
-              />
-            </View>
-
-            {/* Category filter chips */}
-            {filterCategories.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-                <View className="flex-row items-center gap-2 py-1">
-                  <TouchableOpacity
-                    onPress={() => setCategoryFilter(null)}
-                    activeOpacity={0.7}
-                    className={`rounded-xl border px-3 py-2.5 ${
-                      categoryFilter === null
-                        ? 'bg-primary/10 dark:bg-primary/15 border-primary'
-                        : 'border-border bg-surface'
-                    }`}>
-                    <Text
-                      className={`text-sm font-semibold ${
-                        categoryFilter === null ? 'text-primary' : 'text-foreground'
-                      }`}>
-                      All
-                    </Text>
-                  </TouchableOpacity>
-                  {filterCategories.map((cat) => {
-                    const isSelected = categoryFilter === cat.name;
-                    return (
-                      <TouchableOpacity
-                        key={cat.name}
-                        onPress={() => setCategoryFilter(isSelected ? null : cat.name)}
-                        activeOpacity={0.7}
-                        className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${
-                          isSelected
-                            ? 'bg-primary/10 dark:bg-primary/15 border-primary'
-                            : 'border-border bg-surface'
-                        }`}>
-                        <View
-                          className="h-7 w-7 items-center justify-center rounded-full"
-                          style={{ backgroundColor: `${cat.color}15` }}>
-                          <Icon as={cat.icon} size={12} color={cat.color} />
-                        </View>
-                        <Text
-                          className={`text-sm font-semibold ${
-                            isSelected ? 'text-primary' : 'text-foreground'
-                          }`}>
-                          {cat.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-            )}
           </>
         )}
 
@@ -357,6 +334,21 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
           setPendingDelete(null);
         }}
         onCancel={() => setPendingDelete(null)}
+      />
+
+      <FilterPopover
+        visible={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        active={{ filter, categoryFilter, walletFilter }}
+        categories={filterCategories}
+        accounts={accounts}
+        onApply={handleFilterApply}
+        onClear={() => {
+          setFilter('all');
+          setCategoryFilter(null);
+          setWalletFilter(null);
+        }}
+        buttonRect={filterButtonRect}
       />
     </View>
   );
