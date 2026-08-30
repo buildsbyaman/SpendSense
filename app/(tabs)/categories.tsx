@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, LayoutAnimation } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -60,7 +60,6 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   }, [addListener]);
 
   const toggleCategoryExpand = (name: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedCategoryId(expandedCategoryId === name ? null : name);
   };
 
@@ -108,20 +107,17 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   };
 
   const enterReorderMode = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setDraftOrder(sortedCategories);
     setExpandedCategoryId(null);
     setIsReorderMode(true);
   };
 
   const cancelReorder = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsReorderMode(false);
     setDraftOrder([]);
   };
 
   const commitReorder = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     updateCategoryOrder(
       activeTab as 'expense' | 'income',
       draftOrder.map((c) => c.name)
@@ -136,7 +132,6 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   };
 
   const resetOrder = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const defaultCats = activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
     updateCategoryOrder(activeTab as 'expense' | 'income', []);
     setDraftOrder(getSortedCategories(activeTab as 'expense' | 'income') as CategoryItemData[]);

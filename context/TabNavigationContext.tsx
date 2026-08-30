@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useRef, useCallback, useMemo } from 'react';
 
 type TabParams = Record<string, string>;
 
@@ -32,8 +32,13 @@ export function TabNavigationProvider({ children }: { children: React.ReactNode 
     };
   }, []);
 
+  const value = useMemo(
+    () => ({ navigate, lastParams: lastParamsRef, addListener }),
+    [navigate, addListener]
+  );
+
   return (
-    <TabNavigationContext.Provider value={{ navigate, lastParams: lastParamsRef, addListener }}>
+    <TabNavigationContext.Provider value={value}>
       {children}
     </TabNavigationContext.Provider>
   );

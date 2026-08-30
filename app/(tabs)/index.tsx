@@ -1,4 +1,4 @@
-import { View, ScrollView, TouchableOpacity, LayoutAnimation } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -24,11 +24,11 @@ import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Toast from 'react-native-toast-message';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 export default function HomeScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { accounts, transactions, userProfile, deleteTransaction } = useApp();
+  const { accounts, transactions, userProfile, deleteTransaction, customCategories } = useApp();
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -41,10 +41,13 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
   }, [addListener]);
 
   // Calculate Net Worth
-  const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
+  const totalBalance = useMemo(
+    () => accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0),
+    [accounts]
+  );
 
   // Recent 20 transactions
-  const recentTransactions = transactions.slice(0, 20);
+  const recentTransactions = useMemo(() => transactions.slice(0, 20), [transactions]);
   const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
 
@@ -55,18 +58,21 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
   }, [isActive]);
 
   const toggleTransactionExpand = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedTransactionId((prev) => (prev === id ? null : id));
   };
 
-  const now = new Date();
+  const now = useMemo(() => {
+    const d = new Date();
+    return { month: d.getMonth(), year: d.getFullYear() };
+  }, []);
+
   const currentMonthTransactions = useMemo(
     () =>
       transactions.filter((t) => {
         const d = new Date(t.date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        return d.getMonth() === now.month && d.getFullYear() === now.year;
       }),
-    [transactions, now.getMonth(), now.getFullYear()]
+    [transactions, now.month, now.year]
   );
 
   const totalIncome = useMemo(
@@ -85,9 +91,12 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
     [currentMonthTransactions]
   );
 
-  const getWalletName = (walletId: string) => {
-    return accounts.find((a) => a.id === walletId)?.name || 'Wallet';
-  };
+  const getWalletName = useCallback(
+    (walletId: string) => {
+      return accounts.find((a) => a.id === walletId)?.name || 'Wallet';
+    },
+    [accounts]
+  );
 
   return (
     <View className="mt-2 flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
@@ -265,6 +274,8 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
                   onToggleExpand={() => toggleTransactionExpand(tx.id)}
                   onDelete={() => setPendingDelete({ id: tx.id, title: tx.title })}
                   isLast={idx === recentTransactions.length - 1}
+                  currencySymbol={userProfile.currencySymbol}
+                  customCategories={customCategories}
                 />
               ))}
             </View>

@@ -1,4 +1,4 @@
-import { View, ScrollView, LayoutAnimation } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { useApp } from '@/context/AppContext';
@@ -25,7 +25,7 @@ import type { FilterState } from '@/components/transactions/FilterPopover';
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { transactions, accounts, deleteTransaction, userProfile, getSortedCategories } = useApp();
+  const { transactions, accounts, deleteTransaction, userProfile, getSortedCategories, customCategories } = useApp();
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -69,7 +69,6 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   } | null>(null);
 
   const toggleTransactionExpand = useCallback((id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedTransactionId((prev) => (prev === id ? null : id));
   }, []);
 
@@ -78,6 +77,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     if (!isActive) {
       setIsDatePickerOpen(false);
       setExpandedTransactionId(null);
+      setIsFilterOpen(false);
     }
   }, [isActive]);
 
@@ -282,6 +282,8 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
           onDelete={handleDelete}
           getWalletName={getWalletName}
           onClearFilters={handleClearAll}
+          currencySymbol={userProfile.currencySymbol}
+          customCategories={customCategories}
         />
       </ScrollView>
 

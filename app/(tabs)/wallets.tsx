@@ -1,8 +1,8 @@
-import { View, LayoutAnimation, TouchableOpacity, BackHandler } from 'react-native';
+import { View, TouchableOpacity, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
-import { useState } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { Plus, GripVertical, Check, X } from 'lucide-react-native';
@@ -13,7 +13,24 @@ import { DeleteWalletModal } from '@/components/wallets/DeleteWalletModal';
 
 import { useApp } from '@/context/AppContext';
 import { useTabNavigation } from '@/context/TabNavigationContext';
-import { useRef, useEffect } from 'react';
+
+const TotalBalanceHeader = React.memo(function TotalBalanceHeader({
+  totalBalance,
+  currencySymbol,
+}: {
+  totalBalance: number;
+  currencySymbol: string;
+}) {
+  return (
+    <View className="border-b border-border bg-surface px-6 py-5">
+      <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
+      <Text className="text-3xl font-bold text-foreground">
+        {currencySymbol}
+        {formatNumber(totalBalance)}
+      </Text>
+    </View>
+  );
+});
 
 export default function AccountsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -49,7 +66,6 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   // Close all open dialogs/forms when leaving this tab
   useEffect(() => {
     if (!isActive) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsMenuOpen(false);
       setExpandedWalletId(null);
       setWalletToDelete(null);
@@ -60,7 +76,6 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   }, [isActive]);
 
   const toggleWalletExpand = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedWalletId(expandedWalletId === id ? null : id);
   };
 
@@ -101,20 +116,17 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   };
 
   const enterReorderMode = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setDraftOrder(sortedAccounts);
     setExpandedWalletId(null);
     setIsReorderMode(true);
   };
 
   const cancelReorder = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsReorderMode(false);
     setDraftOrder([]);
   };
 
   const commitReorder = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     updateWalletOrder(draftOrder.map((a) => a.id));
     setIsReorderMode(false);
     setDraftOrder([]);
@@ -138,7 +150,6 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   }, [isReorderMode, cancelReorder]);
 
   const resetOrder = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const balanceSorted = [...accounts].sort(
       (a, b) => parseBalance(b.balance) - parseBalance(a.balance)
     );
@@ -147,16 +158,9 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
     setDraftOrder(balanceSorted);
   };
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0);
-
-  const TotalBalanceHeader = () => (
-    <View className="border-b border-border bg-surface px-6 py-5">
-      <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
-      <Text className="text-3xl font-bold text-foreground">
-        {userProfile.currencySymbol}
-        {formatNumber(totalBalance)}
-      </Text>
-    </View>
+  const totalBalance = useMemo(
+    () => accounts.reduce((sum, acc) => sum + parseBalance(acc.balance), 0),
+    [accounts]
   );
 
   return (
@@ -196,7 +200,7 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
           if (height > 0) setAvailableHeight(height);
         }}>
         <WalletList
-          listHeader={<TotalBalanceHeader />}
+          listHeader={<TotalBalanceHeader totalBalance={totalBalance} currencySymbol={userProfile.currencySymbol} />}
           listRef={listRef}
           accounts={isReorderMode ? draftOrder : sortedAccounts}
           expandedWalletId={isReorderMode ? null : expandedWalletId}

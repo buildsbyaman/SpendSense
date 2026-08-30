@@ -32,7 +32,7 @@ interface FilterPopoverProps {
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const POPOVER_WIDTH = 290;
+const POPOVER_WIDTH = 340;
 
 export default function FilterPopover({
   visible,
@@ -64,7 +64,7 @@ export default function FilterPopover({
       setIsRendered(true);
       progress.value = withTiming(1, { duration: 150 });
     } else if (isRendered) {
-      progress.value = withTiming(0, { duration: 120 }, (finished) => {
+      progress.value = withTiming(0, { duration: 100 }, (finished) => {
         if (finished) runOnJS(setIsRendered)(false);
       });
     }
@@ -72,7 +72,10 @@ export default function FilterPopover({
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
-    transform: [{ translateY: interpolate(progress.value, [0, 1], [-6, 0]) }],
+    transform: [
+      { translateY: interpolate(progress.value, [0, 1], [-10, 0]) },
+      { scale: interpolate(progress.value, [0, 1], [0.94, 1]) },
+    ],
   }));
 
   const backdropStyle = useAnimatedStyle(() => ({
@@ -131,7 +134,7 @@ export default function FilterPopover({
         ]}
         onStartShouldSetResponder={() => true}>
         <View
-          className="rounded-2xl border border-border bg-surface p-4 shadow-2xl"
+          className="rounded-[32px] border border-border bg-surface p-5 shadow-2xl"
           style={{ maxHeight: popoverMaxHeight }}>
           {/* Header */}
           <View className="mb-3 flex-row items-center justify-between">
@@ -159,8 +162,9 @@ export default function FilterPopover({
                   setDraftFilter(v);
                   if (v !== draftFilter) setDraftCategory(null);
                 }}
-                paddingVertical={6}
+                paddingVertical={8}
                 fontSize={12}
+                borderRadius={12}
               />
             </View>
 
@@ -175,7 +179,7 @@ export default function FilterPopover({
                     <TouchableOpacity
                       onPress={() => setDraftCategory(null)}
                       activeOpacity={0.7}
-                      className={`rounded-lg border px-2.5 py-1.5 ${
+                      className={`rounded-full border px-4 py-2 ${
                         draftCategory === null
                           ? 'bg-primary/10 dark:bg-primary/15 border-primary'
                           : 'border-border bg-surface'
@@ -194,7 +198,7 @@ export default function FilterPopover({
                           key={cat.name}
                           onPress={() => setDraftCategory(isSelected ? null : cat.name)}
                           activeOpacity={0.7}
-                          className={`flex-row items-center gap-1.5 rounded-lg border px-2.5 py-1.5 ${
+                          className={`flex-row items-center gap-1.5 rounded-full border px-3 py-1.5 ${
                             isSelected
                               ? 'bg-primary/10 dark:bg-primary/15 border-primary'
                               : 'border-border bg-surface'
@@ -229,7 +233,7 @@ export default function FilterPopover({
                     <TouchableOpacity
                       onPress={() => setDraftWallet(null)}
                       activeOpacity={0.7}
-                      className={`rounded-lg border px-2.5 py-1.5 ${
+                      className={`rounded-full border px-4 py-2 ${
                         draftWallet === null
                           ? 'bg-primary/10 dark:bg-primary/15 border-primary'
                           : 'border-border bg-surface'
@@ -250,7 +254,7 @@ export default function FilterPopover({
                           key={wallet.id}
                           onPress={() => setDraftWallet(isSelected ? null : wallet.id)}
                           activeOpacity={0.7}
-                          className={`flex-row items-center gap-1.5 rounded-lg border px-2.5 py-1.5 ${
+                          className={`flex-row items-center gap-1.5 rounded-full border px-3 py-1.5 ${
                             isSelected
                               ? 'bg-primary/10 dark:bg-primary/15 border-primary'
                               : 'border-border bg-surface'
@@ -276,18 +280,18 @@ export default function FilterPopover({
           </ScrollView>
 
           {/* Action buttons */}
-          <View className="mt-1 flex-row gap-2">
+          <View className="mt-3 flex-row gap-2">
             <TouchableOpacity
               onPress={onClose}
-              className="flex-1 items-center justify-center rounded-lg bg-secondary py-2.5"
+              className="flex-1 items-center justify-center rounded-full bg-secondary py-3"
               activeOpacity={0.8}>
-              <Text className="text-xs font-semibold text-foreground">Cancel</Text>
+              <Text className="text-sm font-semibold text-foreground">Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleApply}
-              className="flex-1 items-center justify-center rounded-lg bg-primary py-2.5"
+              className="flex-1 items-center justify-center rounded-full bg-primary py-3"
               activeOpacity={0.8}>
-              <Text className="text-xs font-semibold text-white dark:text-black">Apply</Text>
+              <Text className="text-sm font-semibold text-white dark:text-black">Apply</Text>
             </TouchableOpacity>
           </View>
         </View>

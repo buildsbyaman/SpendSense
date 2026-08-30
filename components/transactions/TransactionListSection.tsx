@@ -3,7 +3,7 @@ import { Text } from '@/components/ui/text';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Wallet, Receipt, Tag, FilterX } from 'lucide-react-native';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
-import { type Transaction } from '@/utils/transaction';
+import { type Transaction, type CustomCategory } from '@/utils/transaction';
 import { type Account } from '@/utils/wallet';
 import { router } from 'expo-router';
 
@@ -16,6 +16,8 @@ interface Props {
   onDelete: (id: string, title: string) => void;
   getWalletName: (walletId: string) => string;
   onClearFilters: () => void;
+  currencySymbol: string;
+  customCategories: CustomCategory[];
 }
 
 export function TransactionListSection({
@@ -27,6 +29,8 @@ export function TransactionListSection({
   onDelete,
   getWalletName,
   onClearFilters,
+  currencySymbol,
+  customCategories,
 }: Props) {
   if (transactions.length === 0) {
     return accounts.length === 0 ? (
@@ -83,6 +87,8 @@ export function TransactionListSection({
                 onToggleExpand={() => onToggleExpand(tx.id)}
                 onDelete={() => onDelete(tx.id, tx.title)}
                 isLast={idx === txs.length - 1}
+                currencySymbol={currencySymbol}
+                customCategories={customCategories}
               />
             ))}
           </View>

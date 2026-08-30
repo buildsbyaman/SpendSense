@@ -69,11 +69,11 @@ export default function TransactionFilterBar({
       {!isSearchExpanded ? (
         <TouchableOpacity
           onPress={handleToggleSearch}
-          className="rounded-[6px] bg-secondary px-3 py-2.5">
-          <Icon as={Search} size={16} className="text-foreground" />
+          className="items-center justify-center rounded-full bg-secondary p-3 aspect-square h-[44px] w-[44px]">
+          <Icon as={Search} size={18} className="text-foreground" />
         </TouchableOpacity>
       ) : (
-        <View className="flex-1 flex-row items-center rounded-[6px] border border-border bg-surface px-4 py-2 focus-within:border-primary">
+        <View className="flex-1 flex-row items-center rounded-full border border-border bg-surface px-4 h-[44px] focus-within:border-primary">
           <Icon as={Search} size={16} className="mr-2 text-muted" />
           <TextInput
             autoFocus
@@ -82,7 +82,7 @@ export default function TransactionFilterBar({
             onBlur={handleBlur}
             placeholder="Search transactions..."
             placeholderTextColor={placeholderColor}
-            className="h-[24px] flex-1 p-0 text-sm font-medium text-foreground"
+            className="flex-1 p-0 text-sm font-medium text-foreground h-full"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity
@@ -95,46 +95,53 @@ export default function TransactionFilterBar({
         </View>
       )}
 
+      {/* Date Filter Button - takes remaining width */}
       <TouchableOpacity
         onPress={onDatePress}
-        className={`flex-row items-center gap-1.5 rounded-[6px] px-4 py-2.5 ${
-          dateLabel !== 'Any Date' ? 'bg-primary' : 'bg-secondary'
+        className={`flex-row items-center justify-center rounded-full bg-secondary h-[44px] ${
+          !isSearchExpanded ? 'flex-1 gap-2 px-4' : 'aspect-square w-[44px]'
         }`}>
         <Icon
           as={Calendar}
-          size={14}
-          className={dateLabel !== 'Any Date' ? 'text-primary-foreground' : 'text-foreground'}
+          size={16}
+          className={dateLabel !== 'Any Date' ? 'text-foreground' : 'text-muted'}
         />
-        <Text
-          className={`text-xs font-semibold ${
-            dateLabel !== 'Any Date' ? 'text-primary-foreground' : 'text-foreground'
-          }`}>
-          {dateLabel}
-        </Text>
+        {!isSearchExpanded && (
+          <Text
+            numberOfLines={1}
+            className={`text-sm font-semibold ${
+              dateLabel !== 'Any Date' ? 'text-foreground' : 'text-muted'
+            }`}>
+            {dateLabel}
+          </Text>
+        )}
       </TouchableOpacity>
 
-      {/* Filter button */}
+      {/* Filter Options Button */}
       <TouchableOpacity
         ref={filterBtnRef}
         onPress={handleFilterPress}
-        className={`relative flex-row items-center gap-1.5 rounded-[6px] px-3 py-2.5 ${
-          activeFilterCount > 0 ? 'bg-primary' : 'bg-secondary'
+        className={`relative items-center justify-center rounded-full bg-secondary h-[44px] px-4 ${
+          !isSearchExpanded && !hasActiveFilter ? '' : 'aspect-square w-[44px] px-0'
         }`}>
         <Icon
           as={SlidersHorizontal}
-          size={16}
-          className={activeFilterCount > 0 ? 'text-primary-foreground' : 'text-foreground'}
+          size={18}
+          className={activeFilterCount > 0 ? 'text-foreground' : 'text-muted'}
         />
         {activeFilterCount > 0 && (
-          <View className="h-4 min-w-[16px] items-center justify-center rounded-full bg-white px-1">
-            <Text className="text-[10px] font-bold text-black">{activeFilterCount}</Text>
+          <View className="absolute -right-1 -top-1 h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 border-2 border-background">
+            <Text className="text-[10px] font-bold text-primary-foreground">{activeFilterCount}</Text>
           </View>
         )}
       </TouchableOpacity>
 
+      {/* Clear All Button */}
       {hasActiveFilter && (
-        <TouchableOpacity onPress={onClearAll} className="rounded-[6px] bg-secondary p-2.5">
-          <Icon as={X} size={14} className="text-foreground" />
+        <TouchableOpacity 
+          onPress={onClearAll} 
+          className="items-center justify-center rounded-full bg-secondary aspect-square h-[44px] w-[44px]">
+          <Icon as={X} size={18} className="text-foreground" />
         </TouchableOpacity>
       )}
     </View>

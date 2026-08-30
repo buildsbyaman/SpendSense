@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, LayoutAnimation } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -32,13 +32,11 @@ export default function SubscriptionsScreen({ referrer }: { referrer?: string })
   const [subscriptionToDelete, setSubscriptionToDelete] = useState<string | null>(null);
 
   const handleTabChange = (tab: 'current' | 'expired') => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveTab(tab);
     setExpandedId(null);
   };
 
   const toggleExpand = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedId(prev => prev === id ? null : id);
   };
 

@@ -12,6 +12,7 @@ import {
 import {
   type Transaction,
   type TransactionType,
+  type CustomCategory,
   getCategoryDetails,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -21,7 +22,6 @@ import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
-import { useApp } from '@/context/AppContext';
 import { useExpandAnimation } from '@/hooks/useExpandAnimation';
 import Animated from 'react-native-reanimated';
 
@@ -33,9 +33,11 @@ interface TransactionItemProps {
   onDelete: () => void;
   accounts: Account[];
   getWalletName: (walletId: string) => string;
+  currencySymbol: string;
+  customCategories: CustomCategory[];
 }
 
-export function TransactionItem({
+export const TransactionItem = React.memo(function TransactionItem({
   transaction,
   isExpanded,
   isLast,
@@ -43,9 +45,10 @@ export function TransactionItem({
   onDelete,
   accounts,
   getWalletName,
+  currencySymbol,
+  customCategories,
 }: TransactionItemProps) {
   const { colorScheme } = useColorScheme();
-  const { userProfile, customCategories } = useApp();
 
   const { actionsStyle, chevronStyle } = useExpandAnimation(isExpanded);
 
@@ -90,7 +93,7 @@ export function TransactionItem({
                 : 'text-expense'
           }`}>
           {transaction.type === 'income' ? '+' : isTransfer ? '' : '-'}
-          {userProfile.currencySymbol}
+          {currencySymbol}
           {formatNumber(transaction.amount)}
         </Text>
         <Animated.View style={chevronStyle} className="shrink-0">
@@ -123,4 +126,4 @@ export function TransactionItem({
       </Animated.View>
     </View>
   );
-}
+});

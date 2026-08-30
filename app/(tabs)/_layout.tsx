@@ -33,6 +33,10 @@ function TabLayoutInner() {
         navigate(SUB_TO_PARENT[activeTab]);
         return true;
       }
+      if (activeTab !== 'index') {
+        navigate('index');
+        return true;
+      }
       return false;
     });
     return () => sub.remove();
