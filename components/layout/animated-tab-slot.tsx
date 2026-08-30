@@ -97,40 +97,6 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
     navigateRef.current(tab);
   }, []);
 
-  // Lazy mounting: only mount the active screen + adjacent screens during swipe gestures
-  const [mountedTabs, setMountedTabs] = useState<Set<string>>(new Set([activeTab]));
-  const unmountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Ensure active tab is always mounted
-  useEffect(() => {
-    setMountedTabs((prev) => {
-      if (prev.has(activeTab)) return prev;
-      const next = new Set(prev);
-      next.add(activeTab);
-      return next;
-    });
-  }, [activeTab]);
-
-  // Clean up unmounted tabs after animation settles
-  const scheduleUnmount = useCallback(() => {
-    if (unmountTimerRef.current) clearTimeout(unmountTimerRef.current);
-    unmountTimerRef.current = setTimeout(() => {
-      setMountedTabs((prev) => {
-        const current = activeTabRef.current;
-        const activeIdx = MAIN_TABS.indexOf(current);
-        const needed = new Set([current]);
-        // Keep adjacent tabs mounted for smooth swiping
-        if (activeIdx > 0) needed.add(MAIN_TABS[activeIdx - 1]);
-        if (activeIdx < MAIN_TABS.length - 1) needed.add(MAIN_TABS[activeIdx + 1]);
-        let changed = false;
-        for (const t of prev) {
-          if (!needed.has(t)) changed = true;
-        }
-        return changed ? needed : prev;
-      });
-    }, 500);
-  }, []);
-
   // Swipe gesture
   const startX = useSharedValue(0);
   const isMainTab = MAIN_TABS.includes(activeTab);
@@ -141,14 +107,6 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
     .failOffsetY([-12, 12])
     .onStart(() => {
       startX.value = translateX.value;
-      // Mount adjacent tabs for smooth swipe preview
-      const idx = MAIN_TABS.indexOf(activeTabRef.current);
-      setMountedTabs((prev) => {
-        const next = new Set(prev);
-        if (idx > 0) next.add(MAIN_TABS[idx - 1]);
-        if (idx < MAIN_TABS.length - 1) next.add(MAIN_TABS[idx + 1]);
-        return next;
-      });
     })
     .onUpdate((e) => {
       const max = -(MAIN_TABS.length - 1) * activeWidth;
@@ -170,7 +128,6 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
       if (nextIndex !== startIdx) {
         runOnJS(handleGestureNavigation)(MAIN_TABS[nextIndex]);
       }
-      runOnJS(scheduleUnmount)();
     })
     .onFinalize((_, success) => {
       if (!success) {
@@ -179,7 +136,6 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
         const nearest = Math.min(Math.max(Math.round(currentTabs), 0), MAIN_TABS.length - 1);
         activeTabIndex.value = nearest;
         translateX.value = withSpring(-nearest * width, SPRING_CONFIG);
-        runOnJS(scheduleUnmount)();
       }
     });
 
@@ -285,12 +241,9 @@ export function AnimatedTabSlot({ activeTab }: AnimatedTabSlotProps) {
   return (
     <GestureDetector gesture={pan}>
       <View style={styles.container} onLayout={handleLayout}>
-        {/* Horizontal main tab row — only mount active + adjacent tabs */}
+        {/* Horizontal main tab row */}
         <Animated.View style={[styles.row, { width: activeWidth * MAIN_TABS.length }, rowStyle]}>
           {MAIN_TABS.map((tabName) => {
-            if (!mountedTabs.has(tabName)) {
-              return <View key={tabName} style={[styles.screen, { width: activeWidth }]} />;
-            }
             const Screen = MAIN_SCREENS[tabName];
             return (
               <View key={tabName} style={[styles.screen, { width: activeWidth }]}>
