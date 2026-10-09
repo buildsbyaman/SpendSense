@@ -137,10 +137,10 @@ export default function AnimatedSegment<T extends string>({
                     selectedValue === option.value
                       ? isDark
                         ? '#ffffff'
-                        : '#000000'
+                        : '#0f172a'
                       : isDark
                         ? '#a1a1aa'
-                        : '#71717a',
+                        : '#64748b',
                 }}>
                 {option.label}
               </Text>

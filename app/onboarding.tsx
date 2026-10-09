@@ -132,7 +132,7 @@ export default function OnboardingScreen() {
               }}
               className="rounded-xl border border-border bg-surface px-4 py-3.5 text-base font-medium text-foreground outline-none focus:border-primary"
               placeholder="e.g. Aman Kumar"
-              placeholderTextColor={isDark ? '#8a8a94' : '#9ca3af'}
+              placeholderTextColor={isDark ? '#8e8e93' : '#94a3b8'}
               autoFocus
               style={Platform.OS === 'web' ? ({ outline: 'none' } as any) : {}}
             />

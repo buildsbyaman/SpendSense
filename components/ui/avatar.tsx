@@ -7,7 +7,7 @@ interface AvatarProps {
   size?: number;
 }
 
-const AVATAR_COLORS_LIGHT = ['#e8d5f5', '#d5e8f5', '#d5f5e8', '#f5e8d5', '#f5d5d5'];
+const AVATAR_COLORS_LIGHT = ['#dbeafe', '#e0e7ff', '#ccfbf1', '#e2e8f0', '#ede9fe'];
 const AVATAR_COLORS_DARK = ['#3a2645', '#263a45', '#26453a', '#453a26', '#452626'];
 
 function getInitials(name: string) {
@@ -29,7 +29,7 @@ export function Avatar({ name, avatar, size = 48 }: AvatarProps) {
   const bgColor = isDark
     ? AVATAR_COLORS_DARK[getColorIndex(name)]
     : AVATAR_COLORS_LIGHT[getColorIndex(name)];
-  const textColor = isDark ? '#e8e8ec' : '#1a1c1b';
+  const textColor = isDark ? '#e8e8ec' : '#0f172a';
 
   if (avatar) {
     const isDataUri = avatar.startsWith('data:image/');

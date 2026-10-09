@@ -28,12 +28,12 @@ export const TabBar = React.memo(function TabBar({ onTabChange, activeTab = 'ind
 
   const colors = useMemo(
     () => ({
-      active: isDark ? '#ffffff' : '#1a1c1b',
-      muted: isDark ? '#8e8e93' : '#9ca3af',
-      addBg: isDark ? '#ffffff' : '#1c1c1e',
+      active: isDark ? '#ffffff' : '#0f172a',
+      muted: isDark ? '#8e8e93' : '#94a3b8',
+      addBg: isDark ? '#ffffff' : '#0f172a',
       addIcon: isDark ? '#000000' : '#ffffff',
-      glassBg: isDark ? 'rgba(28,28,30,0.82)' : 'rgba(255,255,255,0.9)',
-      glassBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
+      glassBg: isDark ? 'rgba(28,28,30,0.82)' : 'rgba(243,247,255,0.9)',
+      glassBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.08)',
       glassTint: (isDark ? 'dark' : 'light') as 'dark' | 'light',
       pillBg: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
     }),

@@ -5,9 +5,9 @@ export type ColorScheme = 'light' | 'dark';
 const light = {
   income: '#16a34a',
   expense: '#f87171',
-  accent: '#f6c98a',
-  axisLabel: '#9b9b9b',
-  grid: '#e8e8e8',
+  accent: '#2563eb',
+  axisLabel: '#94a3b8',
+  grid: '#e8edf6',
   surface: THEME.light.surface,
   foreground: THEME.light.foreground,
   muted: THEME.light.muted,
@@ -16,7 +16,7 @@ const light = {
 const dark = {
   income: '#4ade80',
   expense: '#fb7185',
-  accent: '#f6c98a',
+  accent: '#3b82f6',
   axisLabel: '#8a8a94',
   grid: '#2e2e32',
   surface: THEME.dark.surface,
