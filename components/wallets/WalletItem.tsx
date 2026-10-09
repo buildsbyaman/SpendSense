@@ -2,7 +2,13 @@ import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Star, ChevronDown, GripVertical } from 'lucide-react-native';
-import { type Account, parseBalance, formatWalletDisplay, getWalletTypeColor } from '@/utils/wallet';
+import {
+  type Account,
+  parseBalance,
+  formatWalletDisplay,
+  getWalletTypeColor,
+  formatDayOrdinal,
+} from '@/utils/wallet';
 import { useApp } from '@/context/AppContext';
 import { useExpandAnimation } from '@/hooks/useExpandAnimation';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
@@ -93,6 +99,16 @@ export function WalletItem({
             </Text>
             {!!account.number && (
               <Text className="mt-0.5 text-sm text-muted">{account.number}</Text>
+            )}
+            {(account.dueDay != null || account.billDay != null) && (
+              <Text className="mt-0.5 text-xs text-muted">
+                {[
+                  account.dueDay != null ? `Due ${formatDayOrdinal(account.dueDay)}` : null,
+                  account.billDay != null ? `Bill ${formatDayOrdinal(account.billDay)}` : null,
+                ]
+                  .filter(Boolean)
+                  .join('  ·  ')}
+              </Text>
             )}
           </View>
         </View>

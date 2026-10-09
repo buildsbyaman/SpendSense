@@ -4,7 +4,7 @@
     "slug": "SpendSense",
     "version": "1.0.2",
     "orientation": "portrait",
-    "icon": "./assets/images/favicon.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "SpendSense",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
@@ -12,20 +12,20 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/favicon.png"
+      "icon": "./assets/images/icon.png"
     },
     "android": {
       "package": "com.buildsbyaman.spendsense",
       "versionCode": 3,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/favicon.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       }
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
@@ -34,7 +34,7 @@
         {
           "image": "./assets/images/splash.png",
           "resizeMode": "contain",
-          "backgroundColor": "#000000"
+          "backgroundColor": "#ffffff"
         }
       ],
       "expo-status-bar",

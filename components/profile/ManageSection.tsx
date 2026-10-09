@@ -1,7 +1,7 @@
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { ChevronRight, DollarSign, Download, FileUp, Cloud } from 'lucide-react-native';
+import { ChevronRight, DollarSign, Download, FileUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 
@@ -16,7 +16,6 @@ const rows: ManageRow[] = [
   { label: 'Currency Settings', icon: DollarSign, route: '/currency', isTab: true },
   { label: 'Import', icon: FileUp, route: '/import', isTab: true },
   { label: 'Export', icon: Download, route: '/export', isTab: true },
-  { label: 'Backup', icon: Cloud, route: '/backup', isTab: true },
 ];
 
 export function ManageSection() {

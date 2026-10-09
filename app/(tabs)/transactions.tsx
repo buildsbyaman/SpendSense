@@ -41,6 +41,15 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
         if (params?.wallet) {
           setWalletFilter(params.wallet);
         }
+        if (params?.from && params?.to) {
+          const from = new Date(params.from);
+          const to = new Date(params.to);
+          if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
+            setDateFrom(from);
+            setDateTo(to);
+            setCalendarMonth(new Date(from.getFullYear(), from.getMonth(), 1));
+          }
+        }
       }
     });
   }, [addListener]);

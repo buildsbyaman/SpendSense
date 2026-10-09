@@ -86,14 +86,14 @@
 }
 
 .dark:root {
-  --background: #000000;
+  --background: #121214;
   --foreground: #f3f4f6;
 
-  --surface: #0a0a0a;
-  --card: #0a0a0a;
+  --surface: #1a1a1e;
+  --card: #1a1a1e;
   --card-foreground: #f3f4f6;
 
-  --popover: #0a0a0a;
+  --popover: #1a1a1e;
   --popover-foreground: #f3f4f6;
 
   --primary: #e4e4e7;
@@ -119,9 +119,9 @@
   --expense: #f87171;
   --income: #4ade80;
 
-  --border: #18181b;
-  --divider: #242428;
-  --input: #1a1a1e;
+  --border: #26262b;
+  --divider: #2f2f36;
+  --input: #202025;
   --ring: #f6c98a;
 
   --wallet-bank: #3b82f6;
@@ -129,16 +129,16 @@
   --wallet-digital: #10b981;
   --wallet-fallback: #64748b;
 
-  --gray-50: #131316;
-  --gray-100: #1c1c1f;
-  --gray-200: #27272b;
-  --gray-300: #36363b;
-  --gray-400: #52525a;
-  --gray-500: #676770;
-  --gray-600: #4a4a52;
-  --gray-700: #36363c;
-  --gray-800: #27272d;
-  --gray-900: #1a1a1e;
+  --gray-50: #161619;
+  --gray-100: #1e1e24;
+  --gray-200: #292930;
+  --gray-300: #383842;
+  --gray-400: #545462;
+  --gray-500: #6d6d7c;
+  --gray-600: #50505c;
+  --gray-700: #3a3a44;
+  --gray-800: #2a2a32;
+  --gray-900: #1c1c22;
 
   --accent-dark: #c4984e;
 

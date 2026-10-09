@@ -10,6 +10,8 @@ interface AccountRow {
   balance: string;
   type: string;
   is_default: number;
+  due_day: number | null;
+  bill_day: number | null;
 }
 
 function rowToAccount(row: AccountRow): Account {
@@ -20,6 +22,8 @@ function rowToAccount(row: AccountRow): Account {
     balance: row.balance,
     type: row.type,
     isDefault: row.is_default === 1,
+    dueDay: row.due_day ?? null,
+    billDay: row.bill_day ?? null,
     icon: undefined as any,
   };
 }
@@ -33,25 +37,29 @@ export async function fetchAccounts(): Promise<Account[]> {
 export async function insertAccount(acc: Account): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'INSERT INTO accounts (id, name, number, balance, type, is_default) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO accounts (id, name, number, balance, type, is_default, due_day, bill_day) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     acc.id,
     acc.name,
     acc.number,
     acc.balance,
     acc.type,
-    acc.isDefault ? 1 : 0
+    acc.isDefault ? 1 : 0,
+    acc.dueDay ?? null,
+    acc.billDay ?? null
   );
 }
 
 export async function updateAccount(acc: Account): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'UPDATE accounts SET name = ?, number = ?, balance = ?, type = ?, is_default = ? WHERE id = ?',
+    'UPDATE accounts SET name = ?, number = ?, balance = ?, type = ?, is_default = ?, due_day = ?, bill_day = ? WHERE id = ?',
     acc.name,
     acc.number,
     acc.balance,
     acc.type,
     acc.isDefault ? 1 : 0,
+    acc.dueDay ?? null,
+    acc.billDay ?? null,
     acc.id
   );
 }

@@ -8,6 +8,10 @@ export interface Account {
   icon: LucideIcon;
   isDefault?: boolean;
   type: string;
+  /** Day-of-month (1-31) the wallet payment is due, or null when disabled. */
+  dueDay?: number | null;
+  /** Day-of-month (1-31) the wallet statement/bill is generated, or null when disabled. */
+  billDay?: number | null;
 }
 
 export const formatAccountNumber = (text: string): string => {
@@ -114,6 +118,8 @@ export const deserializeAccount = (data: {
   balance: string;
   type: string;
   isDefault?: boolean;
+  dueDay?: number | null;
+  billDay?: number | null;
 }): Account => {
   const iconMap: Record<string, typeof Wallet> = {
     Bank: Landmark,
@@ -127,6 +133,41 @@ export const deserializeAccount = (data: {
  * Sanitizes a raw balance input: keeps only digits, minus and decimal point.
  */
 export const sanitizeBalanceInput = (text: string): string => text.replace(/[^0-9.-]/g, '');
+
+/**
+ * Formats a day-of-month with an English ordinal suffix (1st, 2nd, 3rd, 4th,
+ * 11th, 21st, 31st...). Returns '' for anything outside 1-31.
+ */
+export const formatDayOrdinal = (day: number): string => {
+  if (!Number.isInteger(day) || day < 1 || day > 31) return '';
+  const mod100 = day % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${day}th`;
+  switch (day % 10) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
+  }
+};
+
+/**
+ * Parses a day-of-month value (from a form or an imported cell).
+ * Returns a valid integer 1-31, or null when the value is missing/invalid.
+ */
+export const parseDayOfMonth = (value: unknown): number | null => {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value >= 1 && value <= 31 ? value : null;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseInt(value.replace(/[^0-9]/g, ''), 10);
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= 31 ? parsed : null;
+  }
+  return null;
+};
 
 /**
  * Validates wallet form fields (name required, balance required + numeric).

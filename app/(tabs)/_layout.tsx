@@ -55,7 +55,7 @@ function TabLayoutInner() {
   return (
     <View className="flex-1">
       <AnimatedTabSlot activeTab={activeTab} />
-      <TabBar onTabChange={handleTabChange} activeTab={activeTab} />
+      <TabBar onTabChange={handleTabChange} activeTab={SUB_TO_PARENT[activeTab] ?? activeTab} />
     </View>
   );
 }

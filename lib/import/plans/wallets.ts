@@ -1,5 +1,5 @@
 import { type ExportedTable } from '@/lib/export/buildExportData';
-import { type Account, formatWalletBalance } from '@/utils/wallet';
+import { type Account, formatWalletBalance, parseDayOfMonth } from '@/utils/wallet';
 import { newId } from '@/lib/id';
 import { type PlanContext } from './types';
 
@@ -54,6 +54,11 @@ export function resolveWalletDefault(
 export function processWalletsTable(table: ExportedTable, ctx: PlanContext): void {
   const { plan, conflict, existingAccounts } = ctx;
   let defaultFound = false;
+  // Column presence decides whether due/bill days are written at all: files
+  // exported before these fields existed must not clear existing values, while
+  // a present-but-empty cell intentionally clears (null).
+  const hasDueCol = table.columns.includes('Due Day');
+  const hasBillCol = table.columns.includes('Bill Day');
   for (const row of table.rows) {
     const name = String(row['Name'] ?? '').trim();
     const number = String(row['Number'] ?? '').trim();
@@ -67,6 +72,8 @@ export function processWalletsTable(table: ExportedTable, ctx: PlanContext): voi
       ? formatWalletBalance(parsedBalance.toString())
       : '0.00';
     let isDefault = String(row['Default'] ?? '').toLowerCase() === 'yes';
+    const dueDay = hasDueCol ? parseDayOfMonth(row['Due Day']) : null;
+    const billDay = hasBillCol ? parseDayOfMonth(row['Bill Day']) : null;
     if (!name) {
       plan.wallets.dropped++;
       continue;
@@ -103,6 +110,8 @@ export function processWalletsTable(table: ExportedTable, ctx: PlanContext): voi
           type,
           balance: balance || existing.balance,
           isDefault,
+          ...(hasDueCol ? { dueDay } : {}),
+          ...(hasBillCol ? { billDay } : {}),
         };
         plan.wallets.update.push(updated);
         existingAccounts.splice(existingAccounts.indexOf(existing), 1, updated);
@@ -117,6 +126,8 @@ export function processWalletsTable(table: ExportedTable, ctx: PlanContext): voi
         balance,
         type,
         isDefault,
+        dueDay,
+        billDay,
         icon: undefined as any,
       };
       plan.wallets.insert.push(newAcc);

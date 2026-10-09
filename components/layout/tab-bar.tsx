@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderRadius: 32, // Pill shaped floating nav
-    height: 72, // Fixed height for floating bar
+    borderRadius: 9999, 
+    height: 65, 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 20,
@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   fab: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',

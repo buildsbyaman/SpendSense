@@ -42,6 +42,8 @@ export interface AppState {
     balance: string;
     type: string;
     isDefault?: boolean;
+    dueDay?: number | null;
+    billDay?: number | null;
   }[];
   budgets: { id: string; category: string; amount: number }[];
   subscriptions: Subscription[];

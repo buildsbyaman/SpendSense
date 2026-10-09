@@ -176,6 +176,17 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
       currentVersion = 14;
     }
 
+    if (currentVersion < 15) {
+      const cols = await tableColumns(instance, 'accounts');
+      if (!cols.includes('due_day')) {
+        await instance.execAsync('ALTER TABLE accounts ADD COLUMN due_day INTEGER');
+      }
+      if (!cols.includes('bill_day')) {
+        await instance.execAsync('ALTER TABLE accounts ADD COLUMN bill_day INTEGER');
+      }
+      currentVersion = 15;
+    }
+
     // Self-healing guard: an earlier transfer build could have stamped the
     // DB at v13 (or higher) without the to_wallet_id column, which would
     // leave every transfer write failing with "no such column". This step

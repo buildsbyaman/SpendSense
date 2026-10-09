@@ -21,6 +21,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SlideSheet, type SlideSheetHandle } from '@/components/ui/slide-sheet';
+import { ToggleRow } from '@/components/ui/ToggleRow';
+import { DayOfMonthPicker } from '@/components/wallets/DayOfMonthPicker';
 
 const ACCOUNT_TYPES = ['Bank', 'Card', 'Digital', 'Cash'];
 
@@ -38,6 +40,10 @@ export default function AddWalletScreen() {
   const [newNumber, setNewNumber] = useState('');
   const [newBalance, setNewBalance] = useState('');
   const [accountType, setAccountType] = useState('Card');
+  const [dueEnabled, setDueEnabled] = useState(false);
+  const [dueDay, setDueDay] = useState(1);
+  const [billEnabled, setBillEnabled] = useState(false);
+  const [billDay, setBillDay] = useState(1);
   const [errors, setErrors] = useState<{ name?: string; balance?: string }>({});
   const sheetRef = useRef<SlideSheetHandle>(null);
 
@@ -49,6 +55,10 @@ export default function AddWalletScreen() {
         setNewNumber(wallet.number || '');
         setNewBalance(wallet.balance.replace(/[^0-9.-]/g, ''));
         setAccountType(wallet.type || 'Card');
+        setDueEnabled(wallet.dueDay != null);
+        setDueDay(wallet.dueDay ?? 1);
+        setBillEnabled(wallet.billDay != null);
+        setBillDay(wallet.billDay ?? 1);
       }
     }
   }, [editId, accounts]);
@@ -107,6 +117,8 @@ export default function AddWalletScreen() {
           icon,
           type: accountType,
           isDefault: accounts.find((a) => a.id === editId)?.isDefault || false,
+          dueDay: dueEnabled ? dueDay : null,
+          billDay: billEnabled ? billDay : null,
         });
         Toast.show({
           type: 'success',
@@ -120,6 +132,8 @@ export default function AddWalletScreen() {
           balance: formattedBalance,
           icon,
           type: accountType,
+          dueDay: dueEnabled ? dueDay : null,
+          billDay: billEnabled ? billDay : null,
         });
         Toast.show({
           type: 'success',
@@ -290,6 +304,24 @@ export default function AddWalletScreen() {
                   {errors.balance && (
                     <Text className="ml-4 mt-1 text-xs text-red-500">{errors.balance}</Text>
                   )}
+                </View>
+
+                <View className="gap-4">
+                  <Text className="ml-1 text-sm text-muted">Payment Dates (Optional)</Text>
+                  <ToggleRow
+                    label="Due Date"
+                    hint="Day of month this wallet's payment is due"
+                    value={dueEnabled}
+                    onChange={setDueEnabled}
+                  />
+                  {dueEnabled && <DayOfMonthPicker value={dueDay} onChange={setDueDay} />}
+                  <ToggleRow
+                    label="Bill Date"
+                    hint="Day of month this wallet's bill is generated"
+                    value={billEnabled}
+                    onChange={setBillEnabled}
+                  />
+                  {billEnabled && <DayOfMonthPicker value={billDay} onChange={setBillDay} />}
                 </View>
               </View>
             </ScrollView>
