@@ -9,12 +9,21 @@
 </p>
 
 <p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.buildsbyaman.spendsense"><img src="https://img.shields.io/badge/Google_Play-Get_SpendSense-34A853?logo=googleplay&logoColor=white" alt="Google Play" /></a>
   <a href="https://github.com/buildsbyaman/SpendSense"><img src="https://img.shields.io/badge/React_Native-blue?logo=react&logoColor=white" alt="React Native" /></a>
   <a href="https://github.com/buildsbyaman/SpendSense"><img src="https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white" alt="Expo" /></a>
   <a href="https://github.com/buildsbyaman/SpendSense"><img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
   <a href="https://github.com/buildsbyaman/SpendSense"><img src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white" alt="SQLite" /></a>
   <a href="https://github.com/buildsbyaman/SpendSense"><img src="https://img.shields.io/badge/Platforms-iOS%20%7C%20Android%20%7C%20Web-brightgreen" alt="Platforms" /></a>
 </p>
+
+---
+
+## Download
+
+SpendSense is available on Android via Google Play:
+
+[![Get it on Google Play](https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=com.buildsbyaman.spendsense)
 
 ---
 
