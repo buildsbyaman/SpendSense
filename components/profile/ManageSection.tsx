@@ -8,7 +8,7 @@ import { useTabNavigation } from '@/context/TabNavigationContext';
 interface ManageRow {
   label: string;
   icon: any;
-  route: '/currency' | '/export' | '/import' | '/backup';
+  route: '/currency' | '/export' | '/import';
   isTab?: boolean;
 }
 

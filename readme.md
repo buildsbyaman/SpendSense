@@ -5,7 +5,7 @@
 <h1 align="center">SpendSense</h1>
 
 <p align="center">
-  A personal finance tracker that stores everything on your device. Local-first and private, with optional end-to-end encrypted backups to your own Google Drive.
+  A personal finance tracker that stores everything on your device. Local-first and private.
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ## Overview
 
-SpendSense is a local-first personal finance tracker built with React Native and Expo. Every transaction, budget, subscription, and setting lives in a SQLite database on your device. There is no server, no API key, no cloud dependency — you own your data. Optional features such as biometric screen locking and encrypted Google Drive backups keep your data private and safe, and can be turned on from Settings.
+SpendSense is a local-first personal finance tracker built with React Native and Expo. Every transaction, budget, subscription, and setting lives in a SQLite database on your device. There is no server, no API key, no cloud dependency — you own your data. Features such as biometric screen locking keep your data private and safe, and can be turned on from Settings.
 
 ---
 
@@ -37,11 +37,11 @@ SpendSense is a local-first personal finance tracker built with React Native and
 - **Custom categories** -- create, rename, and assign icons to your own spending and income categories. Drag to reorder them to match your habits.
 - **Analytics dashboard** -- category donut chart, income vs. expenses with month-over-month deltas, savings rate, and a trend chart that switches between line and bar views with daily/weekly/monthly granularity. A month/year navigator lets you compare over time. Transfers are excluded from these figures.
 - **Screen lock** -- lock the app behind Face ID, fingerprint, or your device PIN/pattern. SpendSense locks automatically whenever it leaves the screen and prompts to unlock on return.
-- **Google Drive backup** -- sign in with Google and store password-protected, encrypted backups in your own Drive (the same access model as WhatsApp). List, restore, or delete previous backups from the Backup screen.
+- **Offline by default** -- no account, no sign-in, and no network requests of any kind.
 - **Currency settings** -- choose from nine preset currencies or define a custom one. Provide a conversion rate to revalue all existing data in a single pass.
 - **Import** -- bring in data from JSON, Excel (.xlsx), or a previously exported SpendSense PDF.
 - **Export** -- export your data to PDF, JSON, or Excel (.xlsx). Select which tables to include, filter by date range and transaction type, and share via the OS share sheet.
-- **Profile photo** -- set an avatar from your photo library, and choose whether it rides along in JSON backups and exports.
+- **Profile photo** -- set an avatar from your photo library, and choose whether it rides along in JSON exports.
 - **Light and dark themes** -- toggle between a light and dark theme. Your preference is saved locally and restored on launch. The app follows the system setting by default.
 - **Onboarding** -- a guided first-run flow sets up your name, currency, and profile avatar.
 - **Demo data** -- load a realistic set of sample transactions, wallets, and budgets to explore the app before entering your own data.
@@ -67,7 +67,7 @@ Screens outside the four-tab row open as animated slide-up overlays and navigate
 | Access point     | Screens                                                              |
 | ---------------- | -------------------------------------------------------------------- |
 | Home quick links | Categories, Budgets, Subscriptions, Analytics (back returns to Home) |
-| Profile → Manage | Currency Settings, Import, Export, Backup (back returns to Profile)  |
+| Profile → Manage | Currency Settings, Import, Export (back returns to Profile)    |
 
 ---
 
@@ -87,24 +87,6 @@ Screens outside the four-tab row open as animated slide-up overlays and navigate
 - Choose export format: PDF, JSON, or Excel (.xlsx)
 - Transactions export includes a To Wallet column for transfers, so From/To links survive the export -> import round-trip
 - All exports are generated locally and shared via the OS share sheet
-
----
-
-## Backup and Restore
-
-Two ways to protect your data:
-
-### Local backup files
-
-From the Backup screen you can save the full database (transactions, wallets, budgets, subscriptions, categories, and profile) to a `.spendbackup` file shared via the OS share sheet. You can optionally protect the file with a password -- it is then encrypted with **scrypt + AES-GCM** so it can only be opened by someone who knows the password. Restoring from a local file replaces the entire database, so a confirmation is always required.
-
-### Google Drive backup
-
-- Sign in with your Google account (OAuth, `drive.file` scope -- the same access model as WhatsApp). The app can only see the backup files it creates in your own Drive.
-- One tap uploads a backup, and backups can be encrypted with a password you choose.
-- The Backup screen lists every SpendSense backup in your Drive, so you can restore an older version or delete backups you no longer need.
-- Works with any signed-in Google account and does not require a server or billing.
-- Currently available on **Android** builds signed with a registered OAuth client ID (see `lib/backup/config.ts`).
 
 ---
 
@@ -128,8 +110,6 @@ From the Backup screen you can save the full database (transactions, wallets, bu
 | Gestures                 | react-native-gesture-handler                              |
 | Blur effects             | expo-blur                                                 |
 | Biometrics               | expo-local-authentication                                 |
-| Google Drive backup      | expo-auth-session, expo-secure-store, expo-web-browser    |
-| Backup encryption        | @noble/ciphers (AES-GCM), @noble/hashes (scrypt)          |
 | Persistence              | @react-native-async-storage/async-storage                 |
 | React                    | React 19 + React Native Web                               |
 | Language                 | TypeScript 6 (strict mode)                                |
@@ -207,18 +187,12 @@ The import subsystem includes several protections against crafted or malicious f
 - Lock preference is stored in the OS secure store (`expo-secure-store`), never in the database
 - SpendSense locks instantly when it leaves the foreground and re-prompts on return
 
-### Backup encryption
-
-- Password-protected backups are encrypted with **scrypt** (key derivation) and **AES-GCM** (authenticated encryption)
-- The correct password is required to restore; a wrong password is rejected on load
-- Google Drive backups use the `drive.file` scope, so the app can only read and write the backup files it creates in your own account
-
 ### Data Privacy
 
 - All data is stored on-device only
-- No accounts, no login, no registration (except an optional, voluntary Google Drive sign-in for backups)
+- No accounts, no login, no registration
 - No analytics SDKs or tracking
-- Fully offline by default -- the only optional network access is Google Drive backup, which uploads your backup solely to your own Drive account
+- Fully offline by default -- the app makes no network requests
 - Exports are generated locally and shared via the OS share sheet
 
 ---
@@ -262,7 +236,7 @@ Press `i` for iOS, `a` for Android, or `w` for web.
 | ---------------------- | -------------------------------------------------------------------------------------------------------------- | ------------- |
 | `EXPO_PUBLIC_DEV_MODE` | Set to `'1'` to enable developer tools (hidden demo data loading). Must be combined with `__DEV__` being true. | No (dev only) |
 
-No API keys, backend URLs, or secrets are required at build time. Google Drive backup uses public OAuth client IDs baked into the binary (see `lib/backup/config.ts`); the app itself makes no network requests except when you opt in to Drive backup.
+No API keys, backend URLs, or secrets are required at build time. The app makes no network requests of any kind.
 
 ---
 
@@ -309,7 +283,6 @@ app/                              Expo Router file-based screens
   +not-found.tsx                    404 screen
   onboarding.tsx                    First-run setup flow
   currency.tsx                      Currency settings + conversion
-  backup.tsx                        Backup/restore: local files + Google Drive
   add-transaction.tsx               Bottom-sheet modal (create/edit transaction)
   add-wallet.tsx                    Bottom-sheet modal (new wallet)
   add-budget.tsx                    Bottom-sheet modal (new budget)
@@ -364,15 +337,6 @@ lib/                              Core business logic and data layer
   chart-theme.ts                    Chart color scheme
   dev-tools.ts                      Dev-only features (guarded by __DEV__ + env var)
   utils.ts                          cn() utility (clsx + tailwind-merge)
-  backup/                           Backup subsystem (5 files)
-    build.ts                          Build backup content from app state
-    format.ts                         Detect and parse .spendbackup files
-    config.ts                         Google Cloud OAuth client IDs for Drive
-    crypto.ts                         scrypt + AES-GCM encrypt/decrypt
-    fingerprint.ts                    Content fingerprinting
-  drive/                            Google Drive integration (2 files)
-    client.ts                         OAuth sign-in, tokens, account info
-    backup.ts                         List/upload/download/delete Drive backups
   export/                           Export subsystem (8 files + tables/)
     constants.ts                      Data type and format definitions
     formatters.ts                     Main export dispatcher (JSON/XLSX/PDF)
@@ -449,8 +413,6 @@ For the full UI/UX design system, see [`design.md`](design.md).
 - iOS (requires Xcode)
 - Android (requires Android Studio)
 - Web (any modern browser)
-
-> Google Drive backup is currently available on **Android** builds signed with a registered OAuth client ID.
 
 ---
 

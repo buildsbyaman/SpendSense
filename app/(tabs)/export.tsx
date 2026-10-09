@@ -227,8 +227,8 @@ export default function ExportScreen() {
               label="Include Profile Picture"
               hint={
                 format !== 'json'
-                  ? 'Only included in JSON backups.'
-                  : 'Embeds your profile picture in the backup.'
+                  ? 'Only included in JSON exports.'
+                  : 'Embeds your profile picture in the export.'
               }
               value={includeAvatar}
               onChange={setIncludeAvatar}

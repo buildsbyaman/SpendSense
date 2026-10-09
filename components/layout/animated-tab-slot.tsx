@@ -26,7 +26,6 @@ import CategoriesScreen from '@/app/(tabs)/categories';
 import CurrencyScreen from '@/app/currency';
 import ExportScreen from '@/app/(tabs)/export';
 import ImportScreen from '@/app/(tabs)/import';
-import BackupScreen from '@/app/backup';
 
 // Only the 4 tab bar tabs — determines horizontal slide order
 const MAIN_TABS = ['index', 'transactions', 'wallets', 'profile'];
@@ -47,7 +46,6 @@ const SUB_SCREENS: Record<string, React.ComponentType<{ referrer?: string }>> = 
   currency: React.memo(CurrencyScreen),
   export: React.memo(ExportScreen),
   import: React.memo(ImportScreen),
-  backup: React.memo(BackupScreen),
 };
 
 const SPRING_CONFIG = {

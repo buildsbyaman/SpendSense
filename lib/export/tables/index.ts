@@ -63,7 +63,7 @@ export function buildExportData(selection: ExportSelection, state: AppState): Ex
   if (want('profile')) {
     // Only the JSON format can carry a full-resolution avatar back into the
     // importer losslessly; XLSX/PDF omit it (see buildProfileTable). The user
-    // decides whether the picture rides along with the JSON backup.
+    // decides whether the picture rides along with the JSON export.
     tables.push(
       buildProfileTable(state.profile, selection.format === 'json' && !!selection.includeAvatar)
     );

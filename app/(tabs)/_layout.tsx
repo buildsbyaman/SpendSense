@@ -14,7 +14,6 @@ const SUB_TO_PARENT: Record<string, string> = {
   currency: 'profile',
   export: 'profile',
   import: 'profile',
-  backup: 'profile',
 };
 
 function TabLayoutInner() {

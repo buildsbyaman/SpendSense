@@ -9,7 +9,7 @@ export function buildProfileTable(profile: UserProfile, includeAvatar: boolean):
   ];
   // The avatar is a base64 data URI that can reach ~2MB. Embedding it in
   // XLSX breaks Excel's 32,767-char cell limit and inflates the PDF payload;
-  // JSON (the lossless backup format) keeps it for round-trip fidelity.
+  // JSON (the lossless export format) keeps it for round-trip fidelity.
   if (includeAvatar) {
     rows.push({ Field: 'Avatar', Value: profile.avatar ?? '—' });
   }
