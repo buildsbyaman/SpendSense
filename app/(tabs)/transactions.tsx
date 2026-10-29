@@ -10,7 +10,7 @@ import {
   getCategoryIcon,
   getCategoryColor,
 } from '@/utils/transaction';
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from 'react';
 import { type LucideIcon } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import Toast from 'react-native-toast-message';
@@ -22,6 +22,7 @@ import { TransactionListSection } from '@/components/transactions/TransactionLis
 import FilterPopover from '@/components/transactions/FilterPopover';
 import type { FilterState } from '@/components/transactions/FilterPopover';
 import { perfLog, perfNow } from '@/lib/perf';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -65,6 +66,13 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [walletFilter, setWalletFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  // The TextInput value stays on `searchQuery` so typing is never blocked.
+  // Filtering waits for the text to settle (debounce) and, if React is busy,
+  // finishes the previous render first (deferred value).
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 200);
+  const deferredSearchQuery = useDeferredValue(debouncedSearchQuery);
+  // Clearing the box should clear results immediately, not 200 ms later.
+  const filterQuery = searchQuery === '' ? '' : deferredSearchQuery;
   const [dateFrom, setDateFrom] = useState<Date | null>(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -125,11 +133,11 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     // 4. Date filter
     const dateFiltered = filterTransactionsByDateRange(walletFiltered, dateFrom, dateTo);
     // 5. Search filter
-    const searched = searchTransactions(dateFiltered, searchQuery, getWalletName);
+    const searched = searchTransactions(dateFiltered, filterQuery, getWalletName);
     perfLog(
       'history.filter',
       startedAt,
-      `in=${transactions.length} out=${searched.length} q=${searchQuery.length}`
+      `in=${transactions.length} out=${searched.length} q=${filterQuery.length}`
     );
     return searched;
   }, [
@@ -139,7 +147,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     walletFilter,
     dateFrom,
     dateTo,
-    searchQuery,
+    filterQuery,
     getWalletName,
   ]);
 
