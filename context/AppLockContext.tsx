@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { authenticate } from '@/lib/biometric';
+import { waitForAppReady } from '@/lib/app-ready';
 import { useAppState } from '@/hooks/useAppState';
 
 const LOCK_STORAGE_KEY = 'spendsense:appLock';
@@ -58,9 +59,11 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
         if (stored === 'true') {
           setEnabled(true);
           setLocked(true);
-          setTimeout(() => {
-            if (!cancelled) void startAuth();
-          }, 500);
+          // Show the biometric prompt once the first real frame is on screen
+          // (the splash is held until data + theme are ready). This used to be
+          // a fixed 500 ms delay that just added latency.
+          await waitForAppReady();
+          if (!cancelled) void startAuth();
         }
       } catch {
         // non-fatal — lock stays off for this session
@@ -133,8 +136,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [startAuth]);
 
   return (
-    <AppLockContext.Provider
-      value={{ enabled, locked, isAuthenticating, enable, disable, unlock }}>
+    <AppLockContext.Provider value={{ enabled, locked, isAuthenticating, enable, disable, unlock }}>
       {children}
     </AppLockContext.Provider>
   );
