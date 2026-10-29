@@ -184,18 +184,16 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     setPendingDelete({ id, title });
   }, []);
 
-  // Quick stats
-  const totalIncome = useMemo(
-    () =>
-      visibleTransactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
-    [visibleTransactions]
-  );
-
-  const totalExpense = useMemo(
-    () =>
-      visibleTransactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
-    [visibleTransactions]
-  );
+  // Quick stats: one pass instead of two filter+reduce passes over the list.
+  const { totalIncome, totalExpense } = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const t of visibleTransactions) {
+      if (t.type === 'income') income += t.amount;
+      else if (t.type === 'expense') expense += t.amount;
+    }
+    return { totalIncome: income, totalExpense: expense };
+  }, [visibleTransactions]);
 
   const isDefaultDate = useCallback(() => {
     if (!dateFrom || !dateTo) return false;
