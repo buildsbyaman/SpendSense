@@ -7,9 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "SpendSense",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": [
-      "assets/images/*.png"
-    ],
+    "assetBundlePatterns": ["assets/images/*.png"],
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon.png"
@@ -21,10 +19,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": [
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
-      ]
+      "permissions": ["android.permission.USE_BIOMETRIC", "android.permission.USE_FINGERPRINT"]
     },
     "web": {
       "bundler": "metro",
@@ -50,7 +45,8 @@
         {
           "faceIDPermission": "Allow SpendSense to use Face ID to unlock the app."
         }
-      ]
+      ],
+      "./plugins/with-release-optimizations"
     ],
     "experiments": {
       "typedRoutes": true
