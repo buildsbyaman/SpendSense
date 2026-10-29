@@ -2,6 +2,7 @@ import { type ExportedTable } from './buildExportData';
 import { encodeUtf8Base64 } from '../import/base64';
 import { decodePayloadFromPdf } from '../import/pdfPayload';
 import { MAX_ROWS_PER_TABLE, MAX_TOTAL_ROWS } from '../import/parse';
+import { loadAutoTable, loadJsPdf, loadXlsx } from '../heavy-modules';
 
 // ── Shared constants ──────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ export async function buildXlsxBytes(
   tables: ExportedTable[],
   profile?: { name: string; currencyCode: string }
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const XLSX = await import('xlsx');
+  const XLSX = await loadXlsx();
   const wb = XLSX.utils.book_new();
 
   const usedNames = new Map<string, number>();
@@ -118,8 +119,8 @@ export async function buildPdfBytes(
   tables: ExportedTable[],
   profile?: { name: string; currencyCode: string }
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const { jsPDF } = await import('jspdf');
-  const { default: autoTable } = await import('jspdf-autotable');
+  const jsPDF = await loadJsPdf();
+  const autoTable = await loadAutoTable();
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   let isFirstTable = true;

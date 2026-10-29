@@ -1,4 +1,5 @@
 import { type ExportedTable } from '@/lib/export/buildExportData';
+import { loadXlsx } from '@/lib/heavy-modules';
 import { decodePayloadFromPdf, type PdfPayload } from './pdfPayload';
 
 export interface ParsedFile {
@@ -51,20 +52,34 @@ function sumZipUncompressedSize(bytes: Uint8Array): number | null {
     ) {
       const totalEntries = bytes[i + 10] | (bytes[i + 11] << 8);
       const cdSize =
-        bytes[i + 12] | (bytes[i + 13] << 8) | (bytes[i + 14] << 16) | ((bytes[i + 15] << 24) >>> 0);
+        bytes[i + 12] |
+        (bytes[i + 13] << 8) |
+        (bytes[i + 14] << 16) |
+        ((bytes[i + 15] << 24) >>> 0);
       const cdOffset =
-        bytes[i + 16] | (bytes[i + 17] << 8) | (bytes[i + 18] << 16) | ((bytes[i + 19] << 24) >>> 0);
+        bytes[i + 16] |
+        (bytes[i + 17] << 8) |
+        (bytes[i + 18] << 16) |
+        ((bytes[i + 19] << 24) >>> 0);
       if (cdOffset + cdSize > bytes.length) return null;
       let total = 0;
       let p = cdOffset;
       for (let n = 0; n < totalEntries; n++) {
         if (p + 46 > bytes.length) break;
-        if (bytes[p] !== 0x50 || bytes[p + 1] !== 0x4b || bytes[p + 2] !== 0x01 || bytes[p + 3] !== 0x02) {
+        if (
+          bytes[p] !== 0x50 ||
+          bytes[p + 1] !== 0x4b ||
+          bytes[p + 2] !== 0x01 ||
+          bytes[p + 3] !== 0x02
+        ) {
           break;
         }
         const method = bytes[p + 10] | (bytes[p + 11] << 8);
         const uncomp =
-          bytes[p + 24] | (bytes[p + 25] << 8) | (bytes[p + 26] << 16) | ((bytes[p + 27] << 24) >>> 0);
+          bytes[p + 24] |
+          (bytes[p + 25] << 8) |
+          (bytes[p + 26] << 16) |
+          ((bytes[p + 27] << 24) >>> 0);
         const nameLen = bytes[p + 28] | (bytes[p + 29] << 8);
         const extraLen = bytes[p + 30] | (bytes[p + 31] << 8);
         const commentLen = bytes[p + 32] | (bytes[p + 33] << 8);
@@ -100,7 +115,10 @@ export function parseJson(text: string): ParsedFile {
       const columns = safeColumns(Object.keys(firstRow));
       // Cumulative budget: cap this table by what remains of MAX_TOTAL_ROWS so a
       // crafted file cannot push 25 x 10k = 250k rows past the advertised limit.
-      const limitedRows = cleanRows.slice(0, Math.min(MAX_ROWS_PER_TABLE, MAX_TOTAL_ROWS - totalRows));
+      const limitedRows = cleanRows.slice(
+        0,
+        Math.min(MAX_ROWS_PER_TABLE, MAX_TOTAL_ROWS - totalRows)
+      );
       if (cleanRows.length > limitedRows.length) meta.truncated = true;
       totalRows += limitedRows.length;
       tables.push({
@@ -120,7 +138,7 @@ export async function parseXlsx(bytes: Uint8Array): Promise<ParsedFile> {
       'This spreadsheet would expand beyond a safe size when decompressed. Please use a smaller file.'
     );
   }
-  const XLSX = await import('xlsx');
+  const XLSX = await loadXlsx();
   const wb = XLSX.read(bytes, { type: 'array', cellDates: true });
   const tables: ExportedTable[] = [];
   let meta: ParsedFile['meta'] = { app: 'SpendSense' };
@@ -252,7 +270,8 @@ export function parsePdf(pdfText: string): ParsedFile {
     // crafted file cannot push 25 x 10k = 250k rows past the advertised limit.
     const remaining = Math.max(0, MAX_TOTAL_ROWS - totalRows);
     const limitedRows = cleanRows.slice(0, Math.min(MAX_ROWS_PER_TABLE, remaining));
-    if (cleanRows.length > limitedRows.length || totalRows + limitedRows.length > MAX_TOTAL_ROWS) truncated = true;
+    if (cleanRows.length > limitedRows.length || totalRows + limitedRows.length > MAX_TOTAL_ROWS)
+      truncated = true;
     totalRows += limitedRows.length;
     return {
       ...t,

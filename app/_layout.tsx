@@ -38,10 +38,10 @@ if (typeof globalThis !== 'undefined' && (globalThis as any).TextDecoder) {
   };
 }
 
-// Force document generation packages into the Metro bundle at the root level to prevent dynamic import issues
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// Document libraries (xlsx/jsPDF) are intentionally NOT imported here. They are
+// loaded lazily on first export/import via `lib/heavy-modules.ts`; importing
+// them at the app root made every cold start parse ~1MB of JS for a feature most
+// sessions never use.
 
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
@@ -93,67 +93,67 @@ export default function RootLayout() {
       <AppProvider>
         <AppLockProvider>
           <ThemeProvider value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}>
-          <ThemeInit />
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-          <Stack>
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                headerShown: false,
-                animation: 'slide_from_right',
-                animationTypeForReplace: 'push',
-              }}
+            <ThemeInit />
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                  animationTypeForReplace: 'push',
+                }}
+              />
+              <Stack.Screen
+                name="onboarding"
+                options={{
+                  headerShown: false,
+                  animation: 'slide_from_left',
+                }}
+              />
+              <Stack.Screen
+                name="add-transaction"
+                options={{
+                  presentation: 'transparentModal',
+                  headerShown: false,
+                  animation: 'slide_from_bottom',
+                }}
+              />
+              <Stack.Screen
+                name="add-subscription"
+                options={{
+                  presentation: 'transparentModal',
+                  headerShown: false,
+                  animation: 'slide_from_bottom',
+                }}
+              />
+              <Stack.Screen
+                name="add-wallet"
+                options={{
+                  presentation: 'transparentModal',
+                  headerShown: false,
+                  animation: 'slide_from_bottom',
+                }}
+              />
+              <Stack.Screen
+                name="add-budget"
+                options={{
+                  presentation: 'transparentModal',
+                  headerShown: false,
+                  animation: 'slide_from_bottom',
+                }}
+              />
+            </Stack>
+            <PortalHost />
+            <Toast
+              config={toastConfig}
+              topOffset={insets.top + 12}
+              bottomOffset={insets.bottom + 40}
             />
-            <Stack.Screen
-              name="onboarding"
-              options={{
-                headerShown: false,
-                animation: 'slide_from_left',
-              }}
-            />
-            <Stack.Screen
-              name="add-transaction"
-              options={{
-                presentation: 'transparentModal',
-                headerShown: false,
-                animation: 'slide_from_bottom',
-              }}
-            />
-            <Stack.Screen
-              name="add-subscription"
-              options={{
-                presentation: 'transparentModal',
-                headerShown: false,
-                animation: 'slide_from_bottom',
-              }}
-            />
-            <Stack.Screen
-              name="add-wallet"
-              options={{
-                presentation: 'transparentModal',
-                headerShown: false,
-                animation: 'slide_from_bottom',
-              }}
-            />
-            <Stack.Screen
-              name="add-budget"
-              options={{
-                presentation: 'transparentModal',
-                headerShown: false,
-                animation: 'slide_from_bottom',
-              }}
-            />
-          </Stack>
-          <PortalHost />
-          <Toast
-            config={toastConfig}
-            topOffset={insets.top + 12}
-            bottomOffset={insets.bottom + 40}
-          />
-          <AppLockScreen />
-        </ThemeProvider>
-      </AppLockProvider>
-    </AppProvider>
+            <AppLockScreen />
+          </ThemeProvider>
+        </AppLockProvider>
+      </AppProvider>
     </GestureHandlerRootView>
   );
 }
