@@ -43,6 +43,9 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
     let currentVersion =
       (await instance.getFirstAsync<{ user_version: number }>('PRAGMA user_version'))
         ?.user_version ?? 0;
+    // Captured before any migration bumps it; used to decide whether the
+    // one-off self-healing check below is still relevant for this database.
+    const startingVersion = currentVersion;
 
     if (currentVersion < 1) {
       await instance.execAsync(SCHEMA);
@@ -187,12 +190,15 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
       currentVersion = 15;
     }
 
-    // Self-healing guard: an earlier transfer build could have stamped the
-    // DB at v13 (or higher) without the to_wallet_id column, which would
-    // leave every transfer write failing with "no such column". This step
-    // runs on every launch and only ALTERs when the column is missing, so it
-    // is safe for fresh, already-migrated, and broken databases alike.
-    {
+    // Self-healing guard: an earlier transfer build could have stamped the DB
+    // at v13 (or higher) without the to_wallet_id column, which would leave
+    // every transfer write failing with "no such column".
+    //
+    // Gated on the version the database *started* at: it only needs to run
+    // while a database has not yet completed v16 (the migration that indexes
+    // to_wallet_id and therefore proves the column exists). Once the DB is at
+    // v16 this PRAGMA no longer runs on every open.
+    if (startingVersion < 16) {
       const cols = await tableColumns(instance, 'transactions');
       if (!cols.includes('to_wallet_id')) {
         await instance.execAsync('ALTER TABLE transactions ADD COLUMN to_wallet_id TEXT');
