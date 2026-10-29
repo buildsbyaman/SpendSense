@@ -199,6 +199,26 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
       }
     }
 
+    // ── v16: indexes for the columns used in WHERE / ORDER BY ──────────
+    // Primary keys are already indexed by SQLite. These cover every other
+    // column referenced by lib/db/* queries:
+    //   transactions: ORDER BY date DESC, WHERE wallet_id / to_wallet_id / category
+    //   budgets:      WHERE category (bulk category rename)
+    //   subscriptions: WHERE wallet_id / category (bulk wallet/category rename)
+    // CREATE INDEX IF NOT EXISTS keeps this idempotent on existing databases.
+    if (currentVersion < 16) {
+      await instance.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date DESC);
+        CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id);
+        CREATE INDEX IF NOT EXISTS idx_transactions_to_wallet_id ON transactions(to_wallet_id);
+        CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+        CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_wallet_id ON subscriptions(wallet_id);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_category ON subscriptions(category);
+      `);
+      currentVersion = 16;
+    }
+
     if (currentVersion > 0) {
       await instance.execAsync(`PRAGMA user_version = ${currentVersion}`);
     }
