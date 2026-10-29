@@ -1,7 +1,11 @@
 import { useCallback } from 'react';
 import { newId } from '@/lib/id';
 import { adjustAccountBalance, computeTransactionDelta, computeTransferDelta } from '@/lib/balance';
-import { type Transaction, sortTransactionsByDate } from '@/utils/transaction';
+import {
+  type Transaction,
+  insertTransactionByDate,
+  replaceTransactionByDate,
+} from '@/utils/transaction';
 import type { Account } from '@/utils/wallet';
 import {
   insertTransaction,
@@ -45,7 +49,7 @@ export function useTransactionsState(core: AppCore) {
   const addTransaction = useCallback(
     async (txData: Omit<Transaction, 'id'>) => {
       const newTx: Transaction = { ...txData, id: newId() };
-      setTransactions((prev) => sortTransactionsByDate([newTx, ...prev]));
+      setTransactions((prev) => insertTransactionByDate(prev, newTx));
 
       // Compute account update outside state updater (pure computation)
       const deltas = transactionDeltas(newTx, 'apply');
@@ -122,8 +126,8 @@ export function useTransactionsState(core: AppCore) {
         });
         setAccounts(newAccounts);
       }
-      // Re-sort by date (date may have changed)
-      setTransactions((prev) => sortTransactionsByDate(prev.map((t) => (t.id === updatedTx.id ? updatedTx : t))));
+      // Keep date order (the date may have changed) without re-sorting.
+      setTransactions((prev) => replaceTransactionByDate(prev, updatedTx));
 
       // DB writes after state is committed
       await updateTransaction(updatedTx);

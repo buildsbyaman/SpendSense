@@ -26,6 +26,53 @@ export const sortTransactionsByDate = (transactions: Transaction[]): Transaction
   [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 /**
+ * Inserts a transaction into an already sorted (newest-first) list without
+ * re-sorting the whole array. O(log n) search + O(n) copy instead of O(n log n).
+ *
+ * The insert point is the first entry that is not strictly newer than `tx`, so
+ * a transaction with the same timestamp as existing ones lands before them —
+ * matching a stable sort of `[tx, ...transactions]`.
+ */
+export const insertTransactionByDate = (
+  transactions: Transaction[],
+  tx: Transaction
+): Transaction[] => {
+  const time = new Date(tx.date).getTime();
+  // Corrupt/imported date: fall back to a full sort so ordering matches the
+  // previous behaviour exactly.
+  if (!Number.isFinite(time)) return sortTransactionsByDate([tx, ...transactions]);
+
+  let low = 0;
+  let high = transactions.length;
+
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    const midTime = new Date(transactions[mid].date).getTime();
+    if (!Number.isFinite(midTime)) return sortTransactionsByDate([tx, ...transactions]);
+    if (midTime > time) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+
+  return [...transactions.slice(0, low), tx, ...transactions.slice(low)];
+};
+
+/**
+ * Replaces a transaction and keeps the list sorted by date. Used on edit, where
+ * the date may have changed and the row has to move.
+ */
+export const replaceTransactionByDate = (
+  transactions: Transaction[],
+  updated: Transaction
+): Transaction[] =>
+  insertTransactionByDate(
+    transactions.filter((t) => t.id !== updated.id),
+    updated
+  );
+
+/**
  * Sanitizes the raw input amount to prevent negative signs and multiple decimals.
  */
 export const sanitizeAmountInput = (text: string): string => {
