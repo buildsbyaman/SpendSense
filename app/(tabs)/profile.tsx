@@ -1,10 +1,4 @@
-import {
-  View,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -29,7 +23,7 @@ import { canUseAuthentication } from '@/lib/biometric';
 export default function ProfileScreen(_props: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { colorScheme, setColorScheme } = useColorScheme();
-  const { userProfile, updateUserProfile, seedDemoData } = useApp();
+  const { userProfile, updateUserProfile, seedDemoData, refreshAllData } = useApp();
   const { enabled: appLockEnabled, enable: enableAppLock, disable: disableAppLock } = useAppLock();
   const [isAppLockChanging, setIsAppLockChanging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -38,6 +32,7 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmSeed, setConfirmSeed] = useState(false);
+  const [confirmLargeSeed, setConfirmLargeSeed] = useState(false);
   const { addListener } = useTabNavigation();
   const scrollRef = useRef<ScrollView>(null);
   const [devToolsEnabled, setDevToolsEnabled] = useState(false);
@@ -179,7 +174,11 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       const ok = appLockEnabled ? await disableAppLock() : await enableAppLock();
       Toast.show({
         type: ok ? 'success' : 'error',
-        text1: ok ? (appLockEnabled ? 'App Lock Disabled' : 'App Lock Enabled') : 'Authentication Failed',
+        text1: ok
+          ? appLockEnabled
+            ? 'App Lock Disabled'
+            : 'App Lock Enabled'
+          : 'Authentication Failed',
         text2: ok
           ? appLockEnabled
             ? 'Your data is no longer locked on app open.'
@@ -190,6 +189,27 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
       setIsAppLockChanging(false);
     }
   }, [appLockEnabled, enableAppLock, disableAppLock, isAppLockChanging]);
+
+  const handleSeedLargeData = useCallback(async () => {
+    setConfirmLargeSeed(false);
+    try {
+      // Loaded lazily so the stress generator is never part of the normal path.
+      const { seedLargeDemoData } = await import('@/lib/dev/large-seed');
+      await seedLargeDemoData();
+      await refreshAllData();
+      Toast.show({
+        type: 'success',
+        text1: 'Stress Data Loaded',
+        text2: '5 wallets, 10,000 transactions over 12 months.',
+      });
+    } catch (err) {
+      Toast.show({
+        type: 'error',
+        text1: 'Seed Failed',
+        text2: err instanceof Error ? err.message : 'Could not generate stress data.',
+      });
+    }
+  }, [refreshAllData]);
 
   return (
     <KeyboardAvoidingView
@@ -238,7 +258,10 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
 
         {/* Dev-only: Load Demo Data */}
         {DEV_MODE && devToolsEnabled && (
-          <DevToolsSection onSeed={() => setConfirmSeed(true)} />
+          <DevToolsSection
+            onSeed={() => setConfirmSeed(true)}
+            onSeedLarge={() => setConfirmLargeSeed(true)}
+          />
         )}
       </ScrollView>
 
@@ -263,6 +286,15 @@ export default function ProfileScreen(_props: { isActive?: boolean }) {
           });
         }}
         onCancel={() => setConfirmSeed(false)}
+      />
+
+      <ConfirmDialog
+        visible={confirmLargeSeed}
+        title="Load 10k Stress Data"
+        message="Dev only. This replaces all wallets and transactions with 5 wallets and 10,000 generated transactions spanning 12 months. Budgets and subscriptions are kept."
+        confirmText="Load"
+        onConfirm={() => void handleSeedLargeData()}
+        onCancel={() => setConfirmLargeSeed(false)}
       />
     </KeyboardAvoidingView>
   );

@@ -37,7 +37,7 @@ const WALLET_DEFS = [
   },
 ];
 
-const EXPENSE_TITLES: Record<string, string[]> = {
+export const EXPENSE_TITLES: Record<string, string[]> = {
   Food: [
     'Starbucks Coffee',
     'Grocery Run',
@@ -87,7 +87,7 @@ const EXPENSE_TITLES: Record<string, string[]> = {
   Others: ['Gift for Friend', 'Charity Donation', 'Pet Supplies', 'Dry Cleaning', 'ATM Fee'],
 };
 
-const INCOME_TITLES: Record<string, string[]> = {
+export const INCOME_TITLES: Record<string, string[]> = {
   Salary: ['Monthly Salary'],
   Business: ['Freelance Project', 'Consulting Fee', 'Side Gig', 'Client Payment'],
   Investment: ['Interest Income', 'Dividend Payment'],
@@ -95,7 +95,7 @@ const INCOME_TITLES: Record<string, string[]> = {
 
 const EXPENSE_CATEGORIES = Object.keys(EXPENSE_TITLES);
 
-const AMOUNT_RANGES: Record<string, [number, number]> = {
+export const AMOUNT_RANGES: Record<string, [number, number]> = {
   Food: [8, 85],
   Transport: [12, 60],
   Shopping: [25, 200],
@@ -106,13 +106,13 @@ const AMOUNT_RANGES: Record<string, [number, number]> = {
   Others: [5, 100],
 };
 
-const INCOME_AMOUNTS: Record<string, [number, number]> = {
+export const INCOME_AMOUNTS: Record<string, [number, number]> = {
   Salary: [3800, 5200],
   Business: [200, 1500],
   Investment: [15, 80],
 };
 
-function mulberry32(seed: number) {
+export function mulberry32(seed: number) {
   return function () {
     seed |= 0;
     seed = (seed + 0x6d2b79f5) | 0;
