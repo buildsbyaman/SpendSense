@@ -45,10 +45,12 @@ if (typeof globalThis !== 'undefined' && (globalThis as any).TextDecoder) {
 
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
-// Disable Reanimated's strict mode warnings which get triggered on theme changes by third-party chart/drag-list libraries
+// Strict mode surfaces accidental reads of shared values during render, which
+// is useful while developing but noisy in release (and it can be triggered by
+// third-party chart/drag-list internals we do not control). Dev builds only.
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
-  strict: false,
+  strict: __DEV__,
 });
 
 import { NAV_THEME } from '@/lib/theme';
