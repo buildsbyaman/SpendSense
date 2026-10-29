@@ -9,6 +9,7 @@ import {
   formatDatePickerDate,
   getCategoryIcon,
   getCategoryColor,
+  groupTransactionsByDay,
 } from '@/utils/transaction';
 import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from 'react';
 import { type LucideIcon } from 'lucide-react-native';
@@ -176,22 +177,8 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     return items;
   }, [filter, getSortedCategories]);
 
-  // Group transactions by date (pure + stable identity so it can be hoisted)
-  const grouped = useMemo(() => {
-    const groups: { [key: string]: Transaction[] } = {};
-    visibleTransactions.forEach((tx) => {
-      const dateStr = new Date(tx.date).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-      if (!groups[dateStr]) {
-        groups[dateStr] = [];
-      }
-      groups[dateStr].push(tx);
-    });
-    return groups;
-  }, [visibleTransactions]);
+  // Group transactions by local day, formatting each day label once.
+  const grouped = useMemo(() => groupTransactionsByDay(visibleTransactions), [visibleTransactions]);
 
   const handleDelete = useCallback((id: string, title: string) => {
     setPendingDelete({ id, title });

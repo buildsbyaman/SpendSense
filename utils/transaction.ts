@@ -23,9 +23,7 @@ export interface Transaction {
  * on create and back down on edit).
  */
 export const sortTransactionsByDate = (transactions: Transaction[]): Transaction[] =>
-  [...transactions].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 /**
  * Sanitizes the raw input amount to prevent negative signs and multiple decimals.
@@ -106,6 +104,10 @@ export const searchTransactions = (
 
 /**
  * Filters transactions within a date range (inclusive).
+ *
+ * Boundaries are converted to UTC instants once. Stored dates are canonical
+ * ISO-8601 UTC strings (`Date#toISOString`), so a lexicographic comparison is
+ * equivalent to comparing instants and saves a `Date` allocation per row.
  */
 export const filterTransactionsByDateRange = (
   transactions: Transaction[],
@@ -114,20 +116,70 @@ export const filterTransactionsByDateRange = (
 ): Transaction[] => {
   if (!fromDate && !toDate) return transactions;
 
+  const fromIso = fromDate
+    ? new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()).toISOString()
+    : null;
+  const toIso = toDate
+    ? new Date(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+        23,
+        59,
+        59,
+        999
+      ).toISOString()
+    : null;
+  // Used only for imported, non-canonical date strings.
+  const fromTime = fromIso ? Date.parse(fromIso) : null;
+  const toTime = toIso ? Date.parse(toIso) : null;
+
   return transactions.filter((tx) => {
-    const txDate = new Date(tx.date);
-    txDate.setHours(0, 0, 0, 0);
-
-    const normalizedFrom = fromDate
-      ? new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate())
-      : null;
-    const normalizedTo = toDate
-      ? new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999)
-      : null;
-
-    const isAfterFrom = normalizedFrom ? txDate >= normalizedFrom : true;
-    const isBeforeTo = normalizedTo ? txDate <= normalizedTo : true;
-
-    return isAfterFrom && isBeforeTo;
+    const isCanonical = tx.date.length === 24 && tx.date.charCodeAt(23) === 90; // ...Z
+    if (!isCanonical) {
+      const time = new Date(tx.date).getTime();
+      return (fromTime === null || time >= fromTime) && (toTime === null || time <= toTime);
+    }
+    return (fromIso === null || tx.date >= fromIso) && (toIso === null || tx.date <= toIso);
   });
+};
+
+export interface TransactionDayGroup {
+  /** Local calendar day, e.g. `2026-10-29`. */
+  key: string;
+  /** Display label, formatted once per unique day. */
+  label: string;
+  transactions: Transaction[];
+}
+
+/**
+ * Groups newest-first transactions by local calendar day.
+ *
+ * The key is derived from the local date (not `date.slice(0, 10)`) because
+ * dates are stored as UTC instants: for timezones behind/ahead of UTC the UTC
+ * day is not the day the user saw when creating the transaction.
+ */
+export const groupTransactionsByDay = (transactions: Transaction[]): TransactionDayGroup[] => {
+  const groups = new Map<string, TransactionDayGroup>();
+
+  for (const tx of transactions) {
+    const date = new Date(tx.date);
+    const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        key,
+        label: date.toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+        transactions: [],
+      };
+      groups.set(key, group);
+    }
+    group.transactions.push(tx);
+  }
+
+  return [...groups.values()];
 };

@@ -3,14 +3,18 @@ import { Text } from '@/components/ui/text';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Wallet, Receipt, Tag, FilterX } from 'lucide-react-native';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
-import { type Transaction, type CustomCategory } from '@/utils/transaction';
+import {
+  type Transaction,
+  type TransactionDayGroup,
+  type CustomCategory,
+} from '@/utils/transaction';
 import { type Account } from '@/utils/wallet';
 import { router } from 'expo-router';
 
 interface Props {
   transactions: Transaction[];
   accounts: Account[];
-  grouped: Record<string, Transaction[]>;
+  grouped: TransactionDayGroup[];
   expandedTransactionId: string | null;
   onToggleExpand: (id: string) => void;
   onDelete: (id: string, title: string) => void;
@@ -56,7 +60,7 @@ export function TransactionListSection({
     );
   }
 
-  if (Object.keys(grouped).length === 0) {
+  if (grouped.length === 0) {
     return (
       <View className="items-center pb-6">
         <EmptyState
@@ -73,9 +77,9 @@ export function TransactionListSection({
 
   return (
     <View className="gap-4">
-      {Object.entries(grouped).map(([date, txs]) => (
-        <View key={date}>
-          <Text className="mb-2 ml-1 text-xs font-semibold text-muted">{date}</Text>
+      {grouped.map(({ key, label, transactions: txs }) => (
+        <View key={key}>
+          <Text className="mb-2 ml-1 text-xs font-semibold text-muted">{label}</Text>
           <View className="overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-xs">
             {txs.map((tx, idx) => (
               <TransactionItem
