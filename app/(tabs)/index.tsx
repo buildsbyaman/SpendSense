@@ -24,7 +24,7 @@ import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Toast from 'react-native-toast-message';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 export default function HomeScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
@@ -91,10 +91,9 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
     [currentMonthTransactions]
   );
 
-  const getWalletName = useCallback(
-    (walletId: string) => {
-      return accounts.find((a) => a.id === walletId)?.name || 'Wallet';
-    },
+  // One lookup table instead of scanning `accounts` per row.
+  const walletNames = useMemo(
+    () => new Map(accounts.map((account) => [account.id, account.name] as const)),
     [accounts]
   );
 
@@ -269,7 +268,8 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
                   key={tx.id}
                   transaction={tx}
                   accounts={accounts}
-                  getWalletName={getWalletName}
+                  walletNames={walletNames}
+                  unknownWalletLabel="Wallet"
                   isExpanded={expandedTransactionId === tx.id}
                   onToggleExpand={() => toggleTransactionExpand(tx.id)}
                   onDelete={() => setPendingDelete({ id: tx.id, title: tx.title })}

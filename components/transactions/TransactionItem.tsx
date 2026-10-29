@@ -32,7 +32,9 @@ interface TransactionItemProps {
   onToggleExpand: () => void;
   onDelete: () => void;
   accounts: Account[];
-  getWalletName: (walletId: string) => string;
+  walletNames: Map<string, string>;
+  /** Fallback when a wallet id is missing (Home and History use different copy). */
+  unknownWalletLabel?: string;
   currencySymbol: string;
   customCategories: CustomCategory[];
 }
@@ -44,7 +46,8 @@ export const TransactionItem = React.memo(function TransactionItem({
   onToggleExpand,
   onDelete,
   accounts,
-  getWalletName,
+  walletNames,
+  unknownWalletLabel = 'Unknown Wallet',
   currencySymbol,
   customCategories,
 }: TransactionItemProps) {
@@ -58,8 +61,8 @@ export const TransactionItem = React.memo(function TransactionItem({
     : getCategoryDetails(transaction.category, transaction.title, customCategories);
 
   const subtitle = isTransfer
-    ? `${getWalletName(transaction.walletId)} → ${getWalletName(transaction.toWalletId ?? '')}`
-    : `${getWalletName(transaction.walletId)} • ${transaction.category}`;
+    ? `${walletNames.get(transaction.walletId) || unknownWalletLabel} → ${walletNames.get(transaction.toWalletId ?? '') || unknownWalletLabel}`
+    : `${walletNames.get(transaction.walletId) || unknownWalletLabel} • ${transaction.category}`;
 
   // --- Normal row view ---
   const rowView = (

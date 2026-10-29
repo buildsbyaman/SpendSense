@@ -106,10 +106,10 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     }
   }, [isActive]);
 
-  const getWalletName = useCallback(
-    (walletId: string) => {
-      return accounts.find((a) => a.id === walletId)?.name || 'Unknown Wallet';
-    },
+  // One lookup table instead of scanning `accounts` for every row (and for
+  // every row the search predicate evaluates).
+  const walletNames = useMemo(
+    () => new Map(accounts.map((account) => [account.id, account.name] as const)),
     [accounts]
   );
 
@@ -133,7 +133,11 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     // 4. Date filter
     const dateFiltered = filterTransactionsByDateRange(walletFiltered, dateFrom, dateTo);
     // 5. Search filter
-    const searched = searchTransactions(dateFiltered, filterQuery, getWalletName);
+    const searched = searchTransactions(
+      dateFiltered,
+      filterQuery,
+      (walletId) => walletNames.get(walletId) || 'Unknown Wallet'
+    );
     perfLog(
       'history.filter',
       startedAt,
@@ -148,7 +152,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     dateFrom,
     dateTo,
     filterQuery,
-    getWalletName,
+    walletNames,
   ]);
 
   // Category chips shown under the type segment. Reflects the active type filter
@@ -312,7 +316,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
           expandedTransactionId={expandedTransactionId}
           onToggleExpand={toggleTransactionExpand}
           onDelete={handleDelete}
-          getWalletName={getWalletName}
+          walletNames={walletNames}
           onClearFilters={handleClearAll}
           currencySymbol={userProfile.currencySymbol}
           customCategories={customCategories}

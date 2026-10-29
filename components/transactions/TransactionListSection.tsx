@@ -14,7 +14,7 @@ interface Props {
   expandedTransactionId: string | null;
   onToggleExpand: (id: string) => void;
   onDelete: (id: string, title: string) => void;
-  getWalletName: (walletId: string) => string;
+  walletNames: Map<string, string>;
   onClearFilters: () => void;
   currencySymbol: string;
   customCategories: CustomCategory[];
@@ -27,7 +27,7 @@ export function TransactionListSection({
   expandedTransactionId,
   onToggleExpand,
   onDelete,
-  getWalletName,
+  walletNames,
   onClearFilters,
   currencySymbol,
   customCategories,
@@ -82,7 +82,7 @@ export function TransactionListSection({
                 key={tx.id}
                 transaction={tx}
                 accounts={accounts}
-                getWalletName={getWalletName}
+                walletNames={walletNames}
                 isExpanded={expandedTransactionId === tx.id}
                 onToggleExpand={() => onToggleExpand(tx.id)}
                 onDelete={() => onDelete(tx.id, tx.title)}
