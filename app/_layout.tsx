@@ -57,13 +57,19 @@ import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import { markAppReady } from '@/lib/app-ready';
 
 export { ErrorBoundary } from 'expo-router';
 
+// Keep the native splash up until the first frame is fully hydrated. Called at
+// module scope (not in an effect) so it applies before the first render.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/components/ui/toast-config';
-import { AppProvider } from '@/context/AppContext';
+import { AppProvider, useApp } from '@/context/AppContext';
 import { AppLockProvider } from '@/context/AppLockContext';
 import { loadThemePreference } from '@/lib/theme-persistence';
 import { AppLockScreen } from '@/components/AppLockScreen';
@@ -71,15 +77,40 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
 
-function ThemeInit() {
+function ThemeInit({ onReady }: { onReady: () => void }) {
   const { setColorScheme } = useColorScheme();
 
   useEffect(() => {
-    SystemUI.setBackgroundColorAsync('transparent');
-    loadThemePreference().then((scheme) => {
-      setColorScheme(scheme ?? 'light');
-    });
-  }, [setColorScheme]);
+    SystemUI.setBackgroundColorAsync('transparent').catch(() => {});
+    loadThemePreference()
+      .then((scheme) => {
+        setColorScheme(scheme ?? 'light');
+      })
+      .catch(() => {})
+      // Wait one painted frame so the new color scheme is committed before the
+      // splash is allowed to hide (avoids a light->dark flash on cold start).
+      .finally(() => {
+        requestAnimationFrame(() => requestAnimationFrame(onReady));
+      });
+  }, [setColorScheme, onReady]);
+
+  return null;
+}
+
+/**
+ * Holds the native splash screen until both the persisted theme and the initial
+ * data snapshot are ready, so the first visible frame is already correct.
+ * Rendered inside AppProvider so it can read `ready`.
+ */
+function SplashGate({ themeReady }: { themeReady: boolean }) {
+  const { ready } = useApp();
+
+  useEffect(() => {
+    if (!ready || !themeReady) return;
+    SplashScreen.hideAsync()
+      .catch(() => {})
+      .finally(() => markAppReady());
+  }, [ready, themeReady]);
 
   return null;
 }
@@ -87,13 +118,16 @@ function ThemeInit() {
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
+  const [themeReady, setThemeReady] = useState(false);
+  const handleThemeReady = useCallback(() => setThemeReady(true), []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
+        <SplashGate themeReady={themeReady} />
         <AppLockProvider>
           <ThemeProvider value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}>
-            <ThemeInit />
+            <ThemeInit onReady={handleThemeReady} />
             <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
             <Stack>
               <Stack.Screen
