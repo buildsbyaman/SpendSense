@@ -21,11 +21,19 @@ import { QuickStatsCards } from '@/components/transactions/QuickStatsCards';
 import { TransactionListSection } from '@/components/transactions/TransactionListSection';
 import FilterPopover from '@/components/transactions/FilterPopover';
 import type { FilterState } from '@/components/transactions/FilterPopover';
+import { perfLog, perfNow } from '@/lib/perf';
 
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { transactions, accounts, deleteTransaction, userProfile, getSortedCategories, customCategories } = useApp();
+  const {
+    transactions,
+    accounts,
+    deleteTransaction,
+    userProfile,
+    getSortedCategories,
+    customCategories,
+  } = useApp();
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -100,6 +108,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   // The whole filter → category → date → search → group pipeline is memoized so
   // it only re-runs when its inputs actually change, not on every keystroke/render.
   const visibleTransactions = useMemo(() => {
+    const startedAt = perfNow();
     // 1. Type filter
     const typeFiltered = transactions.filter((tx) => {
       if (filter === 'all') return true;
@@ -116,7 +125,13 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     // 4. Date filter
     const dateFiltered = filterTransactionsByDateRange(walletFiltered, dateFrom, dateTo);
     // 5. Search filter
-    return searchTransactions(dateFiltered, searchQuery, getWalletName);
+    const searched = searchTransactions(dateFiltered, searchQuery, getWalletName);
+    perfLog(
+      'history.filter',
+      startedAt,
+      `in=${transactions.length} out=${searched.length} q=${searchQuery.length}`
+    );
+    return searched;
   }, [
     transactions,
     filter,

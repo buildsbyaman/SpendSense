@@ -19,6 +19,7 @@ import { CategoryDonut } from '@/components/analytics/CategoryDonut';
 import { SectionCard } from '@/components/analytics/SectionCard';
 import { GranularityToggle } from '@/components/analytics/GranularityToggle';
 import { ChartTypeToggle } from '@/components/analytics/ChartTypeToggle';
+import { perfLog, perfNow } from '@/lib/perf';
 
 import {
   filterByMonth,
@@ -55,32 +56,45 @@ export default function AnalyticsScreen() {
   const [granularity, setGranularity] = useState<'days' | 'weeks' | 'months'>('weeks');
   const [chart, setChart] = useState<'line' | 'bar'>('line');
 
-  const scopeTxs = useMemo(
-    () =>
-      month !== null ? filterByMonth(transactions, year, month) : filterByYear(transactions, year),
-    [transactions, year, month]
-  );
+  const scopeTxs = useMemo(() => {
+    const startedAt = perfNow();
+    const result =
+      month !== null ? filterByMonth(transactions, year, month) : filterByYear(transactions, year);
+    perfLog('analytics.scope', startedAt, `in=${transactions.length} out=${result.length}`);
+    return result;
+  }, [transactions, year, month]);
   const filteredTxs = useMemo(() => filterByType(scopeTxs, type), [scopeTxs, type]);
   const { income, expense } = useMemo(() => sumByType(scopeTxs), [scopeTxs]);
-  const trendSeries = useMemo(
-    () =>
+  const trendSeries = useMemo(() => {
+    const startedAt = perfNow();
+    const result =
       month !== null
         ? granularity === 'days'
           ? buildDailySeries(transactions, year, month)
           : buildWeeklySeries(transactions, year, month)
         : granularity === 'weeks'
           ? buildYearlyWeekSeries(transactions, year)
-          : buildMonthlySeries(transactions, year),
-    [transactions, year, month, granularity]
-  );
-  const { incomeDelta, expenseDelta } = useMemo(
-    () => getPreviousStats(transactions, year, month),
-    [transactions, year, month]
-  );
+          : buildMonthlySeries(transactions, year);
+    perfLog(
+      'analytics.series',
+      startedAt,
+      `in=${transactions.length} points=${result.length} g=${granularity}`
+    );
+    return result;
+  }, [transactions, year, month, granularity]);
+  const { incomeDelta, expenseDelta } = useMemo(() => {
+    const startedAt = perfNow();
+    const stats = getPreviousStats(transactions, year, month);
+    perfLog('analytics.previousStats', startedAt, `in=${transactions.length}`);
+    return stats;
+  }, [transactions, year, month]);
 
   const categoryData = useMemo(() => {
+    const startedAt = perfNow();
     const catTxs = filterByType(scopeTxs, type);
-    return groupByCategory(catTxs);
+    const groups = groupByCategory(catTxs);
+    perfLog('analytics.categoryGroups', startedAt, `groups=${groups.length}`);
+    return groups;
   }, [scopeTxs, type]);
 
   const hasData = scopeTxs.length > 0;

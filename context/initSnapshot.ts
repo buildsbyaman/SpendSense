@@ -4,6 +4,7 @@ import type { Subscription } from '@/utils/subscription';
 import { getDatabase } from '@/lib/database';
 import { processSubscriptionBilling } from '@/lib/billing';
 import { deserializeAccount } from '@/utils/wallet';
+import { perfLog, perfNow } from '@/lib/perf';
 import {
   fetchAccounts,
   insertTransaction,
@@ -45,7 +46,10 @@ export interface InitSnapshot {
  * snapshot so the caller can hydrate its state in one pass.
  */
 export async function loadInitialData(): Promise<InitSnapshot> {
+  const startedAt = perfNow();
+  const dbStartedAt = perfNow();
   await getDatabase();
+  perfLog('startup.getDatabase', dbStartedAt);
   const accounts = (await fetchAccounts()).map(deserializeAccount);
   const transactions = await fetchTransactions();
   const customCategories = await fetchCustomCategories();
@@ -64,6 +68,7 @@ export async function loadInitialData(): Promise<InitSnapshot> {
   const subscriptions = await fetchSubscriptions();
 
   // Handle auto-billing for active subscriptions (cap at 24 iterations)
+  const billingStartedAt = perfNow();
   for (const sub of subscriptions) {
     const { txs, updatedAccount, nextDate } = processSubscriptionBilling(
       sub,
@@ -87,6 +92,13 @@ export async function loadInitialData(): Promise<InitSnapshot> {
       await repoUpdateSubscription(sub);
     }
   }
+
+  perfLog('startup.billing', billingStartedAt);
+  perfLog(
+    'startup.loadInitialData',
+    startedAt,
+    `wallets=${accounts.length} tx=${transactions.length} subs=${subscriptions.length}`
+  );
 
   return {
     accounts,
