@@ -8,7 +8,7 @@
     "scheme": "SpendSense",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
-      "**/*"
+      "assets/images/*.png"
     ],
     "ios": {
       "supportsTablet": true,
