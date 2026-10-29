@@ -54,6 +54,51 @@
 
 ---
 
+## Release builds
+
+Release builds use **R8 minification + resource shrinking**. Both are configured by the
+tracked config plugin [`plugins/with-release-optimizations.js`](plugins/with-release-optimizations.js),
+which `expo prebuild` applies to the generated (gitignored) `android/` directory. The plugin also
+maintains the ProGuard keep rules in `android/app/proguard-rules.pro`.
+
+Release signing is read from `MYAPP_UPLOAD_*` Gradle properties. Keep them in your user-level
+`~/.gradle/gradle.properties`, never in the repository.
+
+**Store builds → AAB with splits**
+
+```bash
+eas build --platform android --profile production
+```
+
+Google Play serves the AAB by generating per-device APKs (ABI + density + language splits), so the
+bundle carries every ABI but each device downloads only what it needs. Keep the default split
+behaviour for store artifacts.
+
+**Local builds → universal APK**
+
+```bash
+npx expo run:android --variant release --device
+# or: cd android && ./gradlew :app:assembleRelease
+```
+
+These produce a universal APK containing `armeabi-v7a`, `arm64-v8a`, `x86`, and `x86_64`
+(`reactNativeArchitectures` in `android/gradle.properties`). Keeping all four is a local
+convenience for emulators and older devices; it only affects local APKs, not store downloads.
+
+Because minification can strip reflectively-used code, smoke-test a release build before shipping:
+
+- Cold start lands on Home with correct theme, wallets, and recent transactions.
+- History: scroll, search, filter by type/category/wallet/date, expand and collapse a row.
+- Add, edit, and delete a transaction; add a wallet transfer; check balances update.
+- Analytics: switch month/year/granularity and chart type; donut and trend charts render.
+- Budgets and subscriptions: create, edit, reorder, and verify auto-billing on relaunch.
+- Categories and wallets: reorder (drag) and confirm the new order persists.
+- Export to `.xlsx`, `.pdf`, and `.json`, then import each file back.
+- Settings: toggle app lock (biometric prompt), change theme, change currency.
+- Reopen the app to confirm the app lock and splash screen still behave.
+
+---
+
 ## 📄 License
 
 Created by **[buildsbyaman](https://github.com/buildsbyaman)**. All rights reserved.
