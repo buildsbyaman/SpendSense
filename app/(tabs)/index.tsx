@@ -24,7 +24,7 @@ import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Toast from 'react-native-toast-message';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 export default function HomeScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
@@ -57,9 +57,13 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
     }
   }, [isActive]);
 
-  const toggleTransactionExpand = (id: string) => {
+  const toggleTransactionExpand = useCallback((id: string) => {
     setExpandedTransactionId((prev) => (prev === id ? null : id));
-  };
+  }, []);
+
+  const handleDeleteTransaction = useCallback((id: string, title: string) => {
+    setPendingDelete({ id, title });
+  }, []);
 
   const now = useMemo(() => {
     const d = new Date();
@@ -267,12 +271,11 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
                 <TransactionItem
                   key={tx.id}
                   transaction={tx}
-                  accounts={accounts}
                   walletNames={walletNames}
                   unknownWalletLabel="Wallet"
                   isExpanded={expandedTransactionId === tx.id}
-                  onToggleExpand={() => toggleTransactionExpand(tx.id)}
-                  onDelete={() => setPendingDelete({ id: tx.id, title: tx.title })}
+                  onToggleExpand={toggleTransactionExpand}
+                  onDelete={handleDeleteTransaction}
                   isLast={idx === recentTransactions.length - 1}
                   currencySymbol={userProfile.currencySymbol}
                   customCategories={customCategories}

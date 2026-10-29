@@ -85,11 +85,10 @@ export function TransactionListSection({
               <TransactionItem
                 key={tx.id}
                 transaction={tx}
-                accounts={accounts}
                 walletNames={walletNames}
                 isExpanded={expandedTransactionId === tx.id}
-                onToggleExpand={() => onToggleExpand(tx.id)}
-                onDelete={() => onDelete(tx.id, tx.title)}
+                onToggleExpand={onToggleExpand}
+                onDelete={onDelete}
                 isLast={idx === txs.length - 1}
                 currencySymbol={currencySymbol}
                 customCategories={customCategories}
