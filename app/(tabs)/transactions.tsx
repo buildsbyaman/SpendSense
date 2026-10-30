@@ -1,9 +1,10 @@
-import { View, ScrollView } from 'react-native';
+import { View } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { useApp } from '@/context/AppContext';
 import {
-  type Transaction,
+  type TransactionDayGroup,
   searchTransactions,
   filterTransactionsByDateRange,
   formatDatePickerDate,
@@ -19,11 +20,19 @@ import TransactionFilterBar from '@/components/transactions/TransactionFilterBar
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { QuickStatsCards } from '@/components/transactions/QuickStatsCards';
-import { TransactionListSection } from '@/components/transactions/TransactionListSection';
+import {
+  TransactionDayGroupView,
+  TransactionHistoryEmptyState,
+} from '@/components/transactions/TransactionListSection';
 import FilterPopover from '@/components/transactions/FilterPopover';
 import type { FilterState } from '@/components/transactions/FilterPopover';
 import { perfLog, perfNow } from '@/lib/perf';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+
+const keyExtractor = (group: TransactionDayGroup) => group.key;
+
+// Matches the old `gap-4` between day groups.
+const DayGroupSeparator = () => <View className="h-4" />;
 
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -36,12 +45,12 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     getSortedCategories,
     customCategories,
   } = useApp();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<FlashListRef<TransactionDayGroup>>(null);
 
   useEffect(() => {
     return addListener((tabName, params) => {
       if (tabName === 'transactions') {
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
         if (params?.category) {
           setCategoryFilter(params.category);
           if (params.type === 'expense' || params.type === 'income') {
@@ -184,6 +193,28 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     setPendingDelete({ id, title });
   }, []);
 
+  const renderDayGroup = useCallback(
+    ({ item }: { item: TransactionDayGroup }) => (
+      <TransactionDayGroupView
+        group={item}
+        expandedTransactionId={expandedTransactionId}
+        onToggleExpand={toggleTransactionExpand}
+        onDelete={handleDelete}
+        walletNames={walletNames}
+        currencySymbol={userProfile.currencySymbol}
+        customCategories={customCategories}
+      />
+    ),
+    [
+      customCategories,
+      expandedTransactionId,
+      handleDelete,
+      toggleTransactionExpand,
+      userProfile.currencySymbol,
+      walletNames,
+    ]
+  );
+
   // Quick stats: one pass instead of two filter+reduce passes over the list.
   const { totalIncome, totalExpense } = useMemo(() => {
     let income = 0;
@@ -257,56 +288,55 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
       <View className="px-5">
         <Header title="History" showBack={false} />
       </View>
-      <ScrollView
+      <FlashList
         ref={scrollRef}
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
+        data={grouped}
+        keyExtractor={keyExtractor}
+        renderItem={renderDayGroup}
+        ItemSeparatorComponent={DayGroupSeparator}
+        ListHeaderComponent={
+          <>
+            {transactions.length > 0 && (
+              <TransactionFilterBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                dateLabel={dateLabel}
+                onDatePress={() => setIsDatePickerOpen(true)}
+                hasActiveFilter={hasActiveFilter}
+                onClearAll={handleClearAll}
+                onFilterPress={(rect) => {
+                  setFilterButtonRect(rect);
+                  setIsFilterOpen(true);
+                }}
+                activeFilterCount={activeFilterCount}
+              />
+            )}
+
+            {/* Quick Stats Cards */}
+            {filter === 'all' && transactions.length > 0 && (
+              <QuickStatsCards
+                income={totalIncome}
+                expense={totalExpense}
+                currencySymbol={userProfile.currencySymbol}
+              />
+            )}
+          </>
+        }
+        ListEmptyComponent={
+          <TransactionHistoryEmptyState
+            hasTransactions={transactions.length > 0}
+            hasAccounts={accounts.length > 0}
+            onClearFilters={handleClearAll}
+          />
+        }
+        style={{ flex: 1 }}
         contentContainerStyle={{
           paddingBottom: 120,
           paddingHorizontal: 20,
         }}
-        keyboardDismissMode="on-drag">
-        {transactions.length > 0 && (
-          <>
-            <TransactionFilterBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              dateLabel={dateLabel}
-              onDatePress={() => setIsDatePickerOpen(true)}
-              hasActiveFilter={hasActiveFilter}
-              onClearAll={handleClearAll}
-              onFilterPress={(rect) => {
-                setFilterButtonRect(rect);
-                setIsFilterOpen(true);
-              }}
-              activeFilterCount={activeFilterCount}
-            />
-          </>
-        )}
-
-        {/* Quick Stats Cards */}
-        {filter === 'all' && transactions.length > 0 && (
-          <QuickStatsCards
-            income={totalIncome}
-            expense={totalExpense}
-            currencySymbol={userProfile.currencySymbol}
-          />
-        )}
-
-        {/* Transactions List */}
-        <TransactionListSection
-          transactions={transactions}
-          accounts={accounts}
-          grouped={grouped}
-          expandedTransactionId={expandedTransactionId}
-          onToggleExpand={toggleTransactionExpand}
-          onDelete={handleDelete}
-          walletNames={walletNames}
-          onClearFilters={handleClearAll}
-          currencySymbol={userProfile.currencySymbol}
-          customCategories={customCategories}
-        />
-      </ScrollView>
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+      />
 
       <TransactionDatePickerModal
         visible={isDatePickerOpen}
