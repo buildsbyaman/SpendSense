@@ -3,7 +3,7 @@ import { TabBar } from '@/components/layout/tab-bar';
 import { AnimatedTabSlot } from '@/components/layout/animated-tab-slot';
 import { useState, useCallback, useEffect } from 'react';
 import { TabNavigationProvider, useTabNavigation } from '@/context/TabNavigationContext';
-import { useApp } from '@/context/AppContext';
+import { useAppSelector } from '@/context/store';
 import { Redirect } from 'expo-router';
 
 const SUB_TO_PARENT: Record<string, string> = {
@@ -19,7 +19,8 @@ const SUB_TO_PARENT: Record<string, string> = {
 function TabLayoutInner() {
   const [activeTab, setActiveTab] = useState('index');
   const { addListener, navigate } = useTabNavigation();
-  const { ready, userProfile } = useApp();
+  const ready = useAppSelector((state) => state.ready);
+  const hasOnboarded = useAppSelector((state) => state.userProfile.hasOnboarded);
 
   useEffect(() => {
     const remove = addListener((tabName) => setActiveTab(tabName));
@@ -52,7 +53,7 @@ function TabLayoutInner() {
   // so this never paints in practice. Return a cheap themed surface rather than
   // `null` in case the splash is dismissed early (e.g. an init error path).
   if (!ready) return <View className="flex-1 bg-background" />;
-  if (!userProfile.hasOnboarded) return <Redirect href="/onboarding" />;
+  if (!hasOnboarded) return <Redirect href="/onboarding" />;
 
   return (
     <View className="flex-1">

@@ -71,7 +71,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/components/ui/toast-config';
-import { AppProvider, useApp } from '@/context/AppContext';
+import { AppProvider } from '@/context/AppContext';
+import { useAppSelector } from '@/context/store';
 import { AppLockProvider } from '@/context/AppLockContext';
 import { loadThemePreference } from '@/lib/theme-persistence';
 import { AppLockScreen } from '@/components/AppLockScreen';
@@ -105,7 +106,7 @@ function ThemeInit({ onReady }: { onReady: () => void }) {
  * Rendered inside AppProvider so it can read `ready`.
  */
 function SplashGate({ themeReady }: { themeReady: boolean }) {
-  const { ready } = useApp();
+  const ready = useAppSelector((state) => state.ready);
 
   useEffect(() => {
     if (!ready || !themeReady) return;
