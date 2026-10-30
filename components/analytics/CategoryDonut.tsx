@@ -4,7 +4,7 @@ import { useColorScheme } from 'nativewind';
 import { PieChart } from 'react-native-gifted-charts';
 import { Text } from '@/components/ui/text';
 import { CHART_COLORS, type ColorScheme } from '@/lib/chart-theme';
-import { useApp } from '@/context/AppContext';
+import { useAppSelector } from '@/context/store';
 import { formatNumber } from '@/utils/wallet';
 
 interface CategoryDonutProps {
@@ -19,7 +19,7 @@ export function CategoryDonut({ data, totalLabel, onSelectCategory }: CategoryDo
   const { colorScheme } = useColorScheme();
   const scheme = (colorScheme ?? 'light') as ColorScheme;
   const colors = CHART_COLORS[scheme];
-  const { userProfile } = useApp();
+  const currencySymbol = useAppSelector((state) => state.userProfile.currencySymbol);
 
   const total = data.reduce((sum, d) => sum + d.amount, 0);
 
@@ -56,7 +56,7 @@ export function CategoryDonut({ data, totalLabel, onSelectCategory }: CategoryDo
             <Text className="ml-1 shrink-0 text-sm text-muted">{pct}%</Text>
           </View>
           <Text className="text-sm font-semibold text-foreground">
-            {userProfile.currencySymbol}
+            {currencySymbol}
             {formatNumber(d.amount)}
           </Text>
         </View>
@@ -81,7 +81,7 @@ export function CategoryDonut({ data, totalLabel, onSelectCategory }: CategoryDo
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.5}>
-                {userProfile.currencySymbol}
+                {currencySymbol}
                 {formatNumber(total)}
               </Text>
             </View>

@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { useApp } from '@/context/AppContext';
+import { useAppSelector } from '@/context/store';
 import { TrendingUp, Wallet } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -37,7 +37,8 @@ import {
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { accounts, transactions } = useApp();
+  const accounts = useAppSelector((state) => state.accounts);
+  const transactions = useAppSelector((state) => state.transactions);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {

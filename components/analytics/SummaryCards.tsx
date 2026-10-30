@@ -3,7 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import { savingsRate } from '@/utils/analytics';
-import { useApp } from '@/context/AppContext';
+import { useAppSelector } from '@/context/store';
 import { formatNumber } from '@/utils/wallet';
 
 interface SummaryCardsProps {
@@ -14,20 +14,16 @@ interface SummaryCardsProps {
   count: number;
 }
 
-function DeltaBadge({ delta, type }: { delta: number | null, type: 'income' | 'expense' }) {
+function DeltaBadge({ delta, type }: { delta: number | null; type: 'income' | 'expense' }) {
   if (delta === null) {
     return <Text className="text-xs text-muted">—</Text>;
   }
   const positive = delta > 0;
-  
+
   // Income increase is good (green), Expense increase is bad (red)
   const isGood = type === 'income' ? positive : !positive;
-  
-  const color = delta === 0 
-    ? 'text-muted' 
-    : isGood 
-      ? 'text-income' 
-      : 'text-expense';
+
+  const color = delta === 0 ? 'text-muted' : isGood ? 'text-income' : 'text-expense';
 
   return (
     <View className="flex-row items-center gap-0.5">
@@ -55,7 +51,7 @@ export function SummaryCards({
 }: SummaryCardsProps) {
   const net = income - expense;
   const rate = savingsRate(income, expense);
-  const { userProfile } = useApp();
+  const currencySymbol = useAppSelector((state) => state.userProfile.currencySymbol);
 
   return (
     <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
@@ -70,7 +66,8 @@ export function SummaryCards({
         <View className="flex-row items-center gap-2">
           <DeltaBadge delta={incomeDelta} type="income" />
           <Text className="text-sm font-semibold text-foreground">
-            {userProfile.currencySymbol}{formatNumber(income)}
+            {currencySymbol}
+            {formatNumber(income)}
           </Text>
         </View>
       </View>
@@ -86,7 +83,8 @@ export function SummaryCards({
         <View className="flex-row items-center gap-2">
           <DeltaBadge delta={expenseDelta} type="expense" />
           <Text className="text-sm font-semibold text-foreground">
-            {userProfile.currencySymbol}{formatNumber(expense)}
+            {currencySymbol}
+            {formatNumber(expense)}
           </Text>
         </View>
       </View>
@@ -98,7 +96,9 @@ export function SummaryCards({
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-semibold text-foreground">Net</Text>
         <Text className={`text-lg font-bold ${net >= 0 ? 'text-income' : 'text-expense'}`}>
-          {net >= 0 ? '+' : ''}{userProfile.currencySymbol}{formatNumber(Math.abs(net))}
+          {net >= 0 ? '+' : ''}
+          {currencySymbol}
+          {formatNumber(Math.abs(net))}
         </Text>
       </View>
 

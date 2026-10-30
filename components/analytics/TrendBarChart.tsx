@@ -6,7 +6,7 @@ import { View, Dimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { type TypeFilter } from '@/utils/analytics';
 import { niceCeil, formatCompactCurrency } from '@/utils/analytics';
-import { useApp } from '@/context/AppContext';
+import { useAppSelector } from '@/context/store';
 
 interface TrendBarChartProps {
   data: { day: number; label?: string; income: number; expense: number }[];
@@ -18,8 +18,7 @@ export function TrendBarChart({ data, type }: TrendBarChartProps) {
   const scheme = (colorScheme ?? 'light') as ColorScheme;
   const colors = CHART_COLORS[scheme];
 
-  const { userProfile } = useApp();
-  const currencySymbol = userProfile.currencySymbol;
+  const currencySymbol = useAppSelector((state) => state.userProfile.currencySymbol);
 
   const showIncome = type === 'income';
   const showExpense = type === 'expense';
@@ -34,9 +33,7 @@ export function TrendBarChart({ data, type }: TrendBarChartProps) {
     barBorderRadius: 6,
   }));
 
-  const maxVal = niceCeil(
-    Math.max(...data.map((d) => (showExpense ? d.expense : d.income)), 1)
-  );
+  const maxVal = niceCeil(Math.max(...data.map((d) => (showExpense ? d.expense : d.income)), 1));
 
   const screenWidth = Dimensions.get('window').width;
   const fitWidth = screenWidth - 100;
@@ -50,10 +47,7 @@ export function TrendBarChart({ data, type }: TrendBarChartProps) {
     n * barWidth + Math.max(n - 1, 0) * MIN_SPACING + initialSpacing + endSpacing > fitWidth;
   const spacing = isScrollable
     ? MIN_SPACING
-    : Math.max(
-        (fitWidth - initialSpacing - endSpacing - n * barWidth) / Math.max(n - 1, 1),
-        2
-      );
+    : Math.max((fitWidth - initialSpacing - endSpacing - n * barWidth) / Math.max(n - 1, 1), 2);
 
   return (
     <View style={{ marginLeft: -10 }}>

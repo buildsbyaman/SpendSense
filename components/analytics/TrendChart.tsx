@@ -6,7 +6,7 @@ import { Text } from '@/components/ui/text';
 import { CHART_COLORS, type ColorScheme } from '@/lib/chart-theme';
 import { type TypeFilter } from '@/utils/analytics';
 import { niceCeil, formatCompactCurrency } from '@/utils/analytics';
-import { useApp } from '@/context/AppContext';
+import { useAppSelector } from '@/context/store';
 
 interface TrendChartProps {
   data: { day: number; label?: string; income: number; expense: number }[];
@@ -18,8 +18,7 @@ export function TrendChart({ data, type }: TrendChartProps) {
   const scheme = (colorScheme ?? 'light') as ColorScheme;
   const isDark = scheme === 'dark';
   const colors = CHART_COLORS[scheme];
-  const { userProfile } = useApp();
-  const currencySymbol = userProfile.currencySymbol;
+  const currencySymbol = useAppSelector((state) => state.userProfile.currencySymbol);
 
   const showIncome = type === 'income';
   const showExpense = type === 'expense';
@@ -49,8 +48,7 @@ export function TrendChart({ data, type }: TrendChartProps) {
   const MIN_SPACING = 24;
 
   const n = data.length;
-  const contentWidth =
-    n > 1 ? (n - 1) * MIN_SPACING + initialSpacing + endSpacing : fitWidth;
+  const contentWidth = n > 1 ? (n - 1) * MIN_SPACING + initialSpacing + endSpacing : fitWidth;
   const isScrollable = contentWidth > fitWidth;
   const spacing = isScrollable
     ? MIN_SPACING
@@ -112,7 +110,5 @@ export function TrendChart({ data, type }: TrendChartProps) {
     />
   );
 
-  return (
-    <View style={{ marginLeft: -10 }}>{chart}</View>
-  );
+  return <View style={{ marginLeft: -10 }}>{chart}</View>;
 }
