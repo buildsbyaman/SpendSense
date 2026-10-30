@@ -2,7 +2,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { useApp } from '@/context/AppContext';
+import { useAppActions, useAppSelector } from '@/context/store';
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -28,7 +28,13 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 export default function HomeScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { accounts, transactions, userProfile, deleteTransaction, customCategories } = useApp();
+  const { deleteTransaction } = useAppActions();
+  const accounts = useAppSelector((state) => state.accounts);
+  const transactions = useAppSelector((state) => state.transactions);
+  const customCategories = useAppSelector((state) => state.customCategories);
+  const userName = useAppSelector((state) => state.userProfile.name);
+  const userAvatar = useAppSelector((state) => state.userProfile.avatar);
+  const currencySymbol = useAppSelector((state) => state.userProfile.currencySymbol);
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -106,11 +112,9 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
       {/* Sticky Welcome Header */}
       <View className="mb-4 ml-1 flex-row items-center justify-between px-5">
         <View className="flex-row items-center gap-3">
-          <Avatar name={userProfile.name} avatar={userProfile.avatar} size={42} />
+          <Avatar name={userName} avatar={userAvatar} size={42} />
           <View>
-            <Text className="mt-0.5 text-2xl font-semibold text-foreground">
-              Hey, {userProfile.name}
-            </Text>
+            <Text className="mt-0.5 text-2xl font-semibold text-foreground">Hey, {userName}</Text>
           </View>
         </View>
       </View>
@@ -121,7 +125,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
           <View className="mb-4 px-6">
             <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
             <Text className="text-3xl font-bold text-foreground">
-              {userProfile.currencySymbol}
+              {currencySymbol}
               {formatNumber(totalBalance)}
             </Text>
           </View>
@@ -138,7 +142,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
               <View>
                 <Text className="text-xs font-medium text-muted">Income</Text>
                 <Text className="mt-0.5 text-sm font-bold text-income">
-                  {userProfile.currencySymbol}
+                  {currencySymbol}
                   {formatNumber(totalIncome)}
                 </Text>
               </View>
@@ -153,7 +157,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
               <View>
                 <Text className="text-xs font-medium text-muted">Expenses</Text>
                 <Text className="mt-0.5 text-sm font-bold text-expense">
-                  {userProfile.currencySymbol}
+                  {currencySymbol}
                   {formatNumber(totalExpense)}
                 </Text>
               </View>
@@ -277,7 +281,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
                   onToggleExpand={toggleTransactionExpand}
                   onDelete={handleDeleteTransaction}
                   isLast={idx === recentTransactions.length - 1}
-                  currencySymbol={userProfile.currencySymbol}
+                  currencySymbol={currencySymbol}
                   customCategories={customCategories}
                 />
               ))}
