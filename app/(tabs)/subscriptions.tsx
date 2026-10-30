@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -13,17 +14,18 @@ import AnimatedSegment from '@/components/ui/animated-segment';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import Toast from 'react-native-toast-message';
+import type { Subscription } from '@/utils/subscription';
 
 export default function SubscriptionsScreen({ referrer }: { referrer?: string }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
   const { subscriptions, deleteSubscription } = useApp();
-  const scrollRef = useRef<ScrollView>(null);
-  
+  const scrollRef = useRef<FlashListRef<Subscription>>(null);
+
   useEffect(() => {
     return addListener((tabName) => {
       if (tabName === 'subscriptions') {
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
       }
     });
   }, [addListener]);
@@ -37,13 +39,16 @@ export default function SubscriptionsScreen({ referrer }: { referrer?: string })
   };
 
   const toggleExpand = (id: string) => {
-    setExpandedId(prev => prev === id ? null : id);
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  const filteredSubscriptions = subscriptions.filter(sub => {
-    const isExpired = sub.end_date ? new Date().getTime() >= new Date(sub.end_date).getTime() : false;
+  const filteredSubscriptions = subscriptions.filter((sub) => {
+    const isExpired = sub.end_date
+      ? new Date().getTime() >= new Date(sub.end_date).getTime()
+      : false;
     return activeTab === 'current' ? !isExpired : isExpired;
   });
+  const sortedSubscriptions = [...filteredSubscriptions].sort((a, b) => b.amount - a.amount);
 
   const confirmDelete = () => {
     if (subscriptionToDelete) {
@@ -61,14 +66,14 @@ export default function SubscriptionsScreen({ referrer }: { referrer?: string })
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header 
-          title="Subscriptions" 
-          showBack={true} 
-          onLeftPress={() => navigateTab(referrer === 'home' ? 'index' : 'profile')} 
+        <Header
+          title="Subscriptions"
+          showBack={true}
+          onLeftPress={() => navigateTab(referrer === 'home' ? 'index' : 'profile')}
           rightIcon={Plus}
           onRightPress={() => router.push('/add-subscription')}
         />
-        <View className="mt-6 mb-2">
+        <View className="mb-2 mt-6">
           <AnimatedSegment<'current' | 'expired'>
             options={[
               { label: 'Current', value: 'current' },
@@ -79,46 +84,45 @@ export default function SubscriptionsScreen({ referrer }: { referrer?: string })
           />
         </View>
       </View>
-      
-      <ScrollView
+
+      <FlashList
         ref={scrollRef}
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 120,
-          paddingHorizontal: 20,
-          paddingTop: 16,
-        }}
-        keyboardDismissMode="on-drag">
-        {filteredSubscriptions.length === 0 ? (
+        data={sortedSubscriptions}
+        keyExtractor={(sub) => sub.id}
+        ListEmptyComponent={
           <EmptyState
             icon={Repeat}
             title={`No ${activeTab === 'expired' ? 'Expired' : 'Current'} Subscriptions`}
             description={
               activeTab === 'expired'
                 ? "You don't have any past subscriptions."
-                : "Track and manage your recurring subscriptions like Netflix, Spotify, and more."
+                : 'Track and manage your recurring subscriptions like Netflix, Spotify, and more.'
             }
             buttonText={activeTab === 'current' ? 'Add Subscription' : undefined}
-            onButtonPress={activeTab === 'current' ? () => router.push('/add-subscription') : undefined}
+            onButtonPress={
+              activeTab === 'current' ? () => router.push('/add-subscription') : undefined
+            }
           />
-        ) : (
-          <View>
-            {[...filteredSubscriptions]
-              .sort((a, b) => b.amount - a.amount)
-              .map((sub) => (
-                <View key={sub.id} style={{ opacity: activeTab === 'expired' ? 0.6 : 1 }}>
-                  <SubscriptionItem
-                    subscription={sub}
-                    isExpanded={expandedId === sub.id}
-                    onToggleExpand={() => toggleExpand(sub.id)}
-                    onDelete={() => setSubscriptionToDelete(sub.id)}
-                  />
-                </View>
-              ))}
+        }
+        renderItem={({ item: sub }) => (
+          <View style={{ opacity: activeTab === 'expired' ? 0.6 : 1 }}>
+            <SubscriptionItem
+              subscription={sub}
+              isExpanded={expandedId === sub.id}
+              onToggleExpand={() => toggleExpand(sub.id)}
+              onDelete={() => setSubscriptionToDelete(sub.id)}
+            />
           </View>
         )}
-      </ScrollView>
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          paddingHorizontal: 20,
+          paddingTop: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+      />
 
       <ConfirmDialog
         visible={subscriptionToDelete !== null}

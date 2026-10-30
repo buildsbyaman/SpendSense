@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
@@ -13,21 +14,24 @@ import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
 import { formatNumber } from '@/utils/wallet';
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
 import { router } from 'expo-router';
+import type { Budget } from '@/lib/db/budget';
+
+type BudgetProgressItem = Budget & { spent: number; percentage: number };
 
 export default function BudgetsScreen({ referrer }: { referrer?: string }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
   const { budgets, transactions, getSortedCategories, userProfile } = useApp();
-  const scrollRef = useRef<ScrollView>(null);
-  
+  const scrollRef = useRef<FlashListRef<BudgetProgressItem>>(null);
+
   useEffect(() => {
     return addListener((tabName) => {
       if (tabName === 'budgets') {
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
       }
     });
   }, [addListener]);
-  
+
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState<number>(now.getMonth());
@@ -40,9 +44,9 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
   const budgetProgress = useMemo(() => {
     return budgets.map((budget) => {
       const spent = currentMonthTxs
-        .filter(t => t.type === 'expense' && t.category === budget.category)
+        .filter((t) => t.type === 'expense' && t.category === budget.category)
         .reduce((sum, t) => sum + t.amount, 0);
-      
+
       const percentage = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
       return { ...budget, spent, percentage };
     });
@@ -50,7 +54,7 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
 
   const expenseCategories = getSortedCategories('expense');
   const getCatDetails = (name: string) => {
-    const cat = expenseCategories.find(c => c.name === name);
+    const cat = expenseCategories.find((c) => c.name === name);
     return {
       icon: getCategoryIcon(name, undefined, cat && 'icon' in cat ? cat.icon : undefined),
       color: getCategoryColor(name, cat && 'color' in cat ? cat.color : undefined),
@@ -64,39 +68,25 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header 
-          title="Budgets" 
-          showBack={true} 
-          onLeftPress={() => navigateTab(referrer === 'home' ? 'index' : 'profile')} 
+        <Header
+          title="Budgets"
+          showBack={true}
+          onLeftPress={() => navigateTab(referrer === 'home' ? 'index' : 'profile')}
           rightIcon={Plus}
-          onRightPress={() => router.push("/add-budget")}
+          onRightPress={() => router.push('/add-budget')}
         />
       </View>
 
-      <ScrollView
+      <FlashList
         ref={scrollRef}
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 120,
-          paddingHorizontal: 20,
-        }}
-        keyboardDismissMode="on-drag">
-        
-        {budgets.length === 0 ? (
-          <EmptyState
-            icon={PiggyBank}
-            title="Monthly Budgets"
-            description="Set spending limits per category and track your progress throughout the month."
-            buttonText="Create Budget"
-            onButtonPress={() => router.push("/add-budget")}
-          />
-        ) : (
-          <View className="mt-2">
-            <View className="mb-4 flex-row items-center justify-between">
+        data={budgetProgress}
+        keyExtractor={(bp) => bp.id}
+        ListHeaderComponent={
+          budgets.length > 0 ? (
+            <View className="mb-4 mt-2 flex-row items-center justify-between">
               <Text className="ml-1 text-sm font-medium text-muted">
-                {year === now.getFullYear() && month === now.getMonth() 
-                  ? 'Current Month' 
+                {year === now.getFullYear() && month === now.getMonth()
+                  ? 'Current Month'
                   : `${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year}`}
               </Text>
               <MonthNavigator
@@ -111,58 +101,76 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
                 allowAllYear={false}
               />
             </View>
-            {budgetProgress.map((bp) => {
-              const { icon: CatIcon, color } = getCatDetails(bp.category);
-              const isOverBudget = bp.percentage >= 100;
-              const progressColor = isOverBudget ? 'bg-red-500' : 'bg-primary';
+          ) : null
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon={PiggyBank}
+            title="Monthly Budgets"
+            description="Set spending limits per category and track your progress throughout the month."
+            buttonText="Create Budget"
+            onButtonPress={() => router.push('/add-budget')}
+          />
+        }
+        renderItem={({ item: bp }) => {
+          const { icon: CatIcon, color } = getCatDetails(bp.category);
+          const isOverBudget = bp.percentage >= 100;
+          const progressColor = isOverBudget ? 'bg-red-500' : 'bg-primary';
 
-              return (
-                <TouchableOpacity
-                  key={bp.id}
-                  activeOpacity={0.7}
-                  onPress={() => handleEdit(bp.id)}
-                  className="mb-4 rounded-xl bg-surface p-6 border border-border shadow-xs">
-                  
-                  <View className="mb-4 flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-3">
-                      <View 
-                        className="h-10 w-10 items-center justify-center rounded-full"
-                        style={{ backgroundColor: `${color}15` }}>
-                        <Icon as={CatIcon} size={20} color={color} />
-                      </View>
-                      <View>
-                        <Text className="text-base font-semibold">{bp.category}</Text>
-                        <Text className="text-xs text-muted">
-                          {userProfile.currencySymbol}{formatNumber(bp.spent)} spent ({bp.amount > 0 ? Math.round((bp.spent / bp.amount) * 100) : 0}%)
-                        </Text>
-                      </View>
-                    </View>
-                    <View className="items-end">
-                      <Text className="text-base font-bold">
-                        {userProfile.currencySymbol}{formatNumber(bp.amount, 0)}
-                      </Text>
-                      <Text className="text-xs text-muted">Limit</Text>
-                    </View>
+          return (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => handleEdit(bp.id)}
+              className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
+              <View className="mb-4 flex-row items-center justify-between">
+                <View className="flex-row items-center gap-3">
+                  <View
+                    className="h-10 w-10 items-center justify-center rounded-full"
+                    style={{ backgroundColor: `${color}15` }}>
+                    <Icon as={CatIcon} size={20} color={color} />
                   </View>
- 
-                  <View className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                    <View
-                      className={`h-full rounded-full ${progressColor}`}
-                      style={{ width: `${bp.percentage}%` }}
-                    />
-                  </View>
-                  
-                  {isOverBudget && (
-                    <Text className="mt-3 text-xs font-medium text-red-500 text-center">
-                      Over budget by {userProfile.currencySymbol}{formatNumber(bp.spent - bp.amount)}
+                  <View>
+                    <Text className="text-base font-semibold">{bp.category}</Text>
+                    <Text className="text-xs text-muted">
+                      {userProfile.currencySymbol}
+                      {formatNumber(bp.spent)} spent (
+                      {bp.amount > 0 ? Math.round((bp.spent / bp.amount) * 100) : 0}%)
                     </Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+                  </View>
+                </View>
+                <View className="items-end">
+                  <Text className="text-base font-bold">
+                    {userProfile.currencySymbol}
+                    {formatNumber(bp.amount, 0)}
+                  </Text>
+                  <Text className="text-xs text-muted">Limit</Text>
+                </View>
+              </View>
+
+              <View className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                <View
+                  className={`h-full rounded-full ${progressColor}`}
+                  style={{ width: `${bp.percentage}%` }}
+                />
+              </View>
+
+              {isOverBudget && (
+                <Text className="mt-3 text-center text-xs font-medium text-red-500">
+                  Over budget by {userProfile.currencySymbol}
+                  {formatNumber(bp.spent - bp.amount)}
+                </Text>
+              )}
+            </TouchableOpacity>
+          );
+        }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          paddingHorizontal: 20,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+      />
     </View>
   );
 }
