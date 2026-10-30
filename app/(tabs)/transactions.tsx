@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
-import { useApp } from '@/context/AppContext';
+import { useAppActions, useAppSelector, selectSortedCategories } from '@/context/store';
 import {
   type TransactionDayGroup,
   searchTransactions,
@@ -37,14 +37,13 @@ const DayGroupSeparator = () => <View className="h-4" />;
 export default function TransactionsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const {
-    transactions,
-    accounts,
-    deleteTransaction,
-    userProfile,
-    getSortedCategories,
-    customCategories,
-  } = useApp();
+  const { deleteTransaction } = useAppActions();
+  const transactions = useAppSelector((state) => state.transactions);
+  const accounts = useAppSelector((state) => state.accounts);
+  const currencySymbol = useAppSelector((state) => state.userProfile.currencySymbol);
+  const customCategories = useAppSelector((state) => state.customCategories);
+  const deletedDefaultCategories = useAppSelector((state) => state.deletedDefaultCategories);
+  const categoryOrder = useAppSelector((state) => state.categoryOrder);
   const scrollRef = useRef<FlashListRef<TransactionDayGroup>>(null);
 
   useEffect(() => {
@@ -173,7 +172,12 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     const seen = new Set<string>();
     const items: { name: string; icon: LucideIcon; color: string }[] = [];
     for (const type of types) {
-      for (const cat of getSortedCategories(type)) {
+      for (const cat of selectSortedCategories(
+        type,
+        customCategories,
+        deletedDefaultCategories,
+        categoryOrder
+      )) {
         if (seen.has(cat.name)) continue;
         seen.add(cat.name);
         items.push({
@@ -184,7 +188,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
       }
     }
     return items;
-  }, [filter, getSortedCategories]);
+  }, [filter, customCategories, deletedDefaultCategories, categoryOrder]);
 
   // Group transactions by local day, formatting each day label once.
   const grouped = useMemo(() => groupTransactionsByDay(visibleTransactions), [visibleTransactions]);
@@ -201,16 +205,16 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
         onToggleExpand={toggleTransactionExpand}
         onDelete={handleDelete}
         walletNames={walletNames}
-        currencySymbol={userProfile.currencySymbol}
+        currencySymbol={currencySymbol}
         customCategories={customCategories}
       />
     ),
     [
       customCategories,
+      currencySymbol,
       expandedTransactionId,
       handleDelete,
       toggleTransactionExpand,
-      userProfile.currencySymbol,
       walletNames,
     ]
   );
@@ -317,7 +321,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
               <QuickStatsCards
                 income={totalIncome}
                 expense={totalExpense}
-                currencySymbol={userProfile.currencySymbol}
+                currencySymbol={currencySymbol}
               />
             )}
           </>
