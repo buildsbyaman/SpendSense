@@ -10,4 +10,6 @@ export {
   type CategoryOrder,
 } from './state';
 export { selectSortedCategories, sortAccounts, type SortedCategoryItem } from './selectors';
-export { useAppSelector, useSortedAccounts, useSortedCategories } from './hooks';
+export { useAppActions, useAppSelector, useSortedAccounts, useSortedCategories } from './hooks';
+export { actions, type AppActions } from './actions';
+export { initialize } from './initialize';

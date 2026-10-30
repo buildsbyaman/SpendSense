@@ -1,210 +1,25 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
-import {
-  fetchCustomCategories,
-  fetchDeletedDefaultCategories,
-  fetchCategoryOrder,
-  fetchWalletOrder,
-} from '@/lib/repository';
-import { loadInitialData } from './initSnapshot';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import type { AppContextType } from './types';
-import { useAppCore } from './state/core';
-import { useCategoriesState } from './state/useCategoriesState';
-import { useWalletsState } from './state/useWalletsState';
-import { useTransactionsState } from './state/useTransactionsState';
-import { useSubscriptionsState } from './state/useSubscriptionsState';
-import { useBudgetsState } from './state/useBudgetsState';
-import { useProfileState } from './hooks/useProfileState';
-import { useDataManagement } from './hooks/useDataManagement';
+import { actions, getState, initialize, subscribe } from './store';
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
-
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const core = useAppCore();
-  const {
-    accounts,
-    setAccounts,
-    transactions,
-    setTransactions,
-    customCategories,
-    setCustomCategories,
-    deletedDefaultCategories,
-    setDeletedDefaultCategories,
-    categoryOrder,
-    setCategoryOrder,
-    walletOrder,
-    setWalletOrder,
-    userProfile,
-    setUserProfile,
-    budgets,
-    setBudgets,
-    subscriptions,
-    setSubscriptions,
-    ready,
-    setReady,
-  } = core;
-
-  const {
-    addCustomCategory,
-    updateCustomCategory,
-    deleteCustomCategory,
-    deleteDefaultCategory,
-    updateCategoryOrder,
-    getSortedCategories,
-  } = useCategoriesState(core);
-  const {
-    addWallet,
-    updateWallet,
-    deleteWallet,
-    setDefaultWallet,
-    updateWalletOrder,
-    getSortedAccounts,
-  } = useWalletsState(core);
-  const { addTransaction, deleteTransaction, updateTransaction } = useTransactionsState(core);
-  const { addSubscription, updateSubscription, deleteSubscription } = useSubscriptionsState(core);
-  const { addBudget, updateBudget, deleteBudget } = useBudgetsState(core);
-
+/**
+ * Initialization boundary only. State lives in the external store, so the
+ * provider never re-renders its children when app data changes.
+ */
+export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const snapshot = await loadInitialData();
-        if (cancelled) return;
-        setAccounts(snapshot.accounts);
-        setTransactions(snapshot.transactions);
-        setCustomCategories(snapshot.customCategories);
-        setDeletedDefaultCategories(snapshot.deletedDefaultCategories);
-        setCategoryOrder({ expense: snapshot.expenseOrder, income: snapshot.incomeOrder });
-        setWalletOrder(snapshot.walletOrder);
-        setUserProfile(snapshot.profile);
-        setBudgets(snapshot.budgets);
-        setSubscriptions(snapshot.subscriptions);
-        setReady(true);
-      } catch (err) {
-        console.error('App init failed:', err);
-        if (!cancelled) setReady(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // Setters are stable; the effect must run once per mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    initialize();
   }, []);
 
-  const { updateUserProfile, completeOnboarding, updateCurrencyAndConvert } = useProfileState({
-    userProfile: core.userProfile,
-    setUserProfile: core.setUserProfile,
-    setAccounts: core.setAccounts,
-    setTransactions: core.setTransactions,
-    setBudgets: core.setBudgets,
-    setSubscriptions: core.setSubscriptions,
-  });
-
-  const { refreshAllData, clearAllData, seedDemoData } = useDataManagement({
-    setAccounts: core.setAccounts,
-    setTransactions: core.setTransactions,
-    setCustomCategories: core.setCustomCategories,
-    setDeletedDefaultCategories: core.setDeletedDefaultCategories,
-    setCategoryOrder: core.setCategoryOrder,
-    setWalletOrder: core.setWalletOrder,
-    setBudgets: core.setBudgets,
-    setSubscriptions: core.setSubscriptions,
-    setUserProfile: core.setUserProfile,
-    userProfile: core.userProfile,
-  });
-
-  const value = useMemo(
-    () => ({
-      accounts,
-      transactions,
-      addWallet,
-      updateWallet,
-      deleteWallet,
-      setDefaultWallet,
-      addTransaction,
-      deleteTransaction,
-      updateTransaction,
-      clearAllData,
-      seedDemoData,
-      userProfile,
-      updateUserProfile,
-      completeOnboarding,
-      ready,
-      updateCurrencyAndConvert,
-      refreshAllData,
-      customCategories,
-      addCustomCategory,
-      updateCustomCategory,
-      deleteCustomCategory,
-      deletedDefaultCategories,
-      deleteDefaultCategory,
-      categoryOrder,
-      updateCategoryOrder,
-      getSortedCategories,
-      walletOrder,
-      updateWalletOrder,
-      getSortedAccounts,
-      budgets,
-      addBudget,
-      updateBudget,
-      deleteBudget,
-      subscriptions,
-      addSubscription,
-      updateSubscription,
-      deleteSubscription,
-    }),
-    [
-      accounts,
-      transactions,
-      addWallet,
-      updateWallet,
-      deleteWallet,
-      setDefaultWallet,
-      addTransaction,
-      deleteTransaction,
-      updateTransaction,
-      clearAllData,
-      seedDemoData,
-      userProfile,
-      updateUserProfile,
-      completeOnboarding,
-      ready,
-      updateCurrencyAndConvert,
-      refreshAllData,
-      customCategories,
-      addCustomCategory,
-      updateCustomCategory,
-      deleteCustomCategory,
-      deletedDefaultCategories,
-      deleteDefaultCategory,
-      categoryOrder,
-      updateCategoryOrder,
-      getSortedCategories,
-      walletOrder,
-      updateWalletOrder,
-      getSortedAccounts,
-      budgets,
-      addBudget,
-      updateBudget,
-      deleteBudget,
-      subscriptions,
-      addSubscription,
-      updateSubscription,
-      deleteSubscription,
-    ]
-  );
-
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <>{children}</>;
 }
 
-export function useApp() {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
-  return context;
+/**
+ * Facade over the external store. Kept for consumers that have not been
+ * migrated to `useAppSelector` / `useAppActions` yet; it subscribes to the
+ * whole state, so those consumers still re-render on every slice change.
+ */
+export function useApp(): AppContextType {
+  const state = useSyncExternalStore(subscribe, getState, getState);
+  return { ...state, ...actions };
 }

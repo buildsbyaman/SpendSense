@@ -328,3 +328,10 @@ success and failure paths.
 - `seedDemoData` (every refreshed collection)
 - `refreshAllData` (every refreshed collection)
 - `initialize` / `loadInitialData` (final hydration)
+
+## Equivalence test
+
+`npm run test:store` runs the legacy hooks and the store actions through the
+same 22-step sequence on generated seed data and compares the state after every
+step. The test replaces SQLite with a no-op repository and uses deterministic
+ids, so it exercises ordering and state transitions without touching user data.

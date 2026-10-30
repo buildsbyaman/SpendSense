@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { Account } from '@/utils/wallet';
+import { actions, type AppActions } from './actions';
 import { getState, subscribe, type AppData } from './state';
 import { selectSortedCategories, sortAccounts, type SortedCategoryItem } from './selectors';
 
@@ -16,6 +17,11 @@ import { selectSortedCategories, sortAccounts, type SortedCategoryItem } from '.
 export function useAppSelector<T>(selector: (state: AppData) => T): T {
   const getSnapshot = useCallback(() => selector(getState()), [selector]);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+/** Returns the frozen action object; safe to use in dependency arrays. */
+export function useAppActions(): AppActions {
+  return actions;
 }
 
 /** Accounts in saved wallet order (or highest balance first). */

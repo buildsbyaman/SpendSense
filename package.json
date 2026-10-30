@@ -8,7 +8,8 @@
     "android": "expo start -c --android",
     "ios": "expo start -c --ios",
     "web": "expo start -c --web",
-    "clean": "rm -rf .expo node_modules"
+    "clean": "rm -rf .expo node_modules",
+    "test:store": "node --experimental-strip-types --import ./scripts/store-equivalence/register.mjs ./scripts/store-equivalence/equivalence.test.mts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
