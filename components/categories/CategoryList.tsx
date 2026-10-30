@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, FlatList, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Tag, Plus } from 'lucide-react-native';
@@ -33,33 +33,45 @@ export function CategoryList({
   listRef,
   maxHeight,
 }: CategoryListProps) {
-
   if (categories.length === 0) {
     return (
-      <View className="items-center justify-center mt-20 px-6">
-        <View className="w-24 h-24 bg-secondary rounded-full items-center justify-center mb-6">
+      <View className="mt-20 items-center justify-center px-6">
+        <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-secondary">
           <Icon as={Tag} size={40} className="text-muted opacity-50" />
         </View>
-        <Text variant="h3" className="text-center mb-2 text-foreground">
+        <Text variant="h3" className="mb-2 text-center text-foreground">
           No Categories Yet
         </Text>
-        <Text className="text-muted text-center mb-8">
+        <Text className="mb-8 text-center text-muted">
           Add your first custom category to organize your spending.
         </Text>
         <TouchableOpacity
-          className="bg-primary px-6 py-4 rounded-[6px] flex-row items-center gap-2"
+          className="flex-row items-center gap-2 rounded-[6px] bg-primary px-6 py-4"
           onPress={onAddFirstCategory}
           activeOpacity={0.7}>
           <Icon as={Plus} size={20} className="text-white dark:text-black" />
-          <Text className="text-white dark:text-black font-medium text-base">
-            Add Category
-          </Text>
+          <Text className="text-base font-medium text-white dark:text-black">Add Category</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   const ItemSeparator = () => <View className="h-[1px] bg-divider" />;
+
+  const renderCategory = (item: CategoryItemData, drag?: () => void, isActive = false) => (
+    <CategoryItem
+      category={item}
+      isExpanded={!reorderMode && expandedCategoryId === item.name}
+      onToggleExpand={() => onToggleExpand(item.name)}
+      onEdit={() => onEditClick(item)}
+      onDelete={() => onDeleteClick(item)}
+      drag={reorderMode ? drag : undefined}
+      isDragging={isActive}
+      reorderMode={reorderMode}
+    />
+  );
+
+  const listStyle = maxHeight && maxHeight > 0 ? { maxHeight } : undefined;
 
   return (
     <View
@@ -69,33 +81,36 @@ export function CategoryList({
         flexShrink: 1,
         ...(maxHeight && maxHeight > 0 ? { maxHeight } : {}),
       }}>
-      <DraggableFlatList
-        ref={listRef}
-        data={categories}
-        keyExtractor={(item) => item.name}
-        onDragEnd={({ data }) => onReorderEnd?.(data)}
-        renderItem={({ item, drag, isActive }) => {
-          return (
-            <ScaleDecorator>
-              <CategoryItem
-                category={item}
-                isExpanded={!reorderMode && expandedCategoryId === item.name}
-                onToggleExpand={() => onToggleExpand(item.name)}
-                onEdit={() => onEditClick(item)}
-                onDelete={() => onDeleteClick(item)}
-                drag={reorderMode ? drag : undefined}
-                isDragging={isActive}
-                reorderMode={reorderMode}
-              />
-            </ScaleDecorator>
-          );
-        }}
-        ListHeaderComponent={listHeader}
-        ItemSeparatorComponent={ItemSeparator}
-        showsVerticalScrollIndicator={false}
-        style={maxHeight && maxHeight > 0 ? { maxHeight } : undefined}
-        containerStyle={{ flexShrink: 1 }}
-      />
+      {reorderMode ? (
+        // Drag-and-drop is only mounted during reordering, so normal browsing
+        // does not pay for its gesture handlers.
+        <DraggableFlatList
+          ref={listRef}
+          data={categories}
+          keyExtractor={(item) => item.name}
+          onDragEnd={({ data }) => onReorderEnd?.(data)}
+          renderItem={({ item, drag, isActive }) => (
+            <ScaleDecorator>{renderCategory(item, drag, isActive)}</ScaleDecorator>
+          )}
+          ListHeaderComponent={listHeader}
+          ItemSeparatorComponent={ItemSeparator}
+          showsVerticalScrollIndicator={false}
+          style={listStyle}
+          containerStyle={{ flexShrink: 1 }}
+        />
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={categories}
+          keyExtractor={(item) => item.name}
+          renderItem={({ item }) => renderCategory(item)}
+          ListHeaderComponent={listHeader}
+          ItemSeparatorComponent={ItemSeparator}
+          showsVerticalScrollIndicator={false}
+          style={listStyle}
+          removeClippedSubviews={false}
+        />
+      )}
     </View>
   );
 }

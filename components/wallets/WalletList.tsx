@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, FlatList } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Wallet, Plus } from 'lucide-react-native';
@@ -58,6 +58,22 @@ export function WalletList({
 
   const ItemSeparator = () => <View className="h-[1px] bg-divider" />;
 
+  const renderWallet = (item: Account, drag?: () => void, isActive = false) => (
+    <WalletItem
+      account={item}
+      isExpanded={!reorderMode && expandedWalletId === item.id}
+      onToggleExpand={() => onToggleExpand(item.id)}
+      onSetDefault={() => onSetDefault(item.id)}
+      onDelete={() => onDeleteClick(item.id)}
+      onEditClick={() => onEditClick(item.id)}
+      drag={reorderMode ? drag : undefined}
+      isDragging={isActive}
+      reorderMode={reorderMode}
+    />
+  );
+
+  const listStyle = maxHeight && maxHeight > 0 ? { maxHeight } : undefined;
+
   return (
     <View
       className="overflow-hidden rounded-xl border border-border bg-surface"
@@ -67,31 +83,34 @@ export function WalletList({
         ...(maxHeight && maxHeight > 0 ? { maxHeight } : {}),
       }}>
       {listHeader}
-      <DraggableFlatList
-        ref={listRef}
-        data={accounts}
-        keyExtractor={(item: Account) => item.id}
-        onDragEnd={({ data }) => onReorderEnd?.(data)}
-        renderItem={({ item, drag, isActive }) => (
-          <ScaleDecorator>
-            <WalletItem
-              account={item}
-              isExpanded={!reorderMode && expandedWalletId === item.id}
-              onToggleExpand={() => onToggleExpand(item.id)}
-              onSetDefault={() => onSetDefault(item.id)}
-              onDelete={() => onDeleteClick(item.id)}
-              onEditClick={() => onEditClick(item.id)}
-              drag={reorderMode ? drag : undefined}
-              isDragging={isActive}
-              reorderMode={reorderMode}
-            />
-          </ScaleDecorator>
-        )}
-        ItemSeparatorComponent={ItemSeparator}
-        showsVerticalScrollIndicator={false}
-        style={maxHeight && maxHeight > 0 ? { maxHeight } : undefined}
-        containerStyle={{ flexShrink: 1 }}
-      />
+      {reorderMode ? (
+        // The drag-and-drop list is only mounted while reordering; the normal
+        // browsing path uses a plain FlatList and skips its gesture plumbing.
+        <DraggableFlatList
+          ref={listRef}
+          data={accounts}
+          keyExtractor={(item: Account) => item.id}
+          onDragEnd={({ data }) => onReorderEnd?.(data)}
+          renderItem={({ item, drag, isActive }) => (
+            <ScaleDecorator>{renderWallet(item, drag, isActive)}</ScaleDecorator>
+          )}
+          ItemSeparatorComponent={ItemSeparator}
+          showsVerticalScrollIndicator={false}
+          style={listStyle}
+          containerStyle={{ flexShrink: 1 }}
+        />
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={accounts}
+          keyExtractor={(item: Account) => item.id}
+          renderItem={({ item }) => renderWallet(item)}
+          ItemSeparatorComponent={ItemSeparator}
+          showsVerticalScrollIndicator={false}
+          style={listStyle}
+          removeClippedSubviews={false}
+        />
+      )}
     </View>
   );
 }
