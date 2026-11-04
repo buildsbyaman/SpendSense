@@ -30,6 +30,8 @@ import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DayOfMonthPicker } from '@/components/wallets/DayOfMonthPicker';
 import AnimatedSegment from '@/components/ui/animated-segment';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
+import { triggerKeypadHaptic, triggerSuccessHaptic } from '@/utils/haptics';
 
 const ACCOUNT_TYPES = ['Card', 'Bank', 'Digital', 'Cash'] as const;
 
@@ -90,6 +92,7 @@ export default function AddWalletScreen() {
 
   // Keypad logic
   const handleToggleNegative = () => {
+    triggerKeypadHaptic();
     if (newBalance.startsWith('-')) {
       setNewBalance(newBalance.slice(1));
     } else {
@@ -98,6 +101,7 @@ export default function AddWalletScreen() {
   };
 
   const handleKeyPress = (key: string) => {
+    triggerKeypadHaptic();
     if (key === '.') {
       if (newBalance.includes('.')) return;
       if (!newBalance || newBalance === '-') {
@@ -136,6 +140,7 @@ export default function AddWalletScreen() {
   };
 
   const handleBackspace = () => {
+    triggerKeypadHaptic();
     if (!newBalance || newBalance.length <= 1 || newBalance === '-') {
       setNewBalance('');
     } else {
@@ -149,12 +154,14 @@ export default function AddWalletScreen() {
   };
 
   const handleClear = () => {
+    triggerKeypadHaptic();
     setNewBalance('');
   };
 
   const savingRef = useRef(false);
 
   const handleSave = () => {
+    triggerSuccessHaptic();
     if (savingRef.current) return;
 
     const newErrors = validateWallet(newName, newBalance);
@@ -267,10 +274,10 @@ export default function AddWalletScreen() {
   const isCurrentDefault = accounts.find((a) => a.id === editId)?.isDefault || false;
 
   return (
-    <View
+    <ScreenTransition
       className="flex-1 bg-background"
       style={{
-        paddingTop: Math.max(insets.top, 16) + 16,
+        paddingTop: insets.top + 16,
         paddingBottom: Math.max(insets.bottom, 16),
       }}>
       {/* ── Top Bar: Close (Left), Heading (Center), Delete / Spacer (Right) ── */}
@@ -570,6 +577,6 @@ export default function AddWalletScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </ScreenTransition>
   );
 }

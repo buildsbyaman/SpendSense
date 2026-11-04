@@ -1,7 +1,7 @@
 {
   "name": "SpendSense",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "scripts": {
     "dev:demo": "EXPO_PUBLIC_DEV_MODE=1 expo start -c",
     "dev": "expo start -c",
@@ -22,6 +22,7 @@
     "expo-blur": "~56.0.4",
     "expo-constants": "~56.0.19",
     "expo-document-picker": "~56.0.4",
+    "expo-haptics": "~56.0.3",
     "expo-image-picker": "~56.0.22",
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.14",

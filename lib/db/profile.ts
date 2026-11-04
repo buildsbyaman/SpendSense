@@ -27,8 +27,8 @@ export async function fetchProfile(): Promise<UserProfile | null> {
   return row
     ? {
         name: row.name,
-        currencySymbol: row.currency_symbol || '$',
-        currencyCode: row.currency_code || 'USD',
+        currencySymbol: row.currency_symbol || '₹',
+        currencyCode: row.currency_code || 'INR',
         avatar: row.avatar || null,
         hasOnboarded: row.has_onboarded === 1,
       }

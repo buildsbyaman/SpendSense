@@ -249,18 +249,20 @@ export default function TransactionDatePickerModal({
               </View>
             </View>
           )}
-          <View className="flex-row gap-3 pt-2">
+          <View className="flex-row gap-2.5 pt-2">
             <TouchableOpacity
               onPress={onClose}
-              className="flex-1 py-3 bg-secondary rounded-[6px] items-center"
+              className="h-11 flex-1 items-center justify-center rounded-xl border border-border/60 bg-secondary/80 active:scale-[0.98]"
+              activeOpacity={0.85}
             >
-              <Text className="font-bold text-xs text-foreground">Cancel</Text>
+              <Text className="text-sm font-semibold text-foreground">Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleConfirm}
-              className="flex-1 py-3 bg-primary rounded-[6px] items-center"
+              className="h-11 flex-1 items-center justify-center rounded-xl bg-primary active:scale-[0.98]"
+              activeOpacity={0.85}
             >
-              <Text className="font-medium text-xs text-white dark:text-black">Confirm</Text>
+              <Text className="text-sm font-bold text-white dark:text-black">Confirm</Text>
             </TouchableOpacity>
           </View>
           </View>

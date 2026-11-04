@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { View, StyleSheet, BackHandler } from 'react-native';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Portal } from '@rn-primitives/portal';
@@ -7,6 +7,7 @@ interface InAppModalProps {
   visible: boolean;
   onRequestClose: () => void;
   animation?: 'none' | 'slide';
+  name?: string;
   children: React.ReactNode;
 }
 
@@ -14,8 +15,12 @@ export function InAppModal({
   visible,
   onRequestClose,
   animation = 'none',
+  name,
   children,
 }: InAppModalProps) {
+  const autoId = useId();
+  const portalName = name || `in-app-modal-${autoId}`;
+
   useEffect(() => {
     if (!visible) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -28,8 +33,10 @@ export function InAppModal({
   if (!visible) return null;
 
   return (
-    <Portal name="in-app-modal">
-      <View style={[StyleSheet.absoluteFill, styles.layer]}>
+    <Portal name={portalName}>
+      <View
+        pointerEvents={visible ? 'auto' : 'none'}
+        style={[StyleSheet.absoluteFill, styles.layer]}>
         {animation === 'slide' ? (
           <Animated.View
             style={styles.fill}

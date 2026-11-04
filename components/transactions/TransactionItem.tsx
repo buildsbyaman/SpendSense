@@ -2,12 +2,18 @@ import React, { useRef, useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { ChevronDown, ArrowLeftRight } from 'lucide-react-native';
+import { ChevronDown, ArrowLeftRight, ArrowRight, type LucideIcon } from 'lucide-react-native';
 import { type Transaction, type CustomCategory, getCategoryDetails } from '@/utils/transaction';
-import { formatNumber } from '@/utils/wallet';
+import { formatNumber, getWalletTypeColor, getWalletTypeIcon, type Account } from '@/utils/wallet';
 import { router } from 'expo-router';
 import { useExpandAnimation } from '@/hooks/useExpandAnimation';
 import Animated from 'react-native-reanimated';
+
+interface PillDetails {
+  label: string;
+  icon?: LucideIcon;
+  color?: string;
+}
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -16,6 +22,7 @@ interface TransactionItemProps {
   onToggleExpand: (id: string) => void;
   onDelete: (id: string, title: string) => void;
   walletNames: Map<string, string>;
+  wallets?: Map<string, Account>;
   /** Fallback when a wallet id is missing (Home and History use different copy). */
   unknownWalletLabel?: string;
   currencySymbol: string;
@@ -44,32 +51,95 @@ function AnimatedChevron({
   );
 }
 
+function ActionPill({
+  icon,
+  color,
+  label,
+}: {
+  icon?: LucideIcon;
+  color?: string;
+  label: string;
+}) {
+  const hasIcon = Boolean(icon && color);
+  const bg =
+    color && color.startsWith('#') && (color.length === 7 || color.length === 4)
+      ? `${color}18`
+      : 'rgba(120, 120, 120, 0.12)';
+
+  return (
+    <View
+      className={`h-[26px] flex-row items-center rounded-full border border-border bg-secondary/60 ${
+        hasIcon ? 'gap-1.5 pl-2 pr-2.5' : 'px-3'
+      }`}>
+      {hasIcon && icon && color && (
+        <View
+          className="h-4 w-4 items-center justify-center rounded-full"
+          style={{ backgroundColor: bg }}>
+          <Icon as={icon} size={10} color={color} />
+        </View>
+      )}
+      <Text className="text-[11.5px] font-medium text-foreground" numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 function TransactionActions({
   transaction,
   isExpanded,
   animateOnMount,
   onDelete,
-  walletName,
-  toWalletName,
   isTransfer,
+  walletPill,
+  toWalletPill,
+  categoryPill,
 }: {
   transaction: Transaction;
   isExpanded: boolean;
   animateOnMount: boolean;
   onDelete: (id: string, title: string) => void;
-  walletName: string;
-  toWalletName?: string;
   isTransfer: boolean;
+  walletPill: PillDetails;
+  toWalletPill?: PillDetails;
+  categoryPill?: PillDetails;
 }) {
-  const { actionsStyle } = useExpandAnimation(isExpanded, animateOnMount, 90);
+  const { actionsStyle } = useExpandAnimation(isExpanded, animateOnMount, 105);
 
   return (
     <Animated.View style={actionsStyle}>
-      {/* Account and Category Detail on One Line */}
-      <View className="px-5 pt-1 pb-2.5">
-        <Text className="text-[12px] font-medium text-muted" numberOfLines={1}>
-          {walletName} • {isTransfer ? toWalletName : transaction.category}
-        </Text>
+      {/* Category and Payment Method Detail Pills */}
+      <View className="flex-row flex-wrap items-center gap-2 px-5 pt-1 pb-3">
+        {isTransfer ? (
+          <>
+            <ActionPill
+              icon={walletPill.icon}
+              color={walletPill.color}
+              label={walletPill.label}
+            />
+            <Icon as={ArrowRight} size={12} className="text-muted" />
+            {toWalletPill && (
+              <ActionPill
+                icon={toWalletPill.icon}
+                color={toWalletPill.color}
+                label={toWalletPill.label}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            {categoryPill && (
+              <ActionPill
+                label={categoryPill.label}
+              />
+            )}
+            <ActionPill
+              icon={walletPill.icon}
+              color={walletPill.color}
+              label={walletPill.label}
+            />
+          </>
+        )}
       </View>
 
       {/* Action Buttons */}
@@ -101,6 +171,7 @@ export const TransactionItem = React.memo(function TransactionItem({
   onToggleExpand,
   onDelete,
   walletNames,
+  wallets,
   unknownWalletLabel = 'Unknown Wallet',
   currencySymbol,
   customCategories,
@@ -118,10 +189,35 @@ export const TransactionItem = React.memo(function TransactionItem({
     ? { icon: ArrowLeftRight, color: '#777777' }
     : getCategoryDetails(transaction.category, transaction.title, customCategories);
 
-  const walletName = walletNames.get(transaction.walletId) || unknownWalletLabel;
+  const wallet = wallets?.get(transaction.walletId);
+  const walletName = wallet?.name || walletNames.get(transaction.walletId) || unknownWalletLabel;
+  const walletType = wallet?.type || 'Card';
+  const walletPill: PillDetails = {
+    label: walletName,
+    icon: wallet?.icon || getWalletTypeIcon(walletType),
+    color: getWalletTypeColor(walletType),
+  };
+
+  const toWallet = isTransfer && transaction.toWalletId ? wallets?.get(transaction.toWalletId) : undefined;
   const toWalletName = isTransfer
-    ? walletNames.get(transaction.toWalletId ?? '') || unknownWalletLabel
+    ? toWallet?.name || walletNames.get(transaction.toWalletId ?? '') || unknownWalletLabel
     : undefined;
+  const toWalletType = toWallet?.type || 'Card';
+  const toWalletPill: PillDetails | undefined =
+    isTransfer && toWalletName
+      ? {
+          label: toWalletName,
+          icon: toWallet?.icon || getWalletTypeIcon(toWalletType),
+          color: getWalletTypeColor(toWalletType),
+        }
+      : undefined;
+
+  const categoryPill: PillDetails | undefined =
+    !isTransfer && transaction.category
+      ? {
+          label: transaction.category,
+        }
+      : undefined;
 
   const subtitle = isTransfer
     ? `${walletName} → ${toWalletName}`
@@ -179,9 +275,10 @@ export const TransactionItem = React.memo(function TransactionItem({
           isExpanded={isExpanded}
           animateOnMount={animateOnMount}
           onDelete={onDelete}
-          walletName={walletName}
-          toWalletName={toWalletName}
           isTransfer={isTransfer}
+          walletPill={walletPill}
+          toWalletPill={toWalletPill}
+          categoryPill={categoryPill}
         />
       )}
 

@@ -18,7 +18,7 @@ function compactTier(n: number): string {
 }
 
 /** Compact axis label: $850, $12.5k, $3.2M, $1.1B (cents kept below $100). */
-export function formatCompactCurrency(v: number, symbol: string = '$'): string {
+export function formatCompactCurrency(v: number, symbol: string = '₹'): string {
   const abs = Math.abs(v);
   const sign = v < 0 ? '-' : '';
   if (abs >= 1_000_000_000) {

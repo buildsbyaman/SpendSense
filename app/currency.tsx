@@ -29,7 +29,7 @@ export default function CurrencySettings() {
   const getDefaultSelection = () => {
     return PRESET_CURRENCIES.some((c) => c.code === userProfile.currencyCode)
       ? userProfile.currencyCode
-      : 'USD';
+      : 'INR';
   };
   const [selectedCode, setSelectedCode] = useState(getDefaultSelection);
 

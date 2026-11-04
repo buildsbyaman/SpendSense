@@ -73,8 +73,9 @@ export default function SubscriptionsScreen({ referrer }: { referrer?: string })
           rightIcon={Plus}
           onRightPress={() => router.push('/add-subscription')}
         />
-        <View className="mb-2 mt-6">
+        <View className="mb-4 mt-2 items-center justify-center">
           <AnimatedSegment<'current' | 'expired'>
+            width={140}
             options={[
               { label: 'Current', value: 'current' },
               { label: 'Expired', value: 'expired' },

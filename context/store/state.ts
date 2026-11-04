@@ -42,8 +42,8 @@ export function createInitialAppData(): AppData {
     walletOrder: [],
     userProfile: {
       name: 'User',
-      currencySymbol: '$',
-      currencyCode: 'USD',
+      currencySymbol: '₹',
+      currencyCode: 'INR',
       avatar: null,
       hasOnboarded: false,
     },

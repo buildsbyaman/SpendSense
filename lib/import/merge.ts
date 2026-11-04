@@ -140,8 +140,8 @@ export function buildImportPlan(
         plan.profile = {
           value: {
             name,
-            currencySymbol: map.get('Currency Symbol') || '$',
-            currencyCode: map.get('Currency Code') || importedCurrency || 'USD',
+            currencySymbol: map.get('Currency Symbol') || '₹',
+            currencyCode: map.get('Currency Code') || importedCurrency || 'INR',
             avatar: (() => {
               const v = map.get('Avatar');
               if (!v || v === '—') return null;

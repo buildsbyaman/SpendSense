@@ -36,6 +36,8 @@ import { usePrefillTransactionForm } from '@/components/transactions/usePrefillT
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { checkBudgetWarning } from '@/hooks/useBudgetWarning';
 import AnimatedSegment from '@/components/ui/animated-segment';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
+import { triggerKeypadHaptic, triggerSuccessHaptic } from '@/utils/haptics';
 
 const isSameDay = (d1: Date, d2: Date) => {
   return (
@@ -190,6 +192,7 @@ export default function AddTransactionScreen() {
 
   // Keypad logic
   const handleToggleNegative = () => {
+    triggerKeypadHaptic();
     if (amount.startsWith('-')) {
       setAmount(amount.slice(1));
     } else {
@@ -198,6 +201,7 @@ export default function AddTransactionScreen() {
   };
 
   const handleKeyPress = (key: string) => {
+    triggerKeypadHaptic();
     if (key === '.') {
       if (amount.includes('.')) return;
       if (!amount || amount === '-') {
@@ -236,6 +240,7 @@ export default function AddTransactionScreen() {
   };
 
   const handleBackspace = () => {
+    triggerKeypadHaptic();
     if (!amount || amount.length <= 1 || amount === '-') {
       setAmount('');
     } else {
@@ -249,12 +254,14 @@ export default function AddTransactionScreen() {
   };
 
   const handleClear = () => {
+    triggerKeypadHaptic();
     setAmount('');
   };
 
   const savingRef = useRef(false);
 
   const handleSave = async () => {
+    triggerSuccessHaptic();
     if (savingRef.current) return;
 
     const { isValid, errorTitle, errorMessage, parsedAmount } = validateTransaction(
@@ -352,10 +359,10 @@ export default function AddTransactionScreen() {
   };
 
   return (
-    <View
+    <ScreenTransition
       className="flex-1 bg-background"
       style={{
-        paddingTop: Math.max(insets.top, 16) + 16,
+        paddingTop: insets.top + 16,
         paddingBottom: Math.max(insets.bottom, 16),
       }}>
       {/* ── Top Bar: Close (Left), Heading (Center), Calendar (Right) ── */}
@@ -825,6 +832,6 @@ export default function AddTransactionScreen() {
         onNavigateMonth={navigateMonth}
         onChangeMonth={setCalendarMonth}
       />
-    </View>
+    </ScreenTransition>
   );
 }

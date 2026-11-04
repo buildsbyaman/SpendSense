@@ -9,7 +9,6 @@ import Toast from 'react-native-toast-message';
 import { useApp } from '@/context/AppContext';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import AnimatedSegment from '@/components/ui/animated-segment';
 import { LabeledSegment } from '@/components/ui/LabeledSegment';
 import { ImportButton } from '@/components/import/ImportButton';
 import { DataTypeChips } from '@/components/import/DataTypeChips';
@@ -17,8 +16,7 @@ import { FilePickerRow } from '@/components/import/FilePickerRow';
 import * as DocumentPicker from 'expo-document-picker';
 
 import { type ExportedTable } from '@/lib/export/buildExportData';
-import { type ExportFormat } from '@/lib/export/download';
-import { parseDocumentFile, MAX_IMPORT_FILE_SIZE } from '@/lib/import/parseFile';
+import { parseDocumentFile, MAX_IMPORT_FILE_SIZE, type DetectedFormat } from '@/lib/import/parseFile';
 import {
   buildImportPlan,
   type ImportMode,
@@ -27,7 +25,7 @@ import {
 } from '@/lib/import/merge';
 import { applyImportPlan } from '@/lib/import/apply';
 import { getPlanTotalRecords, formatPlanSummary } from '@/lib/import/planStats';
-import { DATA_TYPES, FORMATS, IMPORT_MODES, CONFLICT_POLICIES, MIME_MAP, type ImportType } from '@/lib/import/constants';
+import { DATA_TYPES, IMPORT_MODES, CONFLICT_POLICIES, SUPPORTED_IMPORT_MIMES, type ImportType } from '@/lib/import/constants';
 
 export default function ImportScreen() {
   const insets = useSafeAreaInsets();
@@ -46,7 +44,7 @@ export default function ImportScreen() {
   const { navigate: navigateTab } = useTabNavigation();
 
   const [selectedTypes, setSelectedTypes] = useState<ImportType[]>(['alldata']);
-  const [format, setFormat] = useState<ExportFormat>('json');
+  const [detectedFormat, setDetectedFormat] = useState<DetectedFormat | null>(null);
   const [importMode, setImportMode] = useState<ImportMode>('merge');
   const [conflictPolicy, setConflictPolicy] = useState<ConflictPolicy>('skip');
   const [importing, setImporting] = useState(false);
@@ -124,7 +122,7 @@ export default function ImportScreen() {
   const handlePickFile = useCallback(async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: [MIME_MAP[format], '*/*'],
+        type: SUPPORTED_IMPORT_MIMES,
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -147,9 +145,11 @@ export default function ImportScreen() {
       setParsing(true);
       setParsedData(null);
       setPendingPlan(null);
+      setDetectedFormat(null);
 
       try {
-        const parsed = await parseDocumentFile(asset.uri, format);
+        const parsed = await parseDocumentFile(asset.uri, asset.name, asset.mimeType);
+        setDetectedFormat(parsed.format);
         setParsedData(parsed);
         if (parsed.meta.truncated) {
           Toast.show({
@@ -165,6 +165,7 @@ export default function ImportScreen() {
           text2: err instanceof Error ? err.message : 'Could not parse the selected file.',
         });
         setSelectedFile(null);
+        setDetectedFormat(null);
       } finally {
         setParsing(false);
       }
@@ -174,7 +175,7 @@ export default function ImportScreen() {
         text1: 'Failed to pick file',
       });
     }
-  }, [format]);
+  }, []);
 
   const handleImportAction = useCallback(() => {
     if (!pendingPlan) return;
@@ -213,6 +214,7 @@ export default function ImportScreen() {
       // Reset file selection
       setSelectedFile(null);
       setParsedData(null);
+      setDetectedFormat(null);
 
       // Auto-navigate back to home
       navigateTab('profile');
@@ -262,12 +264,6 @@ export default function ImportScreen() {
         {/* ── Configuration ── */}
         <View className="mb-4 gap-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <LabeledSegment
-            label="Format"
-            options={FORMATS.map((f) => ({ value: f.key, label: f.label }))}
-            value={format}
-            onChange={(v) => setFormat(v)}
-          />
-          <LabeledSegment
             label="Import mode"
             options={IMPORT_MODES.map((m) => ({ value: m.key, label: m.label }))}
             value={importMode}
@@ -284,7 +280,11 @@ export default function ImportScreen() {
         {/* ── Attach File ── */}
         <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
           <Text className="mb-4 text-sm font-medium text-muted">Data Source</Text>
-          <FilePickerRow file={selectedFile} onPress={handlePickFile} />
+          <FilePickerRow
+            file={selectedFile}
+            detectedFormat={detectedFormat}
+            onPress={handlePickFile}
+          />
         </View>
 
         {/* ── Import button ── */}

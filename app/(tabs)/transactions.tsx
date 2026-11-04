@@ -1,4 +1,4 @@
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity, BackHandler } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
@@ -48,10 +48,13 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   const categoryOrder = useAppSelector((state) => state.categoryOrder);
   const scrollRef = useRef<FlashListRef<TransactionDayGroup>>(null);
 
+  const [referrer, setReferrer] = useState<string | null>(null);
+
   useEffect(() => {
     return addListener((tabName, params) => {
       if (tabName === 'transactions') {
         scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
+        setReferrer(params?.referrer || null);
         if (params?.category) {
           setCategoryFilter(params.category);
           if (params.type === 'expense' || params.type === 'income') {
@@ -70,9 +73,28 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
             setCalendarMonth(new Date(from.getFullYear(), from.getMonth(), 1));
           }
         }
+      } else {
+        setReferrer(null);
       }
     });
   }, [addListener]);
+
+  const handleGoBack = useCallback(() => {
+    if (referrer) {
+      const target = referrer === 'home' ? 'index' : referrer;
+      setReferrer(null);
+      navigateTab(target);
+    }
+  }, [referrer, navigateTab]);
+
+  useEffect(() => {
+    if (!referrer || !isActive) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleGoBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, [referrer, isActive, handleGoBack]);
   const [filter, setFilter] = useState<'all' | 'expense' | 'income' | 'transfer'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [walletFilter, setWalletFilter] = useState<string | null>(null);
@@ -115,6 +137,10 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   // every row the search predicate evaluates).
   const walletNames = useMemo(
     () => new Map(accounts.map((account) => [account.id, account.name] as const)),
+    [accounts]
+  );
+  const walletMap = useMemo(
+    () => new Map(accounts.map((account) => [account.id, account] as const)),
     [accounts]
   );
 
@@ -201,6 +227,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
         onToggleExpand={toggleTransactionExpand}
         onDelete={handleDelete}
         walletNames={walletNames}
+        wallets={walletMap}
         currencySymbol={currencySymbol}
         customCategories={customCategories}
       />
@@ -212,6 +239,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
       handleDelete,
       toggleTransactionExpand,
       walletNames,
+      walletMap,
     ]
   );
 
@@ -303,7 +331,11 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5">
-        <Header title="History" showBack={false} />
+        <Header
+          title="History"
+          showBack={Boolean(referrer)}
+          onLeftPress={handleGoBack}
+        />
       </View>
       <FlashList
         ref={scrollRef}

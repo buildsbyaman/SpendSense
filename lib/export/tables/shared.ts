@@ -3,7 +3,7 @@ import { type Subscription } from '@/utils/subscription';
 import { filterByMonth, filterByYear } from '@/utils/analytics';
 import { type AppState, type ExportSelection } from './types';
 
-export function fmtMoney(v: number, symbol: string = '$'): string {
+export function fmtMoney(v: number, symbol: string = '₹'): string {
   const neg = v < 0;
   const abs = Math.abs(v);
   const formatted = abs.toLocaleString('en-US', {

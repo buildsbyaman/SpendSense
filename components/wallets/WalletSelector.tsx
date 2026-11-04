@@ -1,7 +1,8 @@
 import { View, TouchableOpacity, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { type Account } from '@/utils/wallet';
+import { type Account, formatWalletDisplay, parseBalance } from '@/utils/wallet';
+import { useApp } from '@/context/AppContext';
 
 interface Props {
   accounts: Account[];
@@ -20,6 +21,7 @@ export function WalletSelector({
   emptyMessage,
   onEmptyAction,
 }: Props) {
+  const { userProfile } = useApp();
   if (accounts.length === 0) {
     return (
       <TouchableOpacity
@@ -60,7 +62,7 @@ export function WalletSelector({
                   className={`text-[10px] ${
                     isSelected ? 'text-primary opacity-70' : 'text-muted'
                   }`}>
-                  {wallet.balance}
+                  {formatWalletDisplay(parseBalance(wallet.balance), userProfile.currencySymbol)}
                 </Text>
               </View>
             </TouchableOpacity>

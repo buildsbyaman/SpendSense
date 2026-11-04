@@ -18,7 +18,7 @@ const SUB_TO_PARENT: Record<string, string> = {
 
 function TabLayoutInner() {
   const [activeTab, setActiveTab] = useState('index');
-  const { addListener, navigate } = useTabNavigation();
+  const { addListener, navigate, lastParams } = useTabNavigation();
   const ready = useAppSelector((state) => state.ready);
   const hasOnboarded = useAppSelector((state) => state.userProfile.hasOnboarded);
 
@@ -29,6 +29,13 @@ function TabLayoutInner() {
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (lastParams.current?.referrer) {
+        const rawTarget = lastParams.current.referrer;
+        const target = rawTarget === 'home' ? 'index' : rawTarget;
+        lastParams.current = {};
+        navigate(target);
+        return true;
+      }
       if (SUB_TO_PARENT[activeTab]) {
         navigate(SUB_TO_PARENT[activeTab]);
         return true;
@@ -40,7 +47,7 @@ function TabLayoutInner() {
       return false;
     });
     return () => sub.remove();
-  }, [activeTab, navigate]);
+  }, [activeTab, navigate, lastParams]);
 
   const handleTabChange = useCallback(
     (name: string) => {

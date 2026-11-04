@@ -17,6 +17,8 @@ import { useColorScheme } from 'nativewind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AnimatedSegment from '@/components/ui/animated-segment';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
+import { triggerKeypadHaptic, triggerSuccessHaptic } from '@/utils/haptics';
 
 export default function AddBudgetScreen() {
   const insets = useSafeAreaInsets();
@@ -108,6 +110,7 @@ export default function AddBudgetScreen() {
 
   // Keypad logic
   const handleToggleNegative = () => {
+    triggerKeypadHaptic();
     if (amount.startsWith('-')) {
       setAmount(amount.slice(1));
     } else {
@@ -116,6 +119,7 @@ export default function AddBudgetScreen() {
   };
 
   const handleKeyPress = (key: string) => {
+    triggerKeypadHaptic();
     if (key === '.') {
       if (amount.includes('.')) return;
       if (!amount || amount === '-') {
@@ -154,6 +158,7 @@ export default function AddBudgetScreen() {
   };
 
   const handleBackspace = () => {
+    triggerKeypadHaptic();
     if (!amount || amount.length <= 1 || amount === '-') {
       setAmount('');
     } else {
@@ -167,12 +172,14 @@ export default function AddBudgetScreen() {
   };
 
   const handleClear = () => {
+    triggerKeypadHaptic();
     setAmount('');
   };
 
   const savingRef = useRef(false);
 
   const handleSave = () => {
+    triggerSuccessHaptic();
     if (savingRef.current) return;
 
     const parsedAmount = parseFloat(amount.replace(/[^0-9.-]/g, ''));
@@ -302,10 +309,10 @@ export default function AddBudgetScreen() {
   };
 
   return (
-    <View
+    <ScreenTransition
       className="flex-1 bg-background"
       style={{
-        paddingTop: Math.max(insets.top, 16) + 16,
+        paddingTop: insets.top + 16,
         paddingBottom: Math.max(insets.bottom, 16),
       }}>
       {/* ── Top Bar: Close (Left), Heading (Center), Delete / Spacer (Right) ── */}
@@ -584,6 +591,6 @@ export default function AddBudgetScreen() {
         onChangeMonth={setCalendarMonth}
         onSelectDate={handleSelectDate}
       />
-    </View>
+    </ScreenTransition>
   );
 }

@@ -78,8 +78,8 @@ export async function loadInitialData(): Promise<InitSnapshot> {
       (row) =>
         row || {
           name: 'User',
-          currencySymbol: '$',
-          currencyCode: 'USD',
+          currencySymbol: '₹',
+          currencyCode: 'INR',
           avatar: null,
           hasOnboarded: false,
         }

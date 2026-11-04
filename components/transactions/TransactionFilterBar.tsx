@@ -76,16 +76,28 @@ export default function TransactionFilterBar({
     });
   };
 
+  const buttonShadow = {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  };
+
   return (
     <View className="mb-4 flex-row items-center gap-2">
       {!isSearchExpanded ? (
         <TouchableOpacity
           onPress={handleToggleSearch}
-          className="items-center justify-center rounded-full border border-black bg-surface p-3 aspect-square h-[44px] w-[44px] dark:border-white">
+          style={buttonShadow}
+          activeOpacity={0.7}
+          className="items-center justify-center rounded-full border border-black/10 bg-surface p-3 aspect-square h-[44px] w-[44px] shadow-sm dark:border-white/15">
           <Icon as={Search} size={18} className="text-foreground" />
         </TouchableOpacity>
       ) : (
-        <View className="flex-1 flex-row items-center rounded-full border border-black bg-surface px-4 h-[44px] focus-within:border-black dark:border-white">
+        <View
+          style={buttonShadow}
+          className="flex-1 flex-row items-center rounded-full border border-black/10 bg-surface px-4 h-[44px] shadow-sm focus-within:border-primary dark:border-white/15">
           <Icon as={Search} size={16} className="mr-2 text-muted" />
           <TextInput
             autoFocus
@@ -109,7 +121,9 @@ export default function TransactionFilterBar({
 
       {/* Date Filter Bar — direct month switcher pill */}
       {!isSearchExpanded ? (
-        <View className="flex-1 flex-row items-center justify-between rounded-full border border-black bg-surface h-[44px] px-1 dark:border-white">
+        <View
+          style={buttonShadow}
+          className="flex-1 flex-row items-center justify-between rounded-full border border-black/10 bg-surface h-[44px] px-1 shadow-sm dark:border-white/15">
           <TouchableOpacity
             onPress={onPrevMonth}
             className="h-9 w-9 items-center justify-center rounded-full"
@@ -141,7 +155,9 @@ export default function TransactionFilterBar({
       ) : (
         <TouchableOpacity
           onPress={onDatePress}
-          className="aspect-square h-[44px] w-[44px] items-center justify-center rounded-full border border-black bg-surface dark:border-white">
+          style={buttonShadow}
+          activeOpacity={0.7}
+          className="aspect-square h-[44px] w-[44px] items-center justify-center rounded-full border border-black/10 bg-surface shadow-sm dark:border-white/15">
           <Icon
             as={Calendar}
             size={16}
@@ -154,8 +170,9 @@ export default function TransactionFilterBar({
       <TouchableOpacity
         ref={filterBtnRef}
         onPress={handleFilterPress}
-        className={`relative items-center justify-center rounded-full border border-black h-[44px] px-4 dark:border-white active:scale-95 ${
-          isFilterOpen ? 'bg-black dark:bg-white' : 'bg-surface'
+        style={buttonShadow}
+        className={`relative items-center justify-center rounded-full border border-black/10 h-[44px] px-4 shadow-sm dark:border-white/15 active:scale-95 ${
+          isFilterOpen ? 'bg-black dark:bg-white border-black dark:border-white' : 'bg-surface'
         } ${!isSearchExpanded && !hasActiveFilter ? '' : 'aspect-square w-[44px] px-0'}`}>
         <Icon
           as={SlidersHorizontal}
@@ -183,7 +200,9 @@ export default function TransactionFilterBar({
       {hasActiveFilter && (
         <TouchableOpacity 
           onPress={onClearAll} 
-          className="items-center justify-center rounded-full border border-black bg-surface aspect-square h-[44px] w-[44px] dark:border-white">
+          style={buttonShadow}
+          activeOpacity={0.7}
+          className="items-center justify-center rounded-full border border-black/10 bg-surface aspect-square h-[44px] w-[44px] shadow-sm dark:border-white/15">
           <Icon as={X} size={18} className="text-foreground" />
         </TouchableOpacity>
       )}

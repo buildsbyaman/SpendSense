@@ -204,6 +204,7 @@ export default function AnalyticsScreen() {
                   navigateTab('transactions', {
                     category: name,
                     type,
+                    referrer: 'analytics',
                     ...(month !== null
                       ? {
                           from: new Date(year, month, 1).toISOString(),

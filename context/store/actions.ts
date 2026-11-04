@@ -592,8 +592,8 @@ const refreshAllData: AppActions['refreshAllData'] = async () => {
   const storedSubscriptions = await fetchSubscriptions();
   const storedProfile = (await fetchProfile()) || {
     name: 'User',
-    currencySymbol: '$',
-    currencyCode: 'USD',
+    currencySymbol: '₹',
+    currencyCode: 'INR',
     avatar: null,
     hasOnboarded: false,
   };

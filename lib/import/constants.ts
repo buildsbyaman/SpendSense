@@ -51,3 +51,12 @@ export const MIME_MAP: Record<ExportFormat, string> = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   pdf: 'application/pdf',
 };
+
+export const SUPPORTED_IMPORT_MIMES = [
+  'application/json',
+  'text/json',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  '*/*',
+];

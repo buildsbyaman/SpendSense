@@ -48,7 +48,7 @@ const compactAbs = (absValue: number, decimals = 2): string => {
  */
 export const formatWalletBalance = (
   balanceInput: string | number,
-  symbol: string = '$'
+  symbol: string = '₹'
 ): string => {
   const balanceStr = typeof balanceInput === 'number' ? balanceInput.toString() : balanceInput;
   let parsedBalance: number;
@@ -75,7 +75,7 @@ export const formatWalletBalance = (
 /**
  * Formats a wallet balance for compact display (e.g. $6M, -$1.25B).
  */
-export const formatWalletDisplay = (value: number, symbol: string = '$'): string => {
+export const formatWalletDisplay = (value: number, symbol: string = '₹'): string => {
   const isNegative = value < 0;
   return `${isNegative ? '-' : ''}${symbol}${compactAbs(Math.abs(value), 2)}`;
 };
@@ -91,6 +91,7 @@ const WALLET_TYPE_COLORS: Record<string, string> = {
   Bank: '#3b82f6',
   Card: '#8b5cf6',
   Digital: '#10b981',
+  Cash: '#f59e0b',
 };
 
 export const getWalletTypeColor = (type: string): string => WALLET_TYPE_COLORS[type] ?? '#64748b';
@@ -99,6 +100,7 @@ const WALLET_TYPE_ICONS: Record<string, LucideIcon> = {
   Bank: Landmark,
   Card: CreditCard,
   Digital: Smartphone,
+  Cash: Wallet,
 };
 
 /**
@@ -123,8 +125,9 @@ export const deserializeAccount = (data: {
 }): Account => {
   const iconMap: Record<string, typeof Wallet> = {
     Bank: Landmark,
-    Card: Wallet,
+    Card: CreditCard,
     Digital: Smartphone,
+    Cash: Wallet,
   };
   return { ...data, icon: iconMap[data.type] ?? Wallet };
 };

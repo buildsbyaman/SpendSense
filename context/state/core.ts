@@ -52,8 +52,8 @@ export function useAppCore(): AppCore {
   const [walletOrder, setWalletOrder] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: 'User',
-    currencySymbol: '$',
-    currencyCode: 'USD',
+    currencySymbol: '₹',
+    currencyCode: 'INR',
     avatar: null,
     hasOnboarded: false,
   });

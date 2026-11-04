@@ -152,35 +152,35 @@ export default function RootLayout() {
                 name="add-transaction"
                 options={{
                   headerShown: false,
-                  animation: 'slide_from_bottom',
+                  animation: 'fade_from_bottom',
                 }}
               />
               <Stack.Screen
                 name="add-subscription"
                 options={{
                   headerShown: false,
-                  animation: 'slide_from_bottom',
+                  animation: 'fade_from_bottom',
                 }}
               />
               <Stack.Screen
                 name="add-wallet"
                 options={{
                   headerShown: false,
-                  animation: 'slide_from_bottom',
+                  animation: 'fade_from_bottom',
                 }}
               />
               <Stack.Screen
                 name="add-budget"
                 options={{
                   headerShown: false,
-                  animation: 'slide_from_bottom',
+                  animation: 'fade_from_bottom',
                 }}
               />
               <Stack.Screen
                 name="add-category"
                 options={{
                   headerShown: false,
-                  animation: 'slide_from_bottom',
+                  animation: 'fade_from_bottom',
                 }}
               />
             </Stack>

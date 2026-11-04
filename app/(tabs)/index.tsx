@@ -105,6 +105,10 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
     () => new Map(accounts.map((account) => [account.id, account.name] as const)),
     [accounts]
   );
+  const walletMap = useMemo(
+    () => new Map(accounts.map((account) => [account.id, account] as const)),
+    [accounts]
+  );
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 12 }}>
@@ -269,6 +273,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
                   key={tx.id}
                   transaction={tx}
                   walletNames={walletNames}
+                  wallets={walletMap}
                   unknownWalletLabel="Wallet"
                   isExpanded={expandedTransactionId === tx.id}
                   onToggleExpand={toggleTransactionExpand}

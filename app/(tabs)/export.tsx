@@ -274,18 +274,18 @@ export default function ExportScreen() {
           onPress={handleExport}
           disabled={exporting || selectedTypes.length === 0}
           className={`mb-4 flex-row items-center justify-center gap-2 rounded-xl py-4 ${
-            exporting || selectedTypes.length === 0 ? 'bg-secondary' : 'bg-primary'
+            exporting || selectedTypes.length === 0 ? 'bg-zinc-200 dark:bg-zinc-800/80' : 'bg-primary'
           }`}>
           <Icon
             as={Download}
             size={18}
             className={
-              exporting || selectedTypes.length === 0 ? 'text-muted' : 'text-white dark:text-black'
+              exporting || selectedTypes.length === 0 ? 'text-zinc-500 dark:text-zinc-400' : 'text-white dark:text-black'
             }
           />
           <Text
             className={`text-base font-medium ${
-              exporting || selectedTypes.length === 0 ? 'text-muted' : 'text-white dark:text-black'
+              exporting || selectedTypes.length === 0 ? 'text-zinc-500 dark:text-zinc-400' : 'text-white dark:text-black'
             }`}>
             {exporting ? 'Exporting…' : 'Export'}
           </Text>

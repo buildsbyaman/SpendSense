@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE TABLE IF NOT EXISTS profile (
   id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
-  currency_symbol TEXT NOT NULL DEFAULT '$',
-  currency_code TEXT NOT NULL DEFAULT 'USD'
+  currency_symbol TEXT NOT NULL DEFAULT '₹',
+  currency_code TEXT NOT NULL DEFAULT 'INR'
 );
 `;
 
@@ -138,10 +138,10 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
     if (currentVersion < 10) {
       const cols = await tableColumns(instance, 'profile');
       if (!cols.includes('currency_symbol')) {
-        await instance.runAsync("ALTER TABLE profile ADD COLUMN currency_symbol TEXT DEFAULT '$'");
+        await instance.runAsync("ALTER TABLE profile ADD COLUMN currency_symbol TEXT DEFAULT '₹'");
       }
       if (!cols.includes('currency_code')) {
-        await instance.runAsync("ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'USD'");
+        await instance.runAsync("ALTER TABLE profile ADD COLUMN currency_code TEXT DEFAULT 'INR'");
       }
       currentVersion = 10;
     }
@@ -236,6 +236,20 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
         await instance.execAsync('ALTER TABLE budgets ADD COLUMN end_date TEXT');
       }
       currentVersion = 17;
+    }
+
+    if (currentVersion < 18) {
+      await instance.runAsync(
+        "UPDATE profile SET currency_symbol = '₹', currency_code = 'INR' WHERE id = 'default' AND currency_symbol = '$' AND currency_code = 'USD'"
+      );
+      const rows = await instance.getAllAsync<{ id: string; balance: string }>(
+        "SELECT id, balance FROM accounts WHERE balance LIKE '$%' OR balance LIKE '-$%'"
+      );
+      for (const r of rows) {
+        const updated = r.balance.replace('$', '₹');
+        await instance.runAsync('UPDATE accounts SET balance = ? WHERE id = ?', updated, r.id);
+      }
+      currentVersion = 18;
     }
 
     if (currentVersion > 0) {

@@ -18,16 +18,16 @@ export function ImportButton({ disabled, parsing, importing, noData, onPress }: 
       onPress={onPress}
       disabled={disabled}
       className={`mb-4 flex-row items-center justify-center gap-2 rounded-xl py-4 ${
-        disabled ? 'bg-secondary' : 'bg-primary'
+        disabled ? 'bg-zinc-200 dark:bg-zinc-800/80' : 'bg-primary'
       }`}>
       <Icon
         as={FileUp}
         size={18}
-        className={disabled ? 'text-muted' : 'text-white dark:text-black'}
+        className={disabled ? 'text-zinc-500 dark:text-zinc-400' : 'text-white dark:text-black'}
       />
       <Text
         className={`text-base font-medium ${
-          disabled ? 'text-muted' : 'text-white dark:text-black'
+          disabled ? 'text-zinc-500 dark:text-zinc-400' : 'text-white dark:text-black'
         }`}>
         {parsing ? 'Parsing file...' : importing ? 'Importing...' : noData ? 'No Data to Import' : 'Import'}
       </Text>

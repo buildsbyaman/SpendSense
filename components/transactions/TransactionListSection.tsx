@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Wallet, Receipt, Tag, FilterX } from 'lucide-react-native';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { type TransactionDayGroup, type CustomCategory } from '@/utils/transaction';
+import { type Account } from '@/utils/wallet';
 import { router } from 'expo-router';
 
 interface DayGroupProps {
@@ -12,6 +13,7 @@ interface DayGroupProps {
   onToggleExpand: (id: string) => void;
   onDelete: (id: string, title: string) => void;
   walletNames: Map<string, string>;
+  wallets?: Map<string, Account>;
   currencySymbol: string;
   customCategories: CustomCategory[];
 }
@@ -27,6 +29,7 @@ export function TransactionDayGroupView({
   onToggleExpand,
   onDelete,
   walletNames,
+  wallets,
   currencySymbol,
   customCategories,
 }: DayGroupProps) {
@@ -39,6 +42,7 @@ export function TransactionDayGroupView({
             key={tx.id}
             transaction={tx}
             walletNames={walletNames}
+            wallets={wallets}
             isExpanded={expandedTransactionId === tx.id}
             onToggleExpand={onToggleExpand}
             onDelete={onDelete}

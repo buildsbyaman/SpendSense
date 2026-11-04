@@ -47,8 +47,8 @@ export function useDataManagement({
     const storedSubscriptions = await fetchSubscriptions();
     const storedProfile = (await fetchProfile()) || {
       name: 'User',
-      currencySymbol: '$',
-      currencyCode: 'USD',
+      currencySymbol: '₹',
+      currencyCode: 'INR',
       avatar: null,
       hasOnboarded: false,
     };
@@ -84,8 +84,8 @@ export function useDataManagement({
     setWalletOrder([]);
     setUserProfile({
       name: 'User',
-      currencySymbol: '$',
-      currencyCode: 'USD',
+      currencySymbol: '₹',
+      currencyCode: 'INR',
       avatar: null,
       hasOnboarded: false,
     });

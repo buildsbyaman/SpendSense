@@ -16,6 +16,7 @@ interface ConfirmDialogProps {
   destructive?: boolean;
   hideCancel?: boolean;
   icon?: any;
+  layout?: 'row' | 'column' | 'auto';
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   destructive = false,
   hideCancel = false,
   icon,
+  layout = 'auto',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -41,13 +43,14 @@ export function ConfirmDialog({
     destructive,
     hideCancel,
     icon,
+    layout,
   });
 
   useEffect(() => {
     if (visible) {
-      setContent({ title, message, confirmText, cancelText, destructive, hideCancel, icon });
+      setContent({ title, message, confirmText, cancelText, destructive, hideCancel, icon, layout });
     }
-  }, [visible, title, message, confirmText, cancelText, destructive, hideCancel, icon]);
+  }, [visible, title, message, confirmText, cancelText, destructive, hideCancel, icon, layout]);
 
   const { isRendered, animatedStyle, backdropStyle } = useModalAnimation({
     visible,
@@ -55,6 +58,11 @@ export function ConfirmDialog({
   });
 
   const displayIcon = content.icon || AlertTriangle;
+  const isStacked =
+    content.layout === 'column' ||
+    (content.layout !== 'row' &&
+      !content.hideCancel &&
+      (content.confirmText.length > 9 || content.cancelText.length > 9));
 
   return (
     <InAppModal visible={isRendered} onRequestClose={onCancel}>
@@ -63,38 +71,109 @@ export function ConfirmDialog({
         className="flex-1 items-center justify-center px-6"
         activeOpacity={1}
         onPress={onCancel}>
-        <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
+        <Animated.View
+          style={[
+            {
+              backgroundColor: 'rgba(0,0,0,0.55)',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            },
+            backdropStyle,
+          ]}
+        />
         <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
           <View
-            className="w-full rounded-2xl border border-border bg-surface p-6 items-center shadow-2xl"
+            className="w-full max-w-[340px] items-center rounded-3xl border border-border/80 bg-surface p-6 shadow-2xl"
             onStartShouldSetResponder={() => true}>
-            
-            <View className="w-16 h-16 rounded-full items-center justify-center mb-5 bg-red-50 dark:bg-red-900/20">
-              <Icon as={displayIcon} size={28} className="text-red-500" />
+            <View
+              className={`mb-4 h-14 w-14 items-center justify-center rounded-full border ${
+                content.destructive
+                  ? 'border-red-500/20 bg-red-500/10 dark:bg-red-500/15'
+                  : 'border-primary/20 bg-primary/10'
+              }`}>
+              <Icon
+                as={displayIcon}
+                size={24}
+                className={content.destructive ? 'text-red-500' : 'text-foreground'}
+              />
             </View>
 
-            <Text variant="h3" className="mb-2 text-center text-foreground">{content.title}</Text>
-            <Text className="text-muted text-center mb-8 px-2">{content.message}</Text>
+            <Text className="mb-2 text-center text-lg font-bold tracking-tight text-foreground">
+              {content.title}
+            </Text>
+            <Text className="mb-6 px-1 text-center text-[13px] leading-5 text-muted">
+              {content.message}
+            </Text>
 
-            <View className="flex-row gap-3 w-full">
-              {!content.hideCancel && (
+            {isStacked ? (
+              <View className="w-full flex-col gap-2.5">
                 <TouchableOpacity
-                  onPress={onCancel}
-                  className="flex-1 items-center justify-center rounded-[6px] bg-secondary py-3.5"
-                  activeOpacity={0.8}>
-                  <Text className="text-sm font-semibold text-foreground">{content.cancelText}</Text>
+                  onPress={onConfirm}
+                  className={`h-11 w-full items-center justify-center rounded-xl active:scale-[0.99] ${
+                    content.destructive
+                      ? 'bg-red-500 active:bg-red-600 dark:bg-red-600'
+                      : 'bg-primary'
+                  }`}
+                  activeOpacity={0.85}>
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                    className={`px-3 text-sm font-bold tracking-wide ${
+                      content.destructive ? 'text-white' : 'text-white dark:text-black'
+                    }`}>
+                    {content.confirmText}
+                  </Text>
                 </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                onPress={onConfirm}
-                className={`flex-1 items-center justify-center rounded-[6px] py-3.5 ${content.destructive && !content.hideCancel ? 'bg-destructive' : 'bg-primary'}`}
-                activeOpacity={0.8}>
-                <Text
-                  className={`text-sm font-semibold ${content.destructive && !content.hideCancel ? 'text-white' : 'text-white dark:text-black'}`}>
-                  {content.confirmText}
-                </Text>
-              </TouchableOpacity>
-            </View>
+
+                {!content.hideCancel && (
+                  <TouchableOpacity
+                    onPress={onCancel}
+                    className="h-11 w-full items-center justify-center rounded-xl border border-border/60 bg-secondary/80 active:scale-[0.99]"
+                    activeOpacity={0.85}>
+                    <Text className="text-sm font-semibold text-foreground">
+                      {content.cancelText}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              <View className="w-full flex-row gap-2.5">
+                {!content.hideCancel && (
+                  <TouchableOpacity
+                    onPress={onCancel}
+                    className="h-11 flex-1 items-center justify-center rounded-xl border border-border/60 bg-secondary/80 active:scale-[0.98]"
+                    activeOpacity={0.85}>
+                    <Text className="text-sm font-semibold text-foreground">
+                      {content.cancelText}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={onConfirm}
+                  className={`h-11 flex-1 items-center justify-center rounded-xl active:scale-[0.98] ${
+                    content.destructive && !content.hideCancel
+                      ? 'bg-red-500 active:bg-red-600 dark:bg-red-600'
+                      : 'bg-primary'
+                  }`}
+                  activeOpacity={0.85}>
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                    className={`px-2 text-sm font-bold tracking-wide ${
+                      content.destructive && !content.hideCancel
+                        ? 'text-white'
+                        : 'text-white dark:text-black'
+                    }`}>
+                    {content.confirmText}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </Animated.View>
       </TouchableOpacity>

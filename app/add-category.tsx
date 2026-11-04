@@ -24,6 +24,7 @@ import { PLACEHOLDER_COLORS } from '@/lib/theme';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CategoryTypeToggle from '@/components/ui/CategoryTypeToggle';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 
 export default function AddCategoryScreen() {
   const insets = useSafeAreaInsets();
@@ -207,10 +208,10 @@ export default function AddCategoryScreen() {
     AVAILABLE_ICONS.find((i) => i.name === selectedIconName) || AVAILABLE_ICONS[0];
 
   return (
-    <View
+    <ScreenTransition
       className="flex-1 bg-background"
       style={{
-        paddingTop: Math.max(insets.top, 16) + 16,
+        paddingTop: insets.top + 16,
         paddingBottom: Math.max(insets.bottom, 16),
       }}>
       {/* ── Top Bar: Close (Left), Heading (Center), Delete / Spacer (Right) ── */}
@@ -392,7 +393,7 @@ export default function AddCategoryScreen() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </View>
+    </ScreenTransition>
   );
 }
 
