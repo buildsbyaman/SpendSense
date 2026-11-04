@@ -96,7 +96,7 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
       <View pointerEvents={visible ? 'auto' : 'none'} style={{ zIndex: 9999, elevation: 99 }} className="flex-1 justify-center items-center px-6">
         <Animated.View style={[{ backgroundColor: 'rgba(0,0,0,0.55)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, backdropStyle]} />
         <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
-          <View className="bg-surface w-full max-w-[340px] rounded-3xl border border-border/80 p-6 items-center shadow-2xl">
+          <View className="bg-surface w-full max-w-[340px] rounded-3xl border border-border p-6 items-center shadow-2xl">
             <View className="w-14 h-14 rounded-full bg-red-500/10 dark:bg-red-500/15 border border-red-500/20 items-center justify-center mb-4">
               <Icon as={Wallet} size={24} className="text-red-500" />
             </View>
@@ -106,7 +106,7 @@ export function DeleteWalletModal({ visible, walletId, onCancel, onConfirm }: De
 
             <View className="flex-row gap-2.5 w-full">
               <TouchableOpacity
-                className="h-11 flex-1 items-center justify-center rounded-xl border border-border/60 bg-secondary/80 active:scale-[0.98]"
+                className="h-11 flex-1 items-center justify-center rounded-xl border border-border bg-secondary active:scale-[0.98]"
                 onPress={onCancel}
                 activeOpacity={0.85}>
                 <Text className="text-sm font-semibold text-foreground">

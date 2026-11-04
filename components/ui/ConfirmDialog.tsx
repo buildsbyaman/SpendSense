@@ -86,13 +86,13 @@ export function ConfirmDialog({
         />
         <Animated.View style={[animatedStyle, { width: '100%', alignItems: 'center' }]}>
           <View
-            className="w-full max-w-[340px] items-center rounded-3xl border border-border/80 bg-surface p-6 shadow-2xl"
+            className="w-full max-w-[340px] items-center rounded-3xl border border-border bg-surface p-6 shadow-2xl"
             onStartShouldSetResponder={() => true}>
             <View
               className={`mb-4 h-14 w-14 items-center justify-center rounded-full border ${
                 content.destructive
                   ? 'border-red-500/20 bg-red-500/10 dark:bg-red-500/15'
-                  : 'border-primary/20 bg-primary/10'
+                  : 'border-black/10 bg-black/5 dark:border-white/15 dark:bg-white/10'
               }`}>
               <Icon
                 as={displayIcon}
@@ -132,7 +132,7 @@ export function ConfirmDialog({
                 {!content.hideCancel && (
                   <TouchableOpacity
                     onPress={onCancel}
-                    className="h-11 w-full items-center justify-center rounded-xl border border-border/60 bg-secondary/80 active:scale-[0.99]"
+                    className="h-11 w-full items-center justify-center rounded-xl border border-border bg-secondary active:scale-[0.99]"
                     activeOpacity={0.85}>
                     <Text className="text-sm font-semibold text-foreground">
                       {content.cancelText}
@@ -145,7 +145,7 @@ export function ConfirmDialog({
                 {!content.hideCancel && (
                   <TouchableOpacity
                     onPress={onCancel}
-                    className="h-11 flex-1 items-center justify-center rounded-xl border border-border/60 bg-secondary/80 active:scale-[0.98]"
+                    className="h-11 flex-1 items-center justify-center rounded-xl border border-border bg-secondary active:scale-[0.98]"
                     activeOpacity={0.85}>
                     <Text className="text-sm font-semibold text-foreground">
                       {content.cancelText}

@@ -2,7 +2,7 @@ import { View, TextInput } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Info } from 'lucide-react-native';
-import AnimatedSegment from '@/components/ui/animated-segment';
+import { RadioGroup } from '@/components/ui/RadioGroup';
 import { LayoutAnimation } from 'react-native';
 import { formatNumber } from '@/utils/wallet';
 
@@ -34,14 +34,13 @@ export function ConversionSection({
 
   return (
     <View className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
-      <Text className="mb-2 ml-1 text-sm text-muted">Conversion Strategy</Text>
-
-      <AnimatedSegment<'no' | 'yes'>
+      <RadioGroup<'no' | 'yes'>
+        label="Conversion Strategy"
         options={[
           { label: 'Swap symbol only', value: 'no' },
           { label: 'Convert amounts', value: 'yes' },
         ]}
-        selectedValue={shouldConvert}
+        value={shouldConvert}
         onChange={(val) => {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setShouldConvert(val);

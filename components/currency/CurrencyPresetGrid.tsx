@@ -49,7 +49,7 @@ export function CurrencyPresetGrid({ selectedCode, onSelect, isCustom, currencyC
               activeOpacity={0.75}
               className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
                 isSelected
-                  ? 'border-primary bg-primary/10 dark:bg-primary/15'
+                  ? 'border-primary bg-black/10 dark:bg-white/15'
                   : 'border-border bg-surface'
               }`}>
               <Text
@@ -72,7 +72,7 @@ export function CurrencyPresetGrid({ selectedCode, onSelect, isCustom, currencyC
           activeOpacity={0.75}
           className={`flex-row items-center gap-1.5 rounded-xl border px-3.5 py-2.5 ${
             isCustom
-              ? 'border-primary bg-primary/10 dark:bg-primary/15'
+              ? 'border-primary bg-black/10 dark:bg-white/15'
               : 'border-dashed border-border bg-surface'
           }`}>
           <Icon

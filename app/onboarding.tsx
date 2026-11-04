@@ -144,7 +144,7 @@ export default function OnboardingScreen() {
         <View className="mt-12 gap-8">
           {bullets.map((bullet, i) => (
             <View key={i} className="flex-row items-start gap-4">
-              <View className="bg-primary/10 mt-1 h-10 w-10 items-center justify-center rounded-full">
+              <View className="bg-black/10 dark:bg-white/10 mt-1 h-10 w-10 items-center justify-center rounded-full">
                 <Icon as={bullet.icon} size={20} className="text-primary" />
               </View>
               <View className="flex-1">

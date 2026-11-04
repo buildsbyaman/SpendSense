@@ -141,7 +141,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
             <View className="flex-1 flex-row items-center gap-3">
               <View>
                 <Text className="text-[12px] font-normal text-muted">Income</Text>
-                <Text className="mt-0.5 text-[14px] font-semibold text-[#00A86B]">
+                <Text className="mt-0.5 text-[14px] font-semibold text-income">
                   {currencySymbol}
                   {formatNumber(totalIncome)}
                 </Text>
@@ -153,7 +153,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
             <View className="flex-1 flex-row items-center gap-3">
               <View>
                 <Text className="text-[12px] font-normal text-muted">Expenses</Text>
-                <Text className="mt-0.5 text-[14px] font-semibold text-[#F04444]">
+                <Text className="mt-0.5 text-[14px] font-semibold text-expense">
                   {currencySymbol}
                   {formatNumber(totalExpense)}
                 </Text>

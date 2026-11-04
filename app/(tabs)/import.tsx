@@ -9,7 +9,7 @@ import Toast from 'react-native-toast-message';
 import { useApp } from '@/context/AppContext';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { LabeledSegment } from '@/components/ui/LabeledSegment';
+import { RadioGroup } from '@/components/ui/RadioGroup';
 import { ImportButton } from '@/components/import/ImportButton';
 import { DataTypeChips } from '@/components/import/DataTypeChips';
 import { FilePickerRow } from '@/components/import/FilePickerRow';
@@ -263,13 +263,13 @@ export default function ImportScreen() {
 
         {/* ── Configuration ── */}
         <View className="mb-4 gap-6 rounded-xl border border-border bg-surface p-6 shadow-xs">
-          <LabeledSegment
+          <RadioGroup
             label="Import mode"
             options={IMPORT_MODES.map((m) => ({ value: m.key, label: m.label }))}
             value={importMode}
             onChange={(v) => setImportMode(v)}
           />
-          <LabeledSegment
+          <RadioGroup
             label="If data already exists"
             options={CONFLICT_POLICIES.map((cp) => ({ value: cp.key, label: cp.label }))}
             value={conflictPolicy}

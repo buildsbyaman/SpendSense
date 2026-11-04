@@ -1,4 +1,4 @@
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Lock } from 'lucide-react-native';
@@ -12,7 +12,9 @@ export function AppLockScreen() {
   if (!locked) return null;
 
   return (
-    <View className="absolute inset-0 z-[999] items-center justify-center bg-background">
+    <View
+      style={[StyleSheet.absoluteFill, { zIndex: 99999, elevation: 99999 }]}
+      className="items-center justify-center bg-background">
       <View className="h-16 w-16 items-center justify-center rounded-full bg-secondary">
         <Icon as={Lock} size={28} className="text-foreground" />
       </View>

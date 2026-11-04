@@ -66,7 +66,7 @@ export function DayOfMonthPicker({
           className={`h-[42px] min-w-[50px] items-center justify-center rounded-xl border px-3 active:scale-95 ${
             !enabled
               ? 'border-2 border-black bg-surface dark:border-white'
-              : 'border-border bg-surface/60'
+              : 'border-border bg-surface'
           }`}>
           <Text
             className={`text-xs ${
@@ -90,7 +90,7 @@ export function DayOfMonthPicker({
               className={`h-[42px] w-[42px] items-center justify-center rounded-xl border active:scale-95 ${
                 isSelected
                   ? 'border-2 border-black bg-surface dark:border-white'
-                  : 'border-border bg-surface/60'
+                  : 'border-border bg-surface'
               }`}>
               <Text
                 className={`text-sm ${

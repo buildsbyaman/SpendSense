@@ -336,7 +336,7 @@ export default function AddWalletScreen() {
               className={`h-10 w-10 items-center justify-center rounded-full border active:scale-90 ${
                 newBalance.startsWith('-')
                   ? 'border-black bg-surface dark:border-white'
-                  : 'border-border bg-surface/60'
+                  : 'border-border bg-surface'
               }`}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Text
@@ -354,7 +354,7 @@ export default function AddWalletScreen() {
             adjustsFontSizeToFit
             minimumFontScale={0.5}
             className={`flex-1 text-center font-bold tracking-tight ${
-              newBalance.replace('-', '') || newBalance.startsWith('-') ? 'text-foreground' : 'text-muted/60'
+              newBalance.replace('-', '') || newBalance.startsWith('-') ? 'text-foreground' : 'text-muted opacity-50'
             }`}
             style={{
               fontSize: newBalance.replace('-', '').length > 6 ? 40 : newBalance.replace('-', '').length > 4 ? 48 : 56,
@@ -392,7 +392,7 @@ export default function AddWalletScreen() {
             className={`h-10 flex-row items-center gap-2 rounded-xl border px-4 ${
               newName.trim()
                 ? 'border-black bg-surface dark:border-white'
-                : 'border-border bg-surface/60'
+                : 'border-border bg-surface'
             }`}>
             <Icon as={Wallet} size={14} className="text-muted" />
             <Text
@@ -412,7 +412,7 @@ export default function AddWalletScreen() {
                 setIsNameModalOpen(true);
               }}
               activeOpacity={0.7}
-              className="h-10 flex-row items-center gap-1.5 rounded-xl border border-border bg-surface/60 px-3.5">
+              className="h-10 flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5">
               <Icon as={CreditCard} size={13} className="text-muted" />
               <Text className="text-xs font-medium text-muted">
                 •••• {newNumber.slice(-4)}
@@ -426,7 +426,7 @@ export default function AddWalletScreen() {
                 setIsNameModalOpen(true);
               }}
               activeOpacity={0.7}
-              className="h-10 flex-row items-center gap-1 rounded-xl border border-border bg-surface/60 px-3.5">
+              className="h-10 flex-row items-center gap-1 rounded-xl border border-border bg-surface px-3.5">
               <Text className="text-xs text-muted">+ number</Text>
             </TouchableOpacity>
           )}
@@ -568,8 +568,8 @@ export default function AddWalletScreen() {
                   setNewNumber(numberInput.trim());
                   setIsNameModalOpen(false);
                 }}
-                className="rounded-lg border border-black bg-surface px-4 py-2 dark:border-white">
-                <Text className="text-xs font-semibold text-foreground">
+                className="rounded-lg bg-primary px-4 py-2 active:opacity-90">
+                <Text className="text-xs font-semibold text-primary-foreground">
                   Done
                 </Text>
               </TouchableOpacity>

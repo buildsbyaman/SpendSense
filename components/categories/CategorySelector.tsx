@@ -26,7 +26,7 @@ export function CategorySelector({ categories, selected, onSelect, withMeta }: P
               onPress={() => onSelect(cat.name)}
               className={`flex-row items-center gap-2 rounded-lg border px-2.5 py-1.5 ${
                 isSelected
-                  ? 'border-primary bg-primary/10 dark:bg-primary/15'
+                  ? 'border-primary bg-black/10 dark:bg-white/15'
                   : 'border-border bg-surface'
               }`}>
               {withMeta && color && CatIcon && (

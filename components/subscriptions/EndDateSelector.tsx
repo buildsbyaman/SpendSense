@@ -45,7 +45,7 @@ export function EndDateSelector({
         <View className="mt-4 flex-row justify-center">
           <TouchableOpacity
             onPress={onOpenPicker}
-            className="bg-primary/10 flex-row items-center gap-1.5 rounded-xl border border-primary px-5 py-2.5">
+            className="bg-black/10 dark:bg-white/15 flex-row items-center gap-1.5 rounded-xl border border-primary px-5 py-2.5">
             <Icon as={Calendar} size={14} className="text-primary" />
             <Text className="text-sm font-semibold text-primary">
               {formatDatePickerDate(endDate)}

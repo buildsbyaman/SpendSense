@@ -68,7 +68,7 @@ function ActionPill({
 
   return (
     <View
-      className={`h-[26px] flex-row items-center rounded-full border border-border bg-secondary/60 ${
+      className={`h-[26px] flex-row items-center rounded-full border border-border bg-secondary ${
         hasIcon ? 'gap-1.5 pl-2 pr-2.5' : 'px-3'
       }`}>
       {hasIcon && icon && color && (

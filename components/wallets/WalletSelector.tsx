@@ -43,7 +43,7 @@ export function WalletSelector({
               onPress={() => onSelect(wallet.id)}
               className={`flex-row items-center gap-2 rounded-lg border px-3 py-2 ${
                 isSelected
-                  ? 'border-primary bg-primary/10 dark:bg-primary/15'
+                  ? 'border-primary bg-black/10 dark:bg-white/15'
                   : 'border-border bg-surface'
               }`}>
               <Icon

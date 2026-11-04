@@ -1,10 +1,60 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { authenticate } from '@/lib/biometric';
-import { waitForAppReady } from '@/lib/app-ready';
+import { isAppReady, waitForAppReady } from '@/lib/app-ready';
 import { useAppState } from '@/hooks/useAppState';
 
-const LOCK_STORAGE_KEY = 'spendsense:appLock';
+const ASYNC_LOCK_KEY = 'spendsense_app_lock';
+const SECURE_LOCK_KEY = 'spendsense_app_lock';
+
+async function readAppLockPreference(): Promise<boolean> {
+  // 1. Check AsyncStorage first (fast, reliable across Android lifecycles, no Keystore issues)
+  try {
+    const asyncVal = await AsyncStorage.getItem(ASYNC_LOCK_KEY);
+    if (asyncVal !== null) {
+      return asyncVal === 'true';
+    }
+  } catch {
+    // fallback to SecureStore
+  }
+
+  // 2. Fallback to SecureStore
+  try {
+    const secureVal = await SecureStore.getItemAsync(SECURE_LOCK_KEY);
+    if (secureVal !== null) {
+      const isEnabled = secureVal === 'true';
+      void AsyncStorage.setItem(ASYNC_LOCK_KEY, isEnabled ? 'true' : 'false').catch(() => {});
+      return isEnabled;
+    }
+  } catch {
+    // non-fatal
+  }
+
+  return false;
+}
+
+async function writeAppLockPreference(enabled: boolean): Promise<void> {
+  const val = enabled ? 'true' : 'false';
+
+  // 1. Persist to AsyncStorage
+  try {
+    await AsyncStorage.setItem(ASYNC_LOCK_KEY, val);
+  } catch {
+    // non-fatal
+  }
+
+  // 2. Persist to SecureStore with valid alphanumeric/underscore key
+  try {
+    if (enabled) {
+      await SecureStore.setItemAsync(SECURE_LOCK_KEY, 'true');
+    } else {
+      await SecureStore.deleteItemAsync(SECURE_LOCK_KEY);
+    }
+  } catch {
+    // non-fatal
+  }
+}
 
 interface AppLockContextType {
   enabled: boolean;
@@ -54,14 +104,13 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const stored = await SecureStore.getItemAsync(LOCK_STORAGE_KEY);
+        const isEnabled = await readAppLockPreference();
         if (cancelled) return;
-        if (stored === 'true') {
+        if (isEnabled) {
           setEnabled(true);
           setLocked(true);
           // Show the biometric prompt once the first real frame is on screen
-          // (the splash is held until data + theme are ready). This used to be
-          // a fixed 500 ms delay that just added latency.
+          // (the splash is held until data + theme are ready).
           await waitForAppReady();
           if (!cancelled) void startAuth();
         }
@@ -86,7 +135,8 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
         enabledRef.current &&
         lockedRef.current &&
         !authInFlightRef.current &&
-        !suppressRef.current
+        !suppressRef.current &&
+        isAppReady()
       ) {
         void startAuth();
       }
@@ -99,11 +149,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
       const ok = await startAuth();
       if (ok) {
         setEnabled(true);
-        try {
-          await SecureStore.setItemAsync(LOCK_STORAGE_KEY, 'true');
-        } catch {
-          // non-fatal — lock applies for this session only
-        }
+        await writeAppLockPreference(true);
       }
       return ok;
     } finally {
@@ -118,11 +164,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
       if (ok) {
         setEnabled(false);
         setLocked(false);
-        try {
-          await SecureStore.deleteItemAsync(LOCK_STORAGE_KEY);
-        } catch {
-          // non-fatal
-        }
+        await writeAppLockPreference(false);
       }
       return ok;
     } finally {

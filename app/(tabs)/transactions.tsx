@@ -392,7 +392,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                             className={`h-8 items-center justify-center rounded-full border px-3.5 ${
                               categoryFilter === null
                                 ? 'border-black bg-surface dark:border-white'
-                                : 'border-border bg-surface/60'
+                                : 'border-border bg-surface'
                             }`}>
                             <Text
                               className={`text-xs ${
@@ -414,7 +414,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                                 className={`h-8 flex-row items-center gap-1.5 rounded-full border px-3 ${
                                   isSelected
                                     ? 'border-black bg-surface dark:border-white'
-                                    : 'border-border bg-surface/60'
+                                    : 'border-border bg-surface'
                                 }`}>
                                 <View
                                   className="h-4 w-4 items-center justify-center rounded-full"
@@ -451,7 +451,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                             className={`h-8 items-center justify-center rounded-full border px-3.5 ${
                               walletFilter === null
                                 ? 'border-black bg-surface dark:border-white'
-                                : 'border-border bg-surface/60'
+                                : 'border-border bg-surface'
                             }`}>
                             <Text
                               className={`text-xs ${
@@ -475,7 +475,7 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
                                 className={`h-8 flex-row items-center gap-1.5 rounded-full border px-3 ${
                                   isSelected
                                     ? 'border-black bg-surface dark:border-white'
-                                    : 'border-border bg-surface/60'
+                                    : 'border-border bg-surface'
                                 }`}>
                                 <Icon as={WalletIcon} size={11} color={walletColor} />
                                 <Text

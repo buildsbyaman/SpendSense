@@ -58,7 +58,7 @@ export function SummaryCards({
       {/* Income row */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2.5">
-          <View className="bg-income/10 dark:bg-income/20 h-7 w-7 items-center justify-center rounded-full">
+          <View className="bg-emerald-500/10 dark:bg-emerald-500/20 h-7 w-7 items-center justify-center rounded-full">
             <Icon as={ArrowDownLeft} size={14} className="text-income" />
           </View>
           <Text className="text-sm font-medium text-muted">Income</Text>
@@ -75,7 +75,7 @@ export function SummaryCards({
       {/* Expense row */}
       <View className="mt-3 flex-row items-center justify-between">
         <View className="flex-row items-center gap-2.5">
-          <View className="bg-expense/10 dark:bg-expense/20 h-7 w-7 items-center justify-center rounded-full">
+          <View className="bg-red-500/10 dark:bg-red-500/20 h-7 w-7 items-center justify-center rounded-full">
             <Icon as={ArrowUpRight} size={14} className="text-expense" />
           </View>
           <Text className="text-sm font-medium text-muted">Expenses</Text>

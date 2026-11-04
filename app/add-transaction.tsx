@@ -460,7 +460,7 @@ export default function AddTransactionScreen() {
               className={`h-10 w-10 items-center justify-center rounded-full border active:scale-90 ${
                 amount.startsWith('-')
                   ? 'border-black bg-surface dark:border-white'
-                  : 'border-border bg-surface/60'
+                  : 'border-border bg-surface'
               }`}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Text
@@ -478,7 +478,7 @@ export default function AddTransactionScreen() {
             adjustsFontSizeToFit
             minimumFontScale={0.5}
             className={`flex-1 text-center font-bold tracking-tight ${
-              amount.replace('-', '') ? 'text-foreground' : 'text-muted/60'
+              amount.replace('-', '') ? 'text-foreground' : 'text-muted opacity-50'
             }`}
             style={{
               fontSize:
@@ -536,7 +536,7 @@ export default function AddTransactionScreen() {
                       className={`h-9 flex-row items-center gap-1.5 rounded-full border px-3 ${
                         isSelected
                           ? 'border-black bg-surface dark:border-white'
-                          : 'border-border bg-surface/60'
+                          : 'border-border bg-surface'
                       }`}>
                       <View
                         className="h-5 w-5 items-center justify-center rounded-full"
@@ -579,7 +579,7 @@ export default function AddTransactionScreen() {
                       className={`h-9 flex-row items-center gap-1.5 rounded-full border px-3 ${
                         isSelected
                           ? 'border-black bg-surface dark:border-white'
-                          : 'border-border bg-surface/60'
+                          : 'border-border bg-surface'
                       }`}>
                       <Icon
                         as={wallet.icon || Wallet}
@@ -611,7 +611,7 @@ export default function AddTransactionScreen() {
                 className={`h-8 flex-row items-center gap-1.5 rounded-full border px-3.5 ${
                   title.trim()
                     ? 'border-black bg-surface dark:border-white'
-                    : 'border-border bg-surface/60'
+                    : 'border-border bg-surface'
                 }`}>
                 <Text
                   className={`text-xs ${
@@ -642,7 +642,7 @@ export default function AddTransactionScreen() {
                       className={`h-9 flex-row items-center gap-1.5 rounded-full border px-3 ${
                         isSelected
                           ? 'border-black bg-surface dark:border-white'
-                          : 'border-border bg-surface/60'
+                          : 'border-border bg-surface'
                       }`}>
                       <Icon
                         as={wallet.icon || Wallet}
@@ -680,7 +680,7 @@ export default function AddTransactionScreen() {
                       className={`h-9 flex-row items-center gap-1.5 rounded-full border px-3 ${
                         isSelected
                           ? 'border-black bg-surface dark:border-white'
-                          : 'border-border bg-surface/60'
+                          : 'border-border bg-surface'
                       }`}>
                       <Icon
                         as={wallet.icon || Wallet}
@@ -712,7 +712,7 @@ export default function AddTransactionScreen() {
                 className={`h-8 flex-row items-center gap-1.5 rounded-full border px-3.5 ${
                   title.trim()
                     ? 'border-black bg-surface dark:border-white'
-                    : 'border-border bg-surface/60'
+                    : 'border-border bg-surface'
                 }`}>
                 <Text
                   className={`text-xs ${
@@ -812,8 +812,8 @@ export default function AddTransactionScreen() {
                   setTitle(noteInput.trim());
                   setIsNoteModalOpen(false);
                 }}
-                className="rounded-lg border border-black bg-surface px-4 py-2 dark:border-white">
-                <Text className="text-xs font-semibold text-foreground">
+                className="rounded-lg bg-primary px-4 py-2 active:opacity-90">
+                <Text className="text-xs font-semibold text-primary-foreground">
                   Done
                 </Text>
               </TouchableOpacity>

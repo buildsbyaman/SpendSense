@@ -383,7 +383,7 @@ export default function AddBudgetScreen() {
 
           {/* End Date Pill */}
           {isInfinity ? (
-            <View className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface/50 px-3 py-1.5">
+            <View className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5">
               <Text className="text-xs font-medium text-muted">
                 To Infinity (∞)
               </Text>
@@ -417,7 +417,7 @@ export default function AddBudgetScreen() {
               className={`h-10 w-10 items-center justify-center rounded-full border active:scale-90 ${
                 amount.startsWith('-')
                   ? 'border-black bg-surface dark:border-white'
-                  : 'border-border bg-surface/60'
+                  : 'border-border bg-surface'
               }`}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Text
@@ -435,7 +435,7 @@ export default function AddBudgetScreen() {
             adjustsFontSizeToFit
             minimumFontScale={0.5}
             className={`flex-1 text-center font-bold tracking-tight ${
-              amount.replace('-', '') ? 'text-foreground' : 'text-muted/60'
+              amount.replace('-', '') ? 'text-foreground' : 'text-muted opacity-50'
             }`}
             style={{
               fontSize:
@@ -489,7 +489,7 @@ export default function AddBudgetScreen() {
                   className={`h-9 flex-row items-center gap-1.5 rounded-full border px-3 ${
                     isSelected
                       ? 'border-black bg-surface dark:border-white'
-                      : 'border-border bg-surface/60'
+                      : 'border-border bg-surface'
                   }`}>
                   <View
                     className="h-5 w-5 items-center justify-center rounded-full"

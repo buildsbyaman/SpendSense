@@ -14,7 +14,7 @@ export function QuickStatsCards({ income, expense, currencySymbol }: Props) {
   return (
     <View className="mb-4 flex-row gap-3">
       <View className="flex-1 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-income/10 dark:bg-income/20">
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 dark:bg-emerald-500/20">
           <Icon as={ArrowDownLeft} size={18} className="text-income" />
         </View>
         <View>
@@ -26,7 +26,7 @@ export function QuickStatsCards({ income, expense, currencySymbol }: Props) {
         </View>
       </View>
       <View className="flex-1 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-expense/10 dark:bg-expense/20">
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-red-500/10 dark:bg-red-500/20">
           <Icon as={ArrowUpRight} size={18} className="text-expense" />
         </View>
         <View>

@@ -274,7 +274,7 @@ export default function AddCategoryScreen() {
               className={`mt-3 w-full text-center tracking-tight ${
                 categoryName.trim()
                   ? 'text-2xl font-bold text-foreground'
-                  : 'text-2xl font-normal text-muted/60'
+                  : 'text-2xl font-normal text-muted opacity-50'
               }`}
               maxLength={30}
             />
@@ -349,13 +349,13 @@ export default function AddCategoryScreen() {
                       className={`h-12 w-12 items-center justify-center rounded-xl border active:scale-95 ${
                         isSelected
                           ? 'border-2 border-black dark:border-white'
-                          : 'border-border bg-surface/60'
+                          : 'border-border bg-surface'
                       }`}>
                       <Icon
                         as={iconObj.icon}
                         size={20}
                         color={isSelected ? selectedColor : undefined}
-                        className={isSelected ? undefined : 'text-foreground/70'}
+                        className={isSelected ? undefined : 'text-muted'}
                       />
                     </TouchableOpacity>
                   );

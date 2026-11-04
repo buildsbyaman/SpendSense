@@ -232,9 +232,9 @@ export default function TransactionDatePickerModal({
                     setRangeFrom(new Date(currentYear, currentMonth, 1));
                     setRangeTo(new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
                   }}
-                  className={`py-2 px-4 rounded-xl ${isWholeMonth ? 'bg-primary/20' : ''}`}
+                  className={`py-2 px-4 rounded-xl ${isWholeMonth ? 'bg-black/10 dark:bg-white/15' : ''}`}
                 >
-                  <Text className={`text-xs ${isWholeMonth ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Month</Text>
+                  <Text className={`text-xs ${isWholeMonth ? 'font-bold text-foreground' : 'font-medium text-muted'}`}>Whole Month</Text>
                 </TouchableOpacity>
                 <View className="w-[1px] h-3 bg-border" />
                 <TouchableOpacity
@@ -242,9 +242,9 @@ export default function TransactionDatePickerModal({
                     setRangeFrom(new Date(currentYear, 0, 1));
                     setRangeTo(new Date(currentYear, 11, 31, 23, 59, 59, 999));
                   }}
-                  className={`py-2 px-4 rounded-xl ${isWholeYear ? 'bg-primary/20' : ''}`}
+                  className={`py-2 px-4 rounded-xl ${isWholeYear ? 'bg-black/10 dark:bg-white/15' : ''}`}
                 >
-                  <Text className={`text-xs ${isWholeYear ? 'font-bold text-primary' : 'font-medium text-muted'}`}>Whole Year</Text>
+                  <Text className={`text-xs ${isWholeYear ? 'font-bold text-foreground' : 'font-medium text-muted'}`}>Whole Year</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -252,7 +252,7 @@ export default function TransactionDatePickerModal({
           <View className="flex-row gap-2.5 pt-2">
             <TouchableOpacity
               onPress={onClose}
-              className="h-11 flex-1 items-center justify-center rounded-xl border border-border/60 bg-secondary/80 active:scale-[0.98]"
+              className="h-11 flex-1 items-center justify-center rounded-xl border border-border bg-secondary active:scale-[0.98]"
               activeOpacity={0.85}
             >
               <Text className="text-sm font-semibold text-foreground">Cancel</Text>

@@ -11,7 +11,7 @@ import { useApp } from '@/context/AppContext';
 import TransactionDatePickerModal from '@/components/transactions/TransactionDatePickerModal';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { ChipSelector } from '@/components/ui/ChipSelector';
-import AnimatedSegment from '@/components/ui/animated-segment';
+import { RadioGroup } from '@/components/ui/RadioGroup';
 import { ToggleRow } from '@/components/ui/ToggleRow';
 
 import {
@@ -260,10 +260,10 @@ export default function ExportScreen() {
 
         {/* ── Format ── */}
         <View className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
-          <Text className="mb-3 text-sm font-medium text-muted">Format</Text>
-          <AnimatedSegment<ExportFormat>
+          <RadioGroup<ExportFormat>
+            label="Format"
             options={FORMATS.map((f) => ({ value: f.key, label: f.label }))}
-            selectedValue={format}
+            value={format}
             onChange={(v) => setFormat(v as ExportFormat)}
           />
         </View>

@@ -19,7 +19,7 @@ export function DataTypeChips({ selected, onToggle }: Props) {
             onPress={() => onToggle(dt.key)}
             activeOpacity={0.75}
             className={`flex-row items-center gap-2 rounded-xl border px-4 py-2.5 ${
-              active ? 'bg-primary/10 dark:bg-primary/15 border-primary' : 'border-border bg-surface'
+              active ? 'bg-black/10 dark:bg-white/15 border-primary' : 'border-border bg-surface'
             }`}>
             <Icon as={dt.icon} size={16} className={active ? 'text-primary' : 'text-muted'} />
             <Text
