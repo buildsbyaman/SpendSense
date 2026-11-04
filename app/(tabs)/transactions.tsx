@@ -1,7 +1,9 @@
-import { View } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
 import { useAppActions, useAppSelector, selectSortedCategories } from '@/context/store';
 import {
   type TransactionDayGroup,
@@ -24,8 +26,8 @@ import {
   TransactionDayGroupView,
   TransactionHistoryEmptyState,
 } from '@/components/transactions/TransactionListSection';
-import FilterPopover from '@/components/transactions/FilterPopover';
-import type { FilterState } from '@/components/transactions/FilterPopover';
+import HistoryTypeFilter from '@/components/transactions/HistoryTypeFilter';
+import { getWalletTypeColor } from '@/utils/wallet';
 import { perfLog, perfNow } from '@/lib/perf';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
@@ -95,12 +97,6 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
   const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filterButtonRect, setFilterButtonRect] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
 
   const toggleTransactionExpand = useCallback((id: string) => {
     setExpandedTransactionId((prev) => (prev === id ? null : id));
@@ -219,17 +215,6 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     ]
   );
 
-  // Quick stats: one pass instead of two filter+reduce passes over the list.
-  const { totalIncome, totalExpense } = useMemo(() => {
-    let income = 0;
-    let expense = 0;
-    for (const t of visibleTransactions) {
-      if (t.type === 'income') income += t.amount;
-      else if (t.type === 'expense') expense += t.amount;
-    }
-    return { totalIncome: income, totalExpense: expense };
-  }, [visibleTransactions]);
-
   const isDefaultDate = useCallback(() => {
     if (!dateFrom || !dateTo) return false;
     const d = new Date();
@@ -266,14 +251,42 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
     return count;
   }, [filter, categoryFilter, walletFilter]);
 
-  const handleFilterApply = useCallback((filters: FilterState) => {
-    setFilter(filters.filter);
-    setCategoryFilter(filters.categoryFilter);
-    setWalletFilter(filters.walletFilter);
-  }, []);
+  const handlePrevMonth = useCallback(() => {
+    const base = dateFrom ?? calendarMonth;
+    const prevMonthDate = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+    const from = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), 1);
+    const to = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    setDateFrom(from);
+    setDateTo(to);
+    setCalendarMonth(from);
+  }, [dateFrom, calendarMonth]);
+
+  const handleNextMonth = useCallback(() => {
+    const base = dateFrom ?? calendarMonth;
+    const nextMonthDate = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+    const from = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), 1);
+    const to = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    setDateFrom(from);
+    setDateTo(to);
+    setCalendarMonth(from);
+  }, [dateFrom, calendarMonth]);
 
   const dateLabel = useMemo(() => {
     if (dateFrom && dateTo) {
+      const isStart = dateFrom.getDate() === 1;
+      const lastDay = new Date(dateFrom.getFullYear(), dateFrom.getMonth() + 1, 0).getDate();
+      const isEnd = dateTo.getDate() === lastDay;
+      const sameMonth =
+        dateFrom.getMonth() === dateTo.getMonth() &&
+        dateFrom.getFullYear() === dateTo.getFullYear();
+
+      // Full month selected: e.g. "Oct '26"
+      if (isStart && isEnd && sameMonth) {
+        const monthShort = dateFrom.toLocaleDateString('en-US', { month: 'short' });
+        const yearShort = String(dateFrom.getFullYear()).slice(-2);
+        return `${monthShort} '${yearShort}`;
+      }
+
       if (dateFrom.toDateString() === dateTo.toDateString()) {
         return formatDatePickerDate(dateFrom, true);
       }
@@ -301,28 +314,153 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
         ListHeaderComponent={
           <>
             {transactions.length > 0 && (
-              <TransactionFilterBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                dateLabel={dateLabel}
-                onDatePress={() => setIsDatePickerOpen(true)}
-                hasActiveFilter={hasActiveFilter}
-                onClearAll={handleClearAll}
-                onFilterPress={(rect) => {
-                  setFilterButtonRect(rect);
-                  setIsFilterOpen(true);
-                }}
-                activeFilterCount={activeFilterCount}
-              />
-            )}
+              <>
+                <TransactionFilterBar
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  dateLabel={dateLabel}
+                  onDatePress={() => setIsDatePickerOpen(true)}
+                  onPrevMonth={handlePrevMonth}
+                  onNextMonth={handleNextMonth}
+                  hasActiveFilter={hasActiveFilter}
+                  onClearAll={handleClearAll}
+                  onFilterToggle={() => setIsFilterOpen((prev) => !prev)}
+                  isFilterOpen={isFilterOpen}
+                  activeFilterCount={activeFilterCount}
+                />
 
-            {/* Quick Stats Cards */}
-            {filter === 'all' && transactions.length > 0 && (
-              <QuickStatsCards
-                income={totalIncome}
-                expense={totalExpense}
-                currencySymbol={currencySymbol}
-              />
+                {/* ── Embedded Inline Filters ── */}
+                {isFilterOpen && (
+                  <View className="mb-4 gap-3">
+                    {/* 1. Type Switcher (Minimal Animated Capsule) */}
+                    <View className="items-center justify-center">
+                      <HistoryTypeFilter
+                        value={filter}
+                        onChange={(v) => {
+                          setFilter(v);
+                          if (v !== filter) setCategoryFilter(null);
+                        }}
+                      />
+                    </View>
+
+                    {/* 2. Category Chips */}
+                    {filter !== 'transfer' && filterCategories.length > 0 && (
+                      <View>
+                        <Text className="mb-1.5 ml-1 text-[10px] font-semibold uppercase text-muted">
+                          Category
+                        </Text>
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+                          <TouchableOpacity
+                            onPress={() => setCategoryFilter(null)}
+                            activeOpacity={0.7}
+                            style={{ outline: 'none' } as any}
+                            className={`h-8 items-center justify-center rounded-full border px-3.5 ${
+                              categoryFilter === null
+                                ? 'border-black bg-surface dark:border-white'
+                                : 'border-border bg-surface/60'
+                            }`}>
+                            <Text
+                              className={`text-xs ${
+                                categoryFilter === null
+                                  ? 'font-bold text-foreground'
+                                  : 'font-medium text-muted'
+                              }`}>
+                              All
+                            </Text>
+                          </TouchableOpacity>
+                          {filterCategories.map((cat) => {
+                            const isSelected = categoryFilter === cat.name;
+                            return (
+                              <TouchableOpacity
+                                key={cat.name}
+                                onPress={() => setCategoryFilter(isSelected ? null : cat.name)}
+                                activeOpacity={0.7}
+                                style={{ outline: 'none' } as any}
+                                className={`h-8 flex-row items-center gap-1.5 rounded-full border px-3 ${
+                                  isSelected
+                                    ? 'border-black bg-surface dark:border-white'
+                                    : 'border-border bg-surface/60'
+                                }`}>
+                                <View
+                                  className="h-4 w-4 items-center justify-center rounded-full"
+                                  style={{ backgroundColor: `${cat.color}18` }}>
+                                  <Icon as={cat.icon} size={10} color={cat.color} />
+                                </View>
+                                <Text
+                                  className={`text-xs ${
+                                    isSelected ? 'font-bold text-foreground' : 'font-medium text-muted'
+                                  }`}>
+                                  {cat.name}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </ScrollView>
+                      </View>
+                    )}
+
+                    {/* 3. Wallet Chips */}
+                    {accounts.length > 1 && (
+                      <View>
+                        <Text className="mb-1.5 ml-1 text-[10px] font-semibold uppercase text-muted">
+                          Wallet
+                        </Text>
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+                          <TouchableOpacity
+                            onPress={() => setWalletFilter(null)}
+                            activeOpacity={0.7}
+                            style={{ outline: 'none' } as any}
+                            className={`h-8 items-center justify-center rounded-full border px-3.5 ${
+                              walletFilter === null
+                                ? 'border-black bg-surface dark:border-white'
+                                : 'border-border bg-surface/60'
+                            }`}>
+                            <Text
+                              className={`text-xs ${
+                                walletFilter === null
+                                  ? 'font-bold text-foreground'
+                                  : 'font-medium text-muted'
+                              }`}>
+                              All
+                            </Text>
+                          </TouchableOpacity>
+                          {accounts.map((wallet) => {
+                            const isSelected = walletFilter === wallet.id;
+                            const walletColor = getWalletTypeColor(wallet.type);
+                            const WalletIcon = wallet.icon;
+                            return (
+                              <TouchableOpacity
+                                key={wallet.id}
+                                onPress={() => setWalletFilter(isSelected ? null : wallet.id)}
+                                activeOpacity={0.7}
+                                style={{ outline: 'none' } as any}
+                                className={`h-8 flex-row items-center gap-1.5 rounded-full border px-3 ${
+                                  isSelected
+                                    ? 'border-black bg-surface dark:border-white'
+                                    : 'border-border bg-surface/60'
+                                }`}>
+                                <Icon as={WalletIcon} size={11} color={walletColor} />
+                                <Text
+                                  className={`text-xs ${
+                                    isSelected ? 'font-bold text-foreground' : 'font-medium text-muted'
+                                  }`}>
+                                  {wallet.name}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </>
             )}
           </>
         }
@@ -391,21 +529,6 @@ export default function TransactionsScreen({ isActive = true }: { isActive?: boo
           setPendingDelete(null);
         }}
         onCancel={() => setPendingDelete(null)}
-      />
-
-      <FilterPopover
-        visible={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        active={{ filter, categoryFilter, walletFilter }}
-        categories={filterCategories}
-        accounts={accounts}
-        onApply={handleFilterApply}
-        onClear={() => {
-          setFilter('all');
-          setCategoryFilter(null);
-          setWalletFilter(null);
-        }}
-        buttonRect={filterButtonRect}
       />
     </View>
   );

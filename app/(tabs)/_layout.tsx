@@ -48,17 +48,14 @@ function TabLayoutInner() {
     },
     [navigate]
   );
-
-  // The native splash is held until data + theme are ready (see app/_layout.tsx),
-  // so this never paints in practice. Return a cheap themed surface rather than
-  // `null` in case the splash is dismissed early (e.g. an init error path).
+  
   if (!ready) return <View className="flex-1 bg-background" />;
   if (!hasOnboarded) return <Redirect href="/onboarding" />;
 
   return (
     <View className="flex-1">
       <AnimatedTabSlot activeTab={activeTab} />
-      <TabBar onTabChange={handleTabChange} activeTab={SUB_TO_PARENT[activeTab] ?? activeTab} />
+      <TabBar onTabChange={handleTabChange} activeTab={activeTab} />
     </View>
   );
 }

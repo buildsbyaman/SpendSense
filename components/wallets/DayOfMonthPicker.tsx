@@ -1,51 +1,107 @@
 import { useEffect, useRef } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 
 interface DayOfMonthPickerProps {
+  label: string;
   value: number;
+  enabled: boolean;
   onChange: (day: number) => void;
+  onToggleEnabled: (enabled: boolean) => void;
 }
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
-// Fixed chip size keeps every day the same width so the auto-scroll offset is
-// exact: chip width (40) + gap (8) = 48px per step.
-const CHIP_STEP = 48;
+const CHIP_WIDTH = 42;
+const CHIP_GAP = 8;
+const CHIP_STEP = CHIP_WIDTH + CHIP_GAP; // 50px
 
-export function DayOfMonthPicker({ value, onChange }: DayOfMonthPickerProps) {
+export function DayOfMonthPicker({
+  label,
+  value,
+  enabled,
+  onChange,
+  onToggleEnabled,
+}: DayOfMonthPickerProps) {
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      scrollRef.current?.scrollTo({ x: 0, animated: true });
+      return;
+    }
     const index = DAYS.indexOf(value);
-    if (index < 0) return;
-    // Keep the selected day roughly a third from the left edge; the native
-    // scroll view clamps past the content end automatically.
-    scrollRef.current?.scrollTo({ x: Math.max(0, index * CHIP_STEP - 120), animated: true });
-  }, [value]);
+    if (index >= 0) {
+      scrollRef.current?.scrollTo({
+        x: Math.max(0, (index + 1) * CHIP_STEP - 110),
+        animated: true,
+      });
+    }
+  }, [value, enabled]);
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingRight: 8 }}>
-      {DAYS.map((day) => {
-        const isActive = day === value;
-        return (
-          <TouchableOpacity
-            key={day}
-            activeOpacity={0.7}
-            onPress={() => onChange(day)}
-            className={`h-9 w-10 items-center justify-center rounded-md border ${
-              isActive ? 'bg-primary/10 border-primary' : 'border-border bg-surface'
+    <View>
+      {/* Label Row with generous breathing room */}
+      <View className="mb-2 flex-row items-center justify-between px-5">
+        <Text className="text-xs font-semibold text-muted">{label}</Text>
+        <Text className="text-xs font-bold text-foreground">
+          {enabled ? `Day ${value}` : 'Off'}
+        </Text>
+      </View>
+
+      {/* Horizontal Squarish Day Cards */}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingVertical: 6,
+          gap: CHIP_GAP,
+          alignItems: 'center',
+        }}>
+        {/* Off Squarish Card */}
+        <TouchableOpacity
+          onPress={() => onToggleEnabled(false)}
+          activeOpacity={0.7}
+          className={`h-[42px] min-w-[50px] items-center justify-center rounded-xl border px-3 active:scale-95 ${
+            !enabled
+              ? 'border-2 border-black bg-surface dark:border-white'
+              : 'border-border bg-surface/60'
+          }`}>
+          <Text
+            className={`text-xs ${
+              !enabled ? 'font-bold text-foreground' : 'font-medium text-muted'
             }`}>
-            <Text
-              className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
-              {day}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+            off
+          </Text>
+        </TouchableOpacity>
+
+        {/* 1..31 Squarish Day Cards */}
+        {DAYS.map((day) => {
+          const isSelected = enabled && value === day;
+          return (
+            <TouchableOpacity
+              key={day}
+              onPress={() => {
+                onChange(day);
+                if (!enabled) onToggleEnabled(true);
+              }}
+              activeOpacity={0.7}
+              className={`h-[42px] w-[42px] items-center justify-center rounded-xl border active:scale-95 ${
+                isSelected
+                  ? 'border-2 border-black bg-surface dark:border-white'
+                  : 'border-border bg-surface/60'
+              }`}>
+              <Text
+                className={`text-sm ${
+                  isSelected ? 'font-bold text-foreground' : 'font-medium text-muted'
+                }`}>
+                {day}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }

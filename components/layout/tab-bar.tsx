@@ -1,18 +1,9 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, useWindowDimensions } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
+import React, { useCallback } from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
 import { Home, ArrowRightLeft, Plus, Wallet, User, type LucideIcon } from 'lucide-react-native';
-
-const PILL_WIDTH = 56;
-const PILL_HEIGHT = 44;
-const PILL_RADIUS = 22; // pill shape
-const TAB_BAR_MARGIN = 16;
-const TAB_COUNT = 5;
 
 interface TabBarProps {
   onTabChange?: (name: string) => void;
@@ -22,52 +13,9 @@ interface TabBarProps {
 export const TabBar = React.memo(function TabBar({ onTabChange, activeTab = 'index' }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { colorScheme } = useColorScheme();
-  const { width } = useWindowDimensions();
-  const isDark = colorScheme === 'dark';
 
-  const colors = useMemo(
-    () => ({
-      active: isDark ? '#ffffff' : '#0f172a',
-      muted: isDark ? '#8e8e93' : '#94a3b8',
-      addBg: isDark ? '#ffffff' : '#0f172a',
-      addIcon: isDark ? '#000000' : '#ffffff',
-      glassBg: isDark ? 'rgba(28,28,30,0.82)' : 'rgba(243,247,255,0.9)',
-      glassBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.08)',
-      glassTint: (isDark ? 'dark' : 'light') as 'dark' | 'light',
-      pillBg: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
-    }),
-    [isDark]
-  );
-
-  // Safe bottom offset
-  const bottomOffset = insets.bottom > 0 ? insets.bottom : 20;
-
-  // Animation values
-  const containerWidth = width - TAB_BAR_MARGIN * 2;
-  const slotWidth = containerWidth / TAB_COUNT;
-
-  const activeIndex = useMemo(() => {
-    switch (activeTab) {
-      case 'index':
-        return 0;
-      case 'transactions':
-        return 1;
-      case 'wallets':
-        return 3;
-      case 'profile':
-        return 4;
-      default:
-        return 0;
-    }
-  }, [activeTab]);
-
-  const indicatorStyle = useAnimatedStyle(() => {
-    const leftPosition = slotWidth * activeIndex + slotWidth / 2 - PILL_WIDTH / 2;
-    return {
-      transform: [{ translateX: withSpring(leftPosition, { damping: 30, stiffness: 400, mass: 0.8 }) }],
-    };
-  });
+  // Bottom safe area padding
+  const bottomPadding = Math.max(insets.bottom, 12);
 
   const renderTab = useCallback(
     (tabName: string, IconComponent: LucideIcon) => {
@@ -78,103 +26,93 @@ export const TabBar = React.memo(function TabBar({ onTabChange, activeTab = 'ind
           style={styles.slot}
           onPress={() => onTabChange?.(tabName)}
           activeOpacity={0.7}>
-          <Icon as={IconComponent} size={24} color={isActive ? colors.active : colors.muted} />
+          <Icon as={IconComponent} size={22} color={isActive ? '#FFFFFF' : '#71717A'} />
+          <View style={[styles.activeDot, { opacity: isActive ? 1 : 0 }]} />
         </TouchableOpacity>
       );
     },
-    [activeTab, onTabChange, colors.active, colors.muted]
+    [activeTab, onTabChange]
   );
 
   return (
-    <View style={[styles.outer, { bottom: bottomOffset }]}>
-      {/* ── Glass capsule ── */}
-      <BlurView
-        style={[
-          styles.capsule,
-          {
-            backgroundColor: colors.glassBg,
-            borderColor: colors.glassBorder,
-            borderWidth: 1,
-            marginHorizontal: TAB_BAR_MARGIN,
-          },
-        ]}
-        tint={colors.glassTint}
-        intensity={Platform.OS === 'android' ? 35 : 45}
-        {...(Platform.OS === 'android' ? { experimentalBlurMethod: 'dimezisBlurView' } : {})}>
-        
-        {/* Animated Pill Indicator */}
-        <Animated.View
-          style={[
-            styles.pill,
-            { backgroundColor: colors.pillBg },
-            indicatorStyle,
-          ]}
-        />
+    <View style={[styles.bar, { paddingBottom: bottomPadding }]}>
+      {renderTab('index', Home)}
+      {renderTab('transactions', ArrowRightLeft)}
 
-        {renderTab('index', Home)}
-        {renderTab('transactions', ArrowRightLeft)}
-
-        {/* ── Add Action Button ── */}
+      {/* ── CRED-Inspired Central Action Button ── */}
+      <View style={styles.slot}>
         <TouchableOpacity
-          style={styles.slot}
+          style={styles.centerButtonOuter}
           onPress={() => router.push('/add-transaction')}
           activeOpacity={0.85}>
-          <View style={[styles.fab, { backgroundColor: colors.addBg }]}>
-            <Icon as={Plus} size={24} color={colors.addIcon} />
+          <View style={styles.centerButtonInner}>
+            <Icon as={Plus} size={22} color="#FFFFFF" strokeWidth={2.4} />
           </View>
         </TouchableOpacity>
+      </View>
 
-        {renderTab('wallets', Wallet)}
-        {renderTab('profile', User)}
-      </BlurView>
+      {renderTab('wallets', Wallet)}
+      {renderTab('profile', User)}
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  outer: {
+  bar: {
     position: 'absolute',
     left: 0,
     right: 0,
-    zIndex: 50,
-    elevation: 50,
-  },
-  capsule: {
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderRadius: 9999, 
-    height: 65, 
+    backgroundColor: '#0D0D0E',
+    borderTopWidth: 1,
+    borderTopColor: '#1F1F24',
+    paddingTop: 10,
+    zIndex: 50,
+    elevation: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 20,
-    shadowOpacity: 0.12,
-    elevation: 12,
-  },
-  pill: {
-    position: 'absolute',
-    width: PILL_WIDTH,
-    height: PILL_HEIGHT,
-    borderRadius: PILL_RADIUS,
-    left: 0, // Base position to apply translateX from
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   slot: {
     flex: 1,
-    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    paddingVertical: 4,
   },
-  fab: {
-    width: 44,
-    height: 44,
-    borderRadius: 24,
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FFFFFF',
+    marginTop: 4,
+  },
+  centerButtonOuter: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#161619',
+    borderWidth: 1.5,
+    borderColor: '#2E2E34',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
     shadowRadius: 8,
-    shadowOpacity: 0.15,
-    elevation: 6,
+    elevation: 8,
+  },
+  centerButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#222228',
+    borderWidth: 1,
+    borderColor: '#383842',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

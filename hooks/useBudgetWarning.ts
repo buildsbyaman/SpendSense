@@ -16,19 +16,32 @@ export function checkBudgetWarning(
   parsedAmount: number,
   editId?: string
 ): BudgetWarningResult {
-  const budget = budgets.find((b) => b.category === category);
+  const txDate = new Date(date);
+  const txYear = txDate.getFullYear();
+  const txMonth = txDate.getMonth();
+
+  const budget = budgets.find((b) => {
+    if (b.category !== category) return false;
+    const bStart = b.start_date ? new Date(b.start_date + 'T00:00:00') : null;
+    const bEnd = b.end_date ? new Date(b.end_date + 'T23:59:59.999') : null;
+    if (bStart && txDate < bStart) return false;
+    if (bEnd && txDate > bEnd) return false;
+    return true;
+  });
 
   if (type !== 'expense' || !budget) {
     return { isOverBudget: false, totalSpent: 0, budget };
   }
 
-  const txDate = new Date(date);
-  const txYear = txDate.getFullYear();
-  const txMonth = txDate.getMonth();
+  const bStart = budget.start_date ? new Date(budget.start_date + 'T00:00:00') : null;
+  const bEnd = budget.end_date ? new Date(budget.end_date + 'T23:59:59.999') : null;
 
   const currentMonthTxs = transactions.filter((t) => {
     const d = new Date(t.date);
-    return d.getFullYear() === txYear && d.getMonth() === txMonth;
+    if (d.getFullYear() !== txYear || d.getMonth() !== txMonth) return false;
+    if (bStart && d < bStart) return false;
+    if (bEnd && d > bEnd) return false;
+    return true;
   });
 
   const spent = currentMonthTxs

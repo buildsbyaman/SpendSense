@@ -11,7 +11,7 @@ import { type Account, parseBalance, formatNumber } from '@/utils/wallet';
 import { WalletList } from '@/components/wallets/WalletList';
 import { DeleteWalletModal } from '@/components/wallets/DeleteWalletModal';
 
-import { useApp } from '@/context/AppContext';
+import { useAppActions, useAppSelector, useSortedAccounts } from '@/context/store';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 
 const TotalBalanceHeader = React.memo(function TotalBalanceHeader({
@@ -35,14 +35,9 @@ const TotalBalanceHeader = React.memo(function TotalBalanceHeader({
 export default function AccountsScreen({ isActive = true }: { isActive?: boolean }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const {
-    accounts,
-    deleteWallet,
-    setDefaultWallet,
-    userProfile,
-    getSortedAccounts,
-    updateWalletOrder,
-  } = useApp();
+  const { deleteWallet, setDefaultWallet, updateWalletOrder } = useAppActions();
+  const accounts = useAppSelector((state) => state.accounts);
+  const currencySymbol = useAppSelector((state) => state.userProfile.currencySymbol);
   const listRef = useRef<any>(null);
 
   useEffect(() => {
@@ -61,7 +56,7 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
   const [draftOrder, setDraftOrder] = useState<Account[]>([]);
   const [availableHeight, setAvailableHeight] = useState(0);
 
-  const sortedAccounts = getSortedAccounts();
+  const sortedAccounts = useSortedAccounts();
 
   // Close all open dialogs/forms when leaving this tab
   useEffect(() => {
@@ -200,7 +195,7 @@ export default function AccountsScreen({ isActive = true }: { isActive?: boolean
           if (height > 0) setAvailableHeight(height);
         }}>
         <WalletList
-          listHeader={<TotalBalanceHeader totalBalance={totalBalance} currencySymbol={userProfile.currencySymbol} />}
+          listHeader={<TotalBalanceHeader totalBalance={totalBalance} currencySymbol={currencySymbol} />}
           listRef={listRef}
           accounts={isReorderMode ? draftOrder : sortedAccounts}
           expandedWalletId={isReorderMode ? null : expandedWalletId}

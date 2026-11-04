@@ -10,15 +10,11 @@ interface GranularityToggleProps {
 
 export function GranularityToggle({ options, value, onChange }: GranularityToggleProps) {
   return (
-    <View style={{ width: 130 }}>
-      <AnimatedSegment
-        options={options}
-        selectedValue={value}
-        onChange={onChange}
-        paddingVertical={6}
-        fontSize={12}
-        borderRadius={10}
-      />
-    </View>
+    <AnimatedSegment
+      width={108}
+      options={options}
+      selectedValue={value}
+      onChange={onChange}
+    />
   );
 }

@@ -1,7 +1,7 @@
 import { type Transaction } from '@/utils/transaction';
 import { type Subscription } from '@/utils/subscription';
 import { filterByMonth, filterByYear } from '@/utils/analytics';
-import { type ExportSelection } from './types';
+import { type AppState, type ExportSelection } from './types';
 
 export function fmtMoney(v: number, symbol: string = '$'): string {
   const neg = v < 0;
@@ -105,3 +105,40 @@ export function filterSubsByPeriod(
   }
   return subs;
 }
+
+export function filterBudgetsByPeriod(
+  budgets: AppState['budgets'],
+  period: ExportSelection['period']
+): AppState['budgets'] {
+  if (period.mode === 'all') return budgets;
+
+  let periodStart: Date | null = null;
+  let periodEnd: Date | null = null;
+
+  if (period.mode === 'month' && period.year != null && period.month != null) {
+    periodStart = new Date(period.year, period.month, 1, 0, 0, 0, 0);
+    periodEnd = new Date(period.year, period.month + 1, 0, 23, 59, 59, 999);
+  } else if (period.mode === 'year' && period.year != null) {
+    periodStart = new Date(period.year, 0, 1, 0, 0, 0, 0);
+    periodEnd = new Date(period.year, 11, 31, 23, 59, 59, 999);
+  } else if (period.mode === 'custom') {
+    if (period.from) {
+      periodStart = new Date(period.from);
+      periodStart.setHours(0, 0, 0, 0);
+    }
+    if (period.to) {
+      periodEnd = new Date(period.to);
+      periodEnd.setHours(23, 59, 59, 999);
+    }
+  }
+
+  return budgets.filter((b) => {
+    const bStart = b.start_date ? new Date(b.start_date + 'T00:00:00') : null;
+    const bEnd = b.end_date ? new Date(b.end_date + 'T23:59:59.999') : null;
+
+    if (periodEnd && bStart && bStart > periodEnd) return false;
+    if (periodStart && bEnd && bEnd < periodStart) return false;
+    return true;
+  });
+}
+

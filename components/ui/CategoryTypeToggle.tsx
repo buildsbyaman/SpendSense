@@ -1,25 +1,28 @@
 import React from 'react';
-import { View } from 'react-native';
-import { type TransactionType } from '@/utils/transaction';
+import { type DimensionValue } from 'react-native';
 import AnimatedSegment from '@/components/ui/animated-segment';
+import { type TransactionType } from '@/utils/transaction';
 
 interface CategoryTypeToggleProps {
   type: TransactionType;
   onChange: (type: TransactionType) => void;
+  width?: DimensionValue;
 }
 
-export default function CategoryTypeToggle({ type, onChange }: CategoryTypeToggleProps) {
+export default function CategoryTypeToggle({
+  type,
+  onChange,
+  width = 132,
+}: CategoryTypeToggleProps) {
   return (
-    <View className="w-[280px] self-center">
-      <AnimatedSegment<TransactionType>
-        options={[
-          { label: 'Expense', value: 'expense' },
-          { label: 'Income', value: 'income' },
-        ]}
-        selectedValue={type}
-        onChange={onChange}
-        borderRadius={12}
-      />
-    </View>
+    <AnimatedSegment<TransactionType>
+      width={width}
+      options={[
+        { label: 'Expense', value: 'expense' },
+        { label: 'Income', value: 'income' },
+      ]}
+      selectedValue={type}
+      onChange={onChange}
+    />
   );
 }

@@ -10,7 +10,11 @@ import {
 const DURATION = 280;
 const EASING = Easing.out(Easing.cubic);
 
-export function useExpandAnimation(isExpanded: boolean, animateOnMount = false) {
+export function useExpandAnimation(
+  isExpanded: boolean,
+  animateOnMount = false,
+  targetHeight = 70
+) {
   // `animateOnMount` is read only when the shared value is created: a component
   // that mounts already expanded can either start fully open (default) or play
   // the opening animation from 0.
@@ -21,7 +25,7 @@ export function useExpandAnimation(isExpanded: boolean, animateOnMount = false) 
   }, [isExpanded]);
 
   const actionsStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(progress.value, [0, 1], [0, 70]),
+    maxHeight: interpolate(progress.value, [0, 1], [0, targetHeight]),
     opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0, 1]),
     overflow: 'hidden' as const,
   }));

@@ -28,8 +28,8 @@ export function QuickDatePicker({
   const quickBtn = (active: boolean, onPress: () => void, label: string) => (
     <TouchableOpacity
       onPress={onPress}
-      className={`flex-1 items-center rounded-xl border py-3 ${
-        active ? 'bg-primary/10 dark:bg-primary/15 border-primary' : 'border-border bg-surface'
+      className={`h-9 flex-1 items-center justify-center rounded-lg border px-2 ${
+        active ? 'border-primary bg-primary/10 dark:bg-primary/15' : 'border-border bg-surface'
       }`}>
       <Text className={`text-xs font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>
         {label}
@@ -38,13 +38,13 @@ export function QuickDatePicker({
   );
 
   return (
-    <View className="flex-row gap-3">
+    <View className="flex-row gap-2">
       {quickBtn(isToday, onSelectToday, 'Today')}
       {onSelectYesterday && quickBtn(isYesterday, onSelectYesterday, 'Yesterday')}
       <TouchableOpacity
         onPress={onOpenCalendar}
-        className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border px-3 py-3 ${
-          isCustom ? 'bg-primary/10 dark:bg-primary/15 border-primary' : 'border-border bg-surface'
+        className={`h-9 flex-1 flex-row items-center justify-center gap-1.5 rounded-lg border px-2 ${
+          isCustom ? 'border-primary bg-primary/10 dark:bg-primary/15' : 'border-border bg-surface'
         }`}>
         <Icon as={Calendar} size={12} className={isCustom ? 'text-primary' : 'text-foreground'} />
         <Text

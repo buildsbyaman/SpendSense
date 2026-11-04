@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -12,7 +13,6 @@ import Toast from 'react-native-toast-message';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { CategoryList } from '@/components/categories/CategoryList';
-import { CategoryFormModal } from '@/components/categories/CategoryFormModal';
 import { type CategoryItemData } from '@/components/categories/CategoryItem';
 
 export default function CategoriesScreen({ referrer }: { referrer?: string }) {
@@ -33,10 +33,6 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [draftOrder, setDraftOrder] = useState<CategoryItemData[]>([]);
   const [availableHeight, setAvailableHeight] = useState(0);
-
-  // Add / Edit Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryItemData | null>(null);
 
   // Delete Dialog state
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -64,13 +60,20 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
   };
 
   const openAddModal = () => {
-    setEditingCategory(null);
-    setIsModalOpen(true);
+    router.push({
+      pathname: '/add-category',
+      params: { type: activeTab },
+    });
   };
 
   const handleEditClick = (cat: CategoryItemData) => {
-    setEditingCategory(cat);
-    setIsModalOpen(true);
+    router.push({
+      pathname: '/add-category',
+      params: {
+        editId: cat.id || cat.name,
+        type: activeTab,
+      },
+    });
   };
 
   const handleDeleteClick = (cat: CategoryItemData) => {
@@ -156,16 +159,19 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
       </View>
 
       {/* Type Toggle & Reorder Button */}
-      <View className="mb-4 flex-row items-center justify-between pl-7 pr-5">
-        {!isReorderMode && (
-          <TouchableOpacity
-            onPress={enterReorderMode}
-            className="mr-3 h-11 w-11 items-center justify-center rounded-full border border-border bg-surface shadow-xs"
-            activeOpacity={0.7}>
-            <Icon as={GripVertical} size={18} className="text-foreground" />
-          </TouchableOpacity>
-        )}
-        <View className="flex-1">
+      <View className="px-5">
+        <View className="mb-4 flex-row items-center justify-between px-2">
+          {!isReorderMode ? (
+            <TouchableOpacity
+              onPress={enterReorderMode}
+              className="h-11 w-11 items-center justify-center rounded-full border border-border bg-surface shadow-xs active:scale-95"
+              activeOpacity={0.7}>
+              <Icon as={GripVertical} size={18} className="text-foreground" />
+            </TouchableOpacity>
+          ) : (
+            <View className="h-11 w-11" />
+          )}
+
           <CategoryTypeToggle
             type={activeTab}
             onChange={(type) => {
@@ -174,6 +180,8 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
               setActiveTab(type);
             }}
           />
+
+          <View className="h-11 w-11" />
         </View>
       </View>
 
@@ -215,17 +223,6 @@ export default function CategoriesScreen({ referrer }: { referrer?: string }) {
           maxHeight={availableHeight}
         />
       </View>
-
-      {/* Add / Edit Category Modal */}
-      <CategoryFormModal
-        visible={isModalOpen}
-        editingCategory={editingCategory}
-        activeTab={activeTab}
-        onRequestClose={() => {
-          setIsModalOpen(false);
-          setEditingCategory(null);
-        }}
-      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

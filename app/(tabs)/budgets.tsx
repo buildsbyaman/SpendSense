@@ -1,28 +1,33 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { View } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/ui/header';
 import { Text } from '@/components/ui/text';
-import { Icon } from '@/components/ui/icon';
-import { PiggyBank, Plus, Edit2 } from 'lucide-react-native';
+import { PiggyBank, Plus } from 'lucide-react-native';
 import { useTabNavigation } from '@/context/TabNavigationContext';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useApp } from '@/context/AppContext';
 import { filterByMonth } from '@/utils/analytics';
 import { getCategoryColor, getCategoryIcon } from '@/utils/transaction';
-import { formatNumber } from '@/utils/wallet';
 import { MonthNavigator } from '@/components/analytics/MonthNavigator';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { BudgetItem, type BudgetProgressItem } from '@/components/budgets/BudgetItem';
+import Toast from 'react-native-toast-message';
 import { router } from 'expo-router';
-import type { Budget } from '@/lib/db/budget';
-
-type BudgetProgressItem = Budget & { spent: number; percentage: number };
 
 export default function BudgetsScreen({ referrer }: { referrer?: string }) {
   const insets = useSafeAreaInsets();
   const { navigate: navigateTab, addListener } = useTabNavigation();
-  const { budgets, transactions, getSortedCategories, userProfile } = useApp();
+  const { budgets, transactions, getSortedCategories, userProfile, deleteBudget } = useApp();
   const scrollRef = useRef<FlashListRef<BudgetProgressItem>>(null);
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [budgetToDelete, setBudgetToDelete] = useState<BudgetProgressItem | null>(null);
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }, []);
 
   useEffect(() => {
     return addListener((tabName) => {
@@ -41,28 +46,69 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
     return filterByMonth(transactions, year, month);
   }, [transactions, year, month]);
 
-  const budgetProgress = useMemo(() => {
-    return budgets.map((budget) => {
-      const spent = currentMonthTxs
-        .filter((t) => t.type === 'expense' && t.category === budget.category)
-        .reduce((sum, t) => sum + t.amount, 0);
+  const budgetProgress = useMemo<BudgetProgressItem[]>(() => {
+    const monthStart = new Date(year, month, 1, 0, 0, 0, 0);
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
-      const percentage = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
-      return { ...budget, spent, percentage };
-    });
-  }, [budgets, currentMonthTxs]);
+    return budgets
+      .filter((budget) => {
+        const bStart = budget.start_date ? new Date(budget.start_date + 'T00:00:00') : null;
+        const bEnd = budget.end_date ? new Date(budget.end_date + 'T23:59:59.999') : null;
+        if (bStart && bStart > monthEnd) return false;
+        if (bEnd && bEnd < monthStart) return false;
+        return true;
+      })
+      .map((budget) => {
+        const bStart = budget.start_date ? new Date(budget.start_date + 'T00:00:00') : null;
+        const bEnd = budget.end_date ? new Date(budget.end_date + 'T23:59:59.999') : null;
+
+        const spent = currentMonthTxs
+          .filter((t) => {
+            if (t.type !== 'expense' || t.category !== budget.category) return false;
+            const tDate = new Date(t.date);
+            if (bStart && tDate < bStart) return false;
+            if (bEnd && tDate > bEnd) return false;
+            return true;
+          })
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const percentage = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
+        return { ...budget, spent, percentage };
+      });
+  }, [budgets, currentMonthTxs, year, month]);
 
   const expenseCategories = getSortedCategories('expense');
-  const getCatDetails = (name: string) => {
-    const cat = expenseCategories.find((c) => c.name === name);
-    return {
-      icon: getCategoryIcon(name, undefined, cat && 'icon' in cat ? cat.icon : undefined),
-      color: getCategoryColor(name, cat && 'color' in cat ? cat.color : undefined),
-    };
-  };
+  const getCatDetails = useCallback(
+    (name: string) => {
+      const cat = expenseCategories.find((c) => c.name === name);
+      return {
+        icon: getCategoryIcon(name, undefined, cat && 'icon' in cat ? cat.icon : undefined),
+        color: getCategoryColor(name, cat && 'color' in cat ? cat.color : undefined),
+      };
+    },
+    [expenseCategories]
+  );
 
-  const handleEdit = (id: string) => {
+  const handleEdit = useCallback((id: string) => {
     router.push(`/add-budget?editId=${id}`);
+  }, []);
+
+  const confirmDelete = async () => {
+    if (!budgetToDelete) return;
+    try {
+      await deleteBudget(budgetToDelete.id);
+      Toast.show({
+        type: 'success',
+        text1: 'Budget deleted',
+      });
+    } catch {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to delete budget',
+      });
+    } finally {
+      setBudgetToDelete(null);
+    }
   };
 
   return (
@@ -83,12 +129,7 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
         keyExtractor={(bp) => bp.id}
         ListHeaderComponent={
           budgets.length > 0 ? (
-            <View className="mb-4 mt-2 flex-row items-center justify-between">
-              <Text className="ml-1 text-sm font-medium text-muted">
-                {year === now.getFullYear() && month === now.getMonth()
-                  ? 'Current Month'
-                  : `${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year}`}
-              </Text>
+            <View className="mb-4 mt-2 flex-row items-center justify-center">
               <MonthNavigator
                 year={year}
                 month={month}
@@ -106,61 +147,30 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
         ListEmptyComponent={
           <EmptyState
             icon={PiggyBank}
-            title="Monthly Budgets"
-            description="Set spending limits per category and track your progress throughout the month."
+            title={budgets.length > 0 ? 'No Budgets in this Period' : 'Monthly Budgets'}
+            description={
+              budgets.length > 0
+                ? 'No budgets are active for the selected month.'
+                : 'Set spending limits per category and track your progress throughout the month.'
+            }
             buttonText="Create Budget"
             onButtonPress={() => router.push('/add-budget')}
           />
         }
         renderItem={({ item: bp }) => {
           const { icon: CatIcon, color } = getCatDetails(bp.category);
-          const isOverBudget = bp.percentage >= 100;
-          const progressColor = isOverBudget ? 'bg-red-500' : 'bg-primary';
 
           return (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => handleEdit(bp.id)}
-              className="mb-4 rounded-xl border border-border bg-surface p-6 shadow-xs">
-              <View className="mb-4 flex-row items-center justify-between">
-                <View className="flex-row items-center gap-3">
-                  <View
-                    className="h-10 w-10 items-center justify-center rounded-full"
-                    style={{ backgroundColor: `${color}15` }}>
-                    <Icon as={CatIcon} size={20} color={color} />
-                  </View>
-                  <View>
-                    <Text className="text-base font-semibold">{bp.category}</Text>
-                    <Text className="text-xs text-muted">
-                      {userProfile.currencySymbol}
-                      {formatNumber(bp.spent)} spent (
-                      {bp.amount > 0 ? Math.round((bp.spent / bp.amount) * 100) : 0}%)
-                    </Text>
-                  </View>
-                </View>
-                <View className="items-end">
-                  <Text className="text-base font-bold">
-                    {userProfile.currencySymbol}
-                    {formatNumber(bp.amount, 0)}
-                  </Text>
-                  <Text className="text-xs text-muted">Limit</Text>
-                </View>
-              </View>
-
-              <View className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                <View
-                  className={`h-full rounded-full ${progressColor}`}
-                  style={{ width: `${bp.percentage}%` }}
-                />
-              </View>
-
-              {isOverBudget && (
-                <Text className="mt-3 text-center text-xs font-medium text-red-500">
-                  Over budget by {userProfile.currencySymbol}
-                  {formatNumber(bp.spent - bp.amount)}
-                </Text>
-              )}
-            </TouchableOpacity>
+            <BudgetItem
+              item={bp}
+              icon={CatIcon}
+              color={color}
+              currencySymbol={userProfile.currencySymbol}
+              isExpanded={expandedId === bp.id}
+              onToggleExpand={() => toggleExpand(bp.id)}
+              onEdit={() => handleEdit(bp.id)}
+              onDelete={() => setBudgetToDelete(bp)}
+            />
           );
         }}
         style={{ flex: 1 }}
@@ -170,6 +180,16 @@ export default function BudgetsScreen({ referrer }: { referrer?: string }) {
         }}
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
+      />
+
+      <ConfirmDialog
+        visible={budgetToDelete !== null}
+        title="Delete Budget"
+        message={`Are you sure you want to delete the budget for ${budgetToDelete?.category}? This action cannot be undone.`}
+        destructive={true}
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setBudgetToDelete(null)}
       />
     </View>
   );

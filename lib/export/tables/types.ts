@@ -45,7 +45,13 @@ export interface AppState {
     dueDay?: number | null;
     billDay?: number | null;
   }[];
-  budgets: { id: string; category: string; amount: number }[];
+  budgets: {
+    id: string;
+    category: string;
+    amount: number;
+    start_date?: string | null;
+    end_date?: string | null;
+  }[];
   subscriptions: Subscription[];
   customCategories: { id: string; name: string; type: string; icon?: string; color?: string }[];
   profile: UserProfile;

@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   ArrowRight,
-  Plus,
   Receipt,
   Wallet,
   Tags,
@@ -108,55 +107,49 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
   );
 
   return (
-    <View className="mt-2 flex-1 bg-background" style={{ paddingTop: insets.top + 16 }}>
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top + 12 }}>
       {/* Sticky Welcome Header */}
-      <View className="mb-4 ml-1 flex-row items-center justify-between px-5">
+      <View className="mb-4 flex-row items-center justify-between px-5">
         <View className="flex-row items-center gap-3">
-          <Avatar name={userName} avatar={userAvatar} size={42} />
+          <Avatar name={userName} avatar={userAvatar} size={44} />
           <View>
-            <Text className="mt-0.5 text-2xl font-semibold text-foreground">Hey, {userName}</Text>
+            <Text className="text-[23px] font-bold tracking-tight text-foreground">Hey, {userName}</Text>
           </View>
         </View>
       </View>
 
       {/* Net Balance Card (Fixed at top) */}
-      <View className="mb-5 px-5">
-        <View className="rounded-xl border border-border bg-surface py-5 shadow-xs">
-          <View className="mb-4 px-6">
-            <Text className="mb-1 text-sm font-medium text-muted">Total Balance</Text>
-            <Text className="text-3xl font-bold text-foreground">
+      <View className="mb-4 px-5">
+        <View className="rounded-2xl border border-border bg-surface py-5">
+          <View className="mb-3.5 px-6">
+            <Text className="mb-1 text-[13px] font-normal text-muted">Total Balance</Text>
+            <Text className="text-[32px] font-bold tracking-tight text-foreground">
               {currencySymbol}
               {formatNumber(totalBalance)}
             </Text>
           </View>
 
           {/* Divider */}
-          <View className="mb-5 h-[1px] bg-divider" />
+          <View className="mb-4 h-[1px] bg-divider" />
 
           {/* Quick Income/Expense Summary */}
-          <View className="mb-5 flex-row px-6">
+          <View className="mb-4 flex-row items-center px-6">
             <View className="flex-1 flex-row items-center gap-3">
-              <View className="bg-income/10 dark:bg-income/20 h-9 w-9 items-center justify-center rounded-full">
-                <Icon as={ArrowDownLeft} size={18} className="text-income" />
-              </View>
               <View>
-                <Text className="text-xs font-medium text-muted">Income</Text>
-                <Text className="mt-0.5 text-sm font-bold text-income">
+                <Text className="text-[12px] font-normal text-muted">Income</Text>
+                <Text className="mt-0.5 text-[14px] font-semibold text-[#00A86B]">
                   {currencySymbol}
                   {formatNumber(totalIncome)}
                 </Text>
               </View>
             </View>
 
-            <View className="mx-4 w-[1px] bg-divider" />
+            <View className="mx-4 h-7 w-[1px] bg-divider" />
 
             <View className="flex-1 flex-row items-center gap-3">
-              <View className="bg-expense/10 dark:bg-expense/20 h-9 w-9 items-center justify-center rounded-full">
-                <Icon as={ArrowUpRight} size={18} className="text-expense" />
-              </View>
               <View>
-                <Text className="text-xs font-medium text-muted">Expenses</Text>
-                <Text className="mt-0.5 text-sm font-bold text-expense">
+                <Text className="text-[12px] font-normal text-muted">Expenses</Text>
+                <Text className="mt-0.5 text-[14px] font-semibold text-[#F04444]">
                   {currencySymbol}
                   {formatNumber(totalExpense)}
                 </Text>
@@ -165,28 +158,28 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
           </View>
 
           {/* Quick Actions Grid */}
-          <View className="mb-4 h-[1px] bg-divider" />
-          <View className="flex-row px-6 pb-2">
+          <View className="mb-3.5 h-[1px] bg-divider" />
+          <View className="flex-row px-6 pb-1">
             {/* Column 1 */}
             <View className="flex-1 gap-3">
               <TouchableOpacity
                 onPress={() => navigateTab('categories', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
-                  <Icon as={Tags} size={14} className="text-primary" />
+                <View className="h-8 w-8 items-center justify-center rounded-full border border-border bg-[#F7F7F7] dark:bg-[#1A1A1E]">
+                  <Icon as={Tags} size={14} className="text-foreground" />
                 </View>
-                <Text className="text-sm font-semibold text-foreground">Categories</Text>
+                <Text className="text-[14px] font-medium text-foreground">Categories</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => navigateTab('budgets', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
-                  <Icon as={PiggyBank} size={14} className="text-primary" />
+                <View className="h-8 w-8 items-center justify-center rounded-full border border-border bg-[#F7F7F7] dark:bg-[#1A1A1E]">
+                  <Icon as={PiggyBank} size={14} className="text-foreground" />
                 </View>
-                <Text className="text-sm font-semibold text-foreground">Budgets</Text>
+                <Text className="text-[14px] font-medium text-foreground">Budgets</Text>
               </TouchableOpacity>
             </View>
 
@@ -199,20 +192,20 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
                 onPress={() => navigateTab('analytics', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
-                  <Icon as={TrendingUp} size={14} className="text-primary" />
+                <View className="h-8 w-8 items-center justify-center rounded-full border border-border bg-[#F7F7F7] dark:bg-[#1A1A1E]">
+                  <Icon as={TrendingUp} size={14} className="text-foreground" />
                 </View>
-                <Text className="text-sm font-semibold text-foreground">Analytics</Text>
+                <Text className="text-[14px] font-medium text-foreground">Analytics</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => navigateTab('subscriptions', { referrer: 'home' })}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-3 py-1">
-                <View className="bg-secondary/60 h-8 w-8 items-center justify-center rounded-full">
-                  <Icon as={Repeat} size={14} className="text-primary" />
+                <View className="h-8 w-8 items-center justify-center rounded-full border border-border bg-[#F7F7F7] dark:bg-[#1A1A1E]">
+                  <Icon as={Repeat} size={14} className="text-foreground" />
                 </View>
-                <Text className="text-sm font-semibold text-foreground">Subscriptions</Text>
+                <Text className="text-[14px] font-medium text-foreground">Subscriptions</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -220,14 +213,14 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
       </View>
 
       {/* Recent Activity Header (Fixed at top) */}
-      <View className="mb-4 flex-row items-center justify-between px-5">
-        <Text className="text-lg font-semibold text-foreground">Recent Activity</Text>
+      <View className="mb-3.5 flex-row items-center justify-between px-5">
+        <Text className="text-[19px] font-semibold tracking-tight text-foreground">Recent Activity</Text>
         {transactions.length > 0 && (
           <TouchableOpacity
             onPress={() => navigateTab('transactions')}
-            className="flex-row items-center gap-1.5 rounded-[6px] border border-border bg-surface px-3 py-1.5 shadow-xs"
+            className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5"
             activeOpacity={0.7}>
-            <Text className="text-xs font-semibold text-foreground">View All</Text>
+            <Text className="text-[12px] font-medium text-foreground">View All</Text>
             <Icon as={ArrowRight} size={12} className="text-foreground" />
           </TouchableOpacity>
         )}
@@ -270,7 +263,7 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
               </View>
             )
           ) : (
-            <View className="overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-xs">
+            <View className="overflow-hidden rounded-2xl border border-border bg-surface py-1">
               {recentTransactions.map((tx, idx) => (
                 <TransactionItem
                   key={tx.id}
@@ -283,12 +276,13 @@ export default function HomeScreen({ isActive = true }: { isActive?: boolean }) 
                   isLast={idx === recentTransactions.length - 1}
                   currencySymbol={currencySymbol}
                   customCategories={customCategories}
+                  showSubtitle={false}
                 />
               ))}
             </View>
           )}
           {recentTransactions.length > 0 && (
-            <Text className="mt-2 text-center text-xs font-medium text-muted">
+            <Text className="mt-2 text-center text-[12px] font-normal text-muted">
               {transactions.length > 20
                 ? 'Showing up to 20 recent transactions'
                 : 'Reached the end of recent activity'}

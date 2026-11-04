@@ -24,34 +24,34 @@ export function WalletSelector({
     return (
       <TouchableOpacity
         onPress={onEmptyAction}
-        className="items-center rounded-xl border border-dashed border-border bg-surface p-4">
-        <Text className="text-sm font-semibold text-primary">{emptyMessage}</Text>
+        className="items-center rounded-lg border border-dashed border-border bg-surface p-3">
+        <Text className="text-xs font-semibold text-primary">{emptyMessage}</Text>
       </TouchableOpacity>
     );
   }
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View className="flex-row gap-3 py-1">
+      <View className="flex-row gap-2 py-0.5">
         {sortedAccounts.map((wallet) => {
           const isSelected = selectedWalletId === wallet.id;
           return (
             <TouchableOpacity
               key={wallet.id}
               onPress={() => onSelect(wallet.id)}
-              className={`flex-row items-center gap-2.5 rounded-xl border px-4 py-3 ${
+              className={`flex-row items-center gap-2 rounded-lg border px-3 py-2 ${
                 isSelected
-                  ? 'bg-primary/10 dark:bg-primary/15 border-primary'
+                  ? 'border-primary bg-primary/10 dark:bg-primary/15'
                   : 'border-border bg-surface'
               }`}>
               <Icon
                 as={wallet.icon}
-                size={16}
+                size={14}
                 className={isSelected ? 'text-primary' : 'text-foreground'}
               />
               <View>
                 <Text
-                  className={`text-sm font-semibold ${
+                  className={`text-xs font-semibold ${
                     isSelected ? 'text-primary' : 'text-foreground'
                   }`}>
                   {wallet.name}

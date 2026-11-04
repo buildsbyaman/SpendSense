@@ -151,7 +151,6 @@ export default function RootLayout() {
               <Stack.Screen
                 name="add-transaction"
                 options={{
-                  presentation: 'transparentModal',
                   headerShown: false,
                   animation: 'slide_from_bottom',
                 }}
@@ -159,7 +158,6 @@ export default function RootLayout() {
               <Stack.Screen
                 name="add-subscription"
                 options={{
-                  presentation: 'transparentModal',
                   headerShown: false,
                   animation: 'slide_from_bottom',
                 }}
@@ -167,7 +165,6 @@ export default function RootLayout() {
               <Stack.Screen
                 name="add-wallet"
                 options={{
-                  presentation: 'transparentModal',
                   headerShown: false,
                   animation: 'slide_from_bottom',
                 }}
@@ -175,7 +172,13 @@ export default function RootLayout() {
               <Stack.Screen
                 name="add-budget"
                 options={{
-                  presentation: 'transparentModal',
+                  headerShown: false,
+                  animation: 'slide_from_bottom',
+                }}
+              />
+              <Stack.Screen
+                name="add-category"
+                options={{
                   headerShown: false,
                   animation: 'slide_from_bottom',
                 }}

@@ -7,8 +7,8 @@ interface AvatarProps {
   size?: number;
 }
 
-const AVATAR_COLORS_LIGHT = ['#dbeafe', '#e0e7ff', '#ccfbf1', '#e2e8f0', '#ede9fe'];
-const AVATAR_COLORS_DARK = ['#3a2645', '#263a45', '#26453a', '#453a26', '#452626'];
+const AVATAR_COLORS_LIGHT = ['#111111', '#1a1a1e', '#222226', '#18181b', '#26262b'];
+const AVATAR_COLORS_DARK = ['#1a1a1e', '#222226', '#18181b', '#26262b', '#111111'];
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -29,7 +29,8 @@ export function Avatar({ name, avatar, size = 48 }: AvatarProps) {
   const bgColor = isDark
     ? AVATAR_COLORS_DARK[getColorIndex(name)]
     : AVATAR_COLORS_LIGHT[getColorIndex(name)];
-  const textColor = isDark ? '#e8e8ec' : '#0f172a';
+  const textColor = '#ffffff';
+  const borderColor = isDark ? '#2e2e34' : '#eaeaea';
 
   if (avatar) {
     const isDataUri = avatar.startsWith('data:image/');
@@ -38,7 +39,13 @@ export function Avatar({ name, avatar, size = 48 }: AvatarProps) {
       return (
         <Image
           source={{ uri: avatar }}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: 1.5,
+            borderColor,
+          }}
         />
       );
     }
@@ -47,7 +54,13 @@ export function Avatar({ name, avatar, size = 48 }: AvatarProps) {
       return (
         <Image
           source={{ uri: `data:image/jpeg;base64,${avatar}` }}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: 1.5,
+            borderColor,
+          }}
         />
       );
     }
@@ -62,12 +75,15 @@ export function Avatar({ name, avatar, size = 48 }: AvatarProps) {
         backgroundColor: bgColor,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor,
       }}>
       <RNText
         style={{
           color: textColor,
           fontSize: size * 0.38,
-          fontWeight: '600',
+          fontWeight: '700',
+          letterSpacing: 0.5,
           lineHeight: size * 0.46,
         }}>
         {getInitials(name)}

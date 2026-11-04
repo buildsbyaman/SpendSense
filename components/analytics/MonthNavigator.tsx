@@ -44,17 +44,19 @@ export function MonthNavigator({ year, month, onChange, maxYear, maxMonth, allow
 
   return (
     <>
-      <View className="flex-row items-center rounded-full bg-secondary p-1">
+      <View className="flex-row items-center rounded-full border border-border bg-surface px-1 py-0.5">
       <TouchableOpacity
         onPress={goBack}
-        className="p-2.5"
+        style={{ outline: 'none' } as any}
+        className="p-2 focus:outline-none"
         hitSlop={{top:6,bottom:6,left:4,right:4}}
         activeOpacity={0.7}>
         <Icon as={ChevronLeft} size={18} className="text-foreground" />
       </TouchableOpacity>
 
       <TouchableOpacity 
-        className="flex-row items-center justify-center min-w-[96px] px-2 py-2 gap-1"
+        style={{ outline: 'none' } as any}
+        className="flex-row items-center justify-center min-w-[96px] px-2 py-1.5 gap-1 focus:outline-none"
         onPress={() => setIsModalVisible(true)}
         activeOpacity={0.7}
       >
@@ -67,7 +69,8 @@ export function MonthNavigator({ year, month, onChange, maxYear, maxMonth, allow
       <TouchableOpacity
         onPress={goNext}
         disabled={!canGoNext}
-        className="p-2.5"
+        style={{ outline: 'none' } as any}
+        className="p-2 focus:outline-none"
         hitSlop={{top:6,bottom:6,left:4,right:4}}
         activeOpacity={0.7}>
         <Icon

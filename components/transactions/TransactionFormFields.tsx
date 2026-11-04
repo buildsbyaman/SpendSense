@@ -63,57 +63,63 @@ export function TransactionFormFields({
     : sortedAccounts;
 
   return (
-    <View className="gap-5">
+    <View className="gap-3">
       <TransactionTypeToggle type={type} onChange={onTypeChange} />
 
-      <View>
-        <Text className="mb-2 ml-1 text-sm text-muted">Amount</Text>
-        <View className="relative justify-center">
-          <Text className="absolute left-5 z-10 text-base font-semibold text-foreground">
-            {userProfile.currencySymbol}
+      <View className="flex-row gap-2.5">
+        <View className="w-[42%]">
+          <Text className="mb-1 ml-0.5 text-xs font-medium text-muted">Amount</Text>
+          <View className="relative justify-center">
+            <Text className="absolute left-3 z-10 text-sm font-semibold text-foreground">
+              {userProfile.currencySymbol}
+            </Text>
+            <TextInput
+              value={amount}
+              onChangeText={(text) => setAmount(sanitizeAmountInput(text))}
+              className={`h-11 rounded-lg border bg-surface pl-7 pr-2.5 text-sm font-semibold text-foreground ${
+                focusedInput === 'amount' ? 'border-primary' : 'border-border'
+              }`}
+              placeholder="0.00"
+              keyboardType="decimal-pad"
+              placeholderTextColor={placeholderColor}
+              onFocus={() => setFocusedInput('amount')}
+              onBlur={() => setFocusedInput(null)}
+            />
+          </View>
+        </View>
+
+        <View className="flex-1">
+          <Text className="mb-1 ml-0.5 text-xs font-medium text-muted" numberOfLines={1}>
+            {isTransfer
+              ? 'Note (Optional)'
+              : type === 'expense'
+                ? 'Description (Optional)'
+                : 'Source (Optional)'}
           </Text>
           <TextInput
-            value={amount}
-            onChangeText={(text) => setAmount(sanitizeAmountInput(text))}
-            className={`rounded-xl border bg-surface py-3.5 pl-10 pr-5 text-base font-semibold text-foreground ${focusedInput === 'amount' ? 'border-primary' : 'border-border'}`}
-            placeholder="0.00"
-            keyboardType="decimal-pad"
+            value={title}
+            onChangeText={setTitle}
+            className={`h-11 rounded-lg border bg-surface px-3 text-sm text-foreground ${
+              focusedInput === 'title' ? 'border-primary' : 'border-border'
+            }`}
+            placeholder={
+              isTransfer
+                ? 'e.g. Top up UPI'
+                : type === 'expense'
+                  ? 'e.g. Starbucks'
+                  : 'e.g. Bonus, Salary'
+            }
             placeholderTextColor={placeholderColor}
-            onFocus={() => setFocusedInput('amount')}
+            onFocus={() => setFocusedInput('title')}
             onBlur={() => setFocusedInput(null)}
           />
         </View>
       </View>
 
-      <View>
-        <Text className="mb-2 ml-1 text-sm text-muted">
-          {isTransfer
-            ? 'Note (Optional)'
-            : type === 'expense'
-              ? 'What was this for? (Optional)'
-              : 'Source / Description (Optional)'}
-        </Text>
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          className={`rounded-xl border bg-surface px-4 py-3 text-base text-foreground ${focusedInput === 'title' ? 'border-primary' : 'border-border'}`}
-          placeholder={
-            isTransfer
-              ? 'e.g. Top up UPI wallet'
-              : type === 'expense'
-                ? 'e.g. Starbucks Coffee'
-                : 'e.g. Freelance project, Bonus'
-          }
-          placeholderTextColor={placeholderColor}
-          onFocus={() => setFocusedInput('title')}
-          onBlur={() => setFocusedInput(null)}
-        />
-      </View>
-
       {isTransfer ? (
         <>
           <View>
-            <Text className="mb-2 ml-1 text-sm text-muted">From Wallet</Text>
+            <Text className="mb-1 ml-0.5 text-xs font-medium text-muted">From Wallet</Text>
             <WalletSelector
               accounts={accounts}
               sortedAccounts={sortedAccounts}
@@ -125,7 +131,7 @@ export function TransactionFormFields({
           </View>
 
           <View>
-            <Text className="mb-2 ml-1 text-sm text-muted">To Wallet</Text>
+            <Text className="mb-1 ml-0.5 text-xs font-medium text-muted">To Wallet</Text>
             <WalletSelector
               accounts={accounts}
               sortedAccounts={toAccounts}
@@ -139,7 +145,7 @@ export function TransactionFormFields({
       ) : (
         <>
           <View>
-            <Text className="mb-2 ml-1 text-sm text-muted">Select Wallet</Text>
+            <Text className="mb-1 ml-0.5 text-xs font-medium text-muted">Select Wallet</Text>
             <WalletSelector
               accounts={accounts}
               sortedAccounts={sortedAccounts}
@@ -151,7 +157,7 @@ export function TransactionFormFields({
           </View>
 
           <View>
-            <Text className="mb-2 ml-1 text-sm text-muted">Category</Text>
+            <Text className="mb-1 ml-0.5 text-xs font-medium text-muted">Category</Text>
             <CategorySelector
               categories={categoriesList as Array<{ name: string; icon?: string; color?: string }>}
               selected={category}
@@ -163,7 +169,7 @@ export function TransactionFormFields({
       )}
 
       <View>
-        <Text className="mb-2 ml-1 text-sm text-muted">Date</Text>
+        <Text className="mb-1 ml-0.5 text-xs font-medium text-muted">Date</Text>
         <QuickDatePicker
           date={date}
           onSelectToday={() => setDate(new Date())}

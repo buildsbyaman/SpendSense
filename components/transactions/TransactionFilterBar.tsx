@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { Search, Calendar, X, SlidersHorizontal } from 'lucide-react-native';
+import { Search, Calendar, X, SlidersHorizontal, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { PLACEHOLDER_COLORS } from '@/lib/theme';
 
@@ -17,9 +17,13 @@ interface TransactionFilterBarProps {
   onSearchChange: (query: string) => void;
   dateLabel: string;
   onDatePress: () => void;
+  onPrevMonth?: () => void;
+  onNextMonth?: () => void;
   hasActiveFilter: boolean;
   onClearAll: () => void;
-  onFilterPress: (rect: { x: number; y: number; width: number; height: number }) => void;
+  onFilterPress?: (rect: { x: number; y: number; width: number; height: number }) => void;
+  onFilterToggle?: () => void;
+  isFilterOpen?: boolean;
   activeFilterCount: number;
 }
 
@@ -28,9 +32,13 @@ export default function TransactionFilterBar({
   onSearchChange,
   dateLabel,
   onDatePress,
+  onPrevMonth,
+  onNextMonth,
   hasActiveFilter,
   onClearAll,
   onFilterPress,
+  onFilterToggle,
+  isFilterOpen = false,
   activeFilterCount,
 }: TransactionFilterBarProps) {
   const { colorScheme } = useColorScheme();
@@ -59,8 +67,12 @@ export default function TransactionFilterBar({
   };
 
   const handleFilterPress = () => {
+    if (onFilterToggle) {
+      onFilterToggle();
+      return;
+    }
     filterBtnRef.current?.measureInWindow((x, y, width, height) => {
-      onFilterPress({ x, y, width, height });
+      onFilterPress?.({ x, y, width, height });
     });
   };
 
@@ -69,11 +81,11 @@ export default function TransactionFilterBar({
       {!isSearchExpanded ? (
         <TouchableOpacity
           onPress={handleToggleSearch}
-          className="items-center justify-center rounded-full bg-secondary p-3 aspect-square h-[44px] w-[44px]">
+          className="items-center justify-center rounded-full border border-black bg-surface p-3 aspect-square h-[44px] w-[44px] dark:border-white">
           <Icon as={Search} size={18} className="text-foreground" />
         </TouchableOpacity>
       ) : (
-        <View className="flex-1 flex-row items-center rounded-full border border-border bg-surface px-4 h-[44px] focus-within:border-primary">
+        <View className="flex-1 flex-row items-center rounded-full border border-black bg-surface px-4 h-[44px] focus-within:border-black dark:border-white">
           <Icon as={Search} size={16} className="mr-2 text-muted" />
           <TextInput
             autoFocus
@@ -95,41 +107,72 @@ export default function TransactionFilterBar({
         </View>
       )}
 
-      {/* Date Filter Button - takes remaining width */}
-      <TouchableOpacity
-        onPress={onDatePress}
-        className={`flex-row items-center justify-center rounded-full bg-secondary h-[44px] ${
-          !isSearchExpanded ? 'flex-1 gap-2 px-4' : 'aspect-square w-[44px]'
-        }`}>
-        <Icon
-          as={Calendar}
-          size={16}
-          className={dateLabel !== 'Any Date' ? 'text-foreground' : 'text-muted'}
-        />
-        {!isSearchExpanded && (
-          <Text
-            numberOfLines={1}
-            className={`text-sm font-semibold ${
-              dateLabel !== 'Any Date' ? 'text-foreground' : 'text-muted'
-            }`}>
-            {dateLabel}
-          </Text>
-        )}
-      </TouchableOpacity>
+      {/* Date Filter Bar — direct month switcher pill */}
+      {!isSearchExpanded ? (
+        <View className="flex-1 flex-row items-center justify-between rounded-full border border-black bg-surface h-[44px] px-1 dark:border-white">
+          <TouchableOpacity
+            onPress={onPrevMonth}
+            className="h-9 w-9 items-center justify-center rounded-full"
+            activeOpacity={0.6}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
+            <Icon as={ChevronLeft} size={18} className="text-foreground" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={onDatePress}
+            activeOpacity={0.7}
+            className="flex-1 flex-row items-center justify-center gap-1 px-1 py-2">
+            <Text
+              numberOfLines={1}
+              className="text-sm font-semibold text-foreground text-center">
+              {dateLabel}
+            </Text>
+            <Icon as={ChevronDown} size={14} className="text-muted shrink-0" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={onNextMonth}
+            className="h-9 w-9 items-center justify-center rounded-full"
+            activeOpacity={0.6}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}>
+            <Icon as={ChevronRight} size={18} className="text-foreground" />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          onPress={onDatePress}
+          className="aspect-square h-[44px] w-[44px] items-center justify-center rounded-full border border-black bg-surface dark:border-white">
+          <Icon
+            as={Calendar}
+            size={16}
+            className={dateLabel !== 'Any Date' ? 'text-foreground' : 'text-muted'}
+          />
+        </TouchableOpacity>
+      )}
 
       {/* Filter Options Button */}
       <TouchableOpacity
         ref={filterBtnRef}
         onPress={handleFilterPress}
-        className={`relative items-center justify-center rounded-full bg-secondary h-[44px] px-4 ${
-          !isSearchExpanded && !hasActiveFilter ? '' : 'aspect-square w-[44px] px-0'
-        }`}>
+        className={`relative items-center justify-center rounded-full border border-black h-[44px] px-4 dark:border-white active:scale-95 ${
+          isFilterOpen ? 'bg-black dark:bg-white' : 'bg-surface'
+        } ${!isSearchExpanded && !hasActiveFilter ? '' : 'aspect-square w-[44px] px-0'}`}>
         <Icon
           as={SlidersHorizontal}
           size={18}
-          className={activeFilterCount > 0 ? 'text-foreground' : 'text-muted'}
+          color={
+            isFilterOpen
+              ? colorScheme === 'dark'
+                ? '#000000'
+                : '#FFFFFF'
+              : activeFilterCount > 0
+                ? colorScheme === 'dark'
+                  ? '#FFFFFF'
+                  : '#000000'
+                : '#71717A'
+          }
         />
-        {activeFilterCount > 0 && (
+        {activeFilterCount > 0 && !isFilterOpen && (
           <View className="absolute -right-1 -top-1 h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 border-2 border-background">
             <Text className="text-[10px] font-bold text-primary-foreground">{activeFilterCount}</Text>
           </View>
@@ -140,7 +183,7 @@ export default function TransactionFilterBar({
       {hasActiveFilter && (
         <TouchableOpacity 
           onPress={onClearAll} 
-          className="items-center justify-center rounded-full bg-secondary aspect-square h-[44px] w-[44px]">
+          className="items-center justify-center rounded-full border border-black bg-surface aspect-square h-[44px] w-[44px] dark:border-white">
           <Icon as={X} size={18} className="text-foreground" />
         </TouchableOpacity>
       )}

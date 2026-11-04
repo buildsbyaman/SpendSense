@@ -23,7 +23,7 @@ export function validateSubscriptionForm(
   if (!input.name.trim()) {
     return { text1: 'Invalid Name', text2: 'Please enter a subscription name' };
   }
-  if (isNaN(parsedAmount) || !isFinite(parsedAmount) || parsedAmount <= 0) {
+  if (isNaN(parsedAmount) || !isFinite(parsedAmount) || parsedAmount === 0) {
     return { text1: 'Invalid Amount', text2: 'Please enter a valid amount' };
   }
   if (!input.selectedWalletId) {

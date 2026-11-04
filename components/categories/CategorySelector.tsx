@@ -13,7 +13,7 @@ interface Props {
 export function CategorySelector({ categories, selected, onSelect, withMeta }: Props) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View className="flex-row gap-2.5 py-1">
+      <View className="flex-row gap-2 py-0.5">
         {categories.map((cat, index) => {
           const isSelected = selected === cat.name;
           const CatIcon = withMeta
@@ -24,20 +24,20 @@ export function CategorySelector({ categories, selected, onSelect, withMeta }: P
             <TouchableOpacity
               key={`${cat.name}-${index}`}
               onPress={() => onSelect(cat.name)}
-              className={`flex-row items-center gap-2 rounded-xl border px-3 py-2.5 ${
+              className={`flex-row items-center gap-2 rounded-lg border px-2.5 py-1.5 ${
                 isSelected
-                  ? 'bg-primary/10 dark:bg-primary/15 border-primary'
+                  ? 'border-primary bg-primary/10 dark:bg-primary/15'
                   : 'border-border bg-surface'
               }`}>
               {withMeta && color && CatIcon && (
                 <View
-                  className="h-7 w-7 items-center justify-center rounded-full"
+                  className="h-6 w-6 items-center justify-center rounded-full"
                   style={{ backgroundColor: `${color}15` }}>
-                  <Icon as={CatIcon} size={12} color={color} />
+                  <Icon as={CatIcon} size={11} color={color} />
                 </View>
               )}
               <Text
-                className={`text-sm font-semibold ${
+                className={`text-xs font-semibold ${
                   isSelected ? 'text-primary' : 'text-foreground'
                 }`}>
                 {cat.name}

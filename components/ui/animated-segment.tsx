@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, LayoutChangeEvent } from 'react-native';
+import { View, TouchableOpacity, LayoutChangeEvent, type DimensionValue } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 
@@ -20,133 +19,141 @@ interface AnimatedSegmentProps<T extends string> {
   onChange: (value: T) => void;
   borderRadius?: number;
   paddingVertical?: number;
+  padding?: number;
   fontSize?: number;
+  width?: DimensionValue;
+  maxWidth?: DimensionValue;
 }
 
 export default function AnimatedSegment<T extends string>({
   options,
   selectedValue,
   onChange,
-  borderRadius = 12,
-  paddingVertical = 10,
-  fontSize = 13,
+  borderRadius = 9999,
+  paddingVertical = 4.5,
+  padding = 2.5,
+  fontSize = 11.5,
+  width,
+  maxWidth,
 }: AnimatedSegmentProps<T>) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [toggleWidth, setToggleWidth] = useState(0);
-  const toggleX = useSharedValue(0);
 
-  const activeIndex = (() => {
-    const idx = options.findIndex((o) => o.value === selectedValue);
-    return idx === -1 ? 0 : idx;
-  })();
+  const [containerWidth, setContainerWidth] = useState<number>(
+    typeof width === 'number' ? width : 0
+  );
 
-  const SPRING_CONFIG = {
-    damping: 20,
-    stiffness: 250,
-    mass: 0.8,
-  };
+  const count = options.length;
+  const tabWidth = containerWidth > 0 && count > 0
+    ? (containerWidth - padding * 2) / count
+    : 0;
 
+  const activeIndex = options.findIndex((o) => o.value === selectedValue);
+  const safeIndex = activeIndex >= 0 ? activeIndex : 0;
+
+  const translateX = useSharedValue(0);
   const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (toggleWidth > 0 && options.length > 0) {
+    if (tabWidth > 0) {
       if (!hasInitialized.current) {
-        toggleX.value = (toggleWidth / options.length) * activeIndex;
+        translateX.value = safeIndex * tabWidth;
         hasInitialized.current = true;
       } else {
-        toggleX.value = withSpring((toggleWidth / options.length) * activeIndex, SPRING_CONFIG);
+        translateX.value = withSpring(safeIndex * tabWidth, {
+          damping: 24,
+          stiffness: 280,
+          mass: 0.6,
+        });
       }
     }
-  }, [activeIndex, toggleWidth, options.length]);
+  }, [safeIndex, tabWidth]);
 
-  const thumbStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: toggleX.value,
-      },
-    ],
+  const thumbAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
   }));
 
-  const thumbColor = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(
-      isDark ? 'rgba(255, 255, 255, 0.16)' : '#ffffff',
-      { duration: 250 }
-    ),
-    borderColor: withTiming(
-      isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.06)',
-      { duration: 250 }
-    ),
-    borderWidth: 1,
-  }));
-
-  const handleSelect = (index: number) => {
-    onChange(options[index].value);
-    if (toggleWidth > 0 && options.length > 0) {
-      toggleX.value = withSpring((toggleWidth / options.length) * index, SPRING_CONFIG);
-    }
-  };
+  const activeTextColor = isDark ? '#000000' : '#FFFFFF';
+  const inactiveTextColor = isDark ? '#A1A1AA' : '#71717A';
 
   return (
-    <View className="w-full items-center">
+    <View
+      style={{
+        width: width ?? '100%',
+        maxWidth,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
       <View
-        className="w-full p-1"
-        style={{
-          borderRadius: borderRadius,
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-          borderWidth: 1,
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-        }}
         onLayout={(e: LayoutChangeEvent) => {
-          const w = e.nativeEvent.layout.width - 8;
-          setToggleWidth(w);
+          const w = e.nativeEvent.layout.width;
+          if (w > 0) setContainerWidth(w);
+        }}
+        style={{
+          width: '100%',
+          flexDirection: 'row',
+          alignItems: 'center',
+          position: 'relative',
+          padding: padding,
+          borderRadius: 9999,
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F2F2F5',
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E4E4E8',
         }}>
-        <View style={{ flexDirection: 'row', position: 'relative' }}>
-          {toggleWidth > 0 && (
-            <Animated.View
-              style={[
-                {
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  width: toggleWidth / options.length,
-                  borderRadius: borderRadius === 9999 ? 9999 : borderRadius - 4,
-                  zIndex: 0,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isDark ? 0.3 : 0.08,
-                  shadowRadius: 4,
-                  elevation: 2,
-                },
-                thumbStyle,
-                thumbColor,
-              ]}
-            />
-          )}
-          {options.map((option, index) => (
+        {/* Animated Sliding Solid Thumb */}
+        {tabWidth > 0 && (
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                top: padding,
+                bottom: padding,
+                left: padding,
+                width: tabWidth,
+                borderRadius: 9999,
+                backgroundColor: isDark ? '#FFFFFF' : '#000000',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1.5 },
+                shadowOpacity: isDark ? 0.3 : 0.18,
+                shadowRadius: 2.5,
+                elevation: 2,
+              },
+              thumbAnimatedStyle,
+            ]}
+          />
+        )}
+
+        {options.map((opt) => {
+          const isSelected = opt.value === selectedValue;
+          return (
             <TouchableOpacity
-              key={option.value}
-              onPress={() => handleSelect(index)}
-              style={{ flex: 1, alignItems: 'center', paddingVertical: paddingVertical, zIndex: 1 }}
-              activeOpacity={0.9}>
+              key={opt.value}
+              onPress={() => onChange(opt.value)}
+              activeOpacity={0.7}
+              style={[
+                { outline: 'none' } as any,
+                {
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical,
+                  zIndex: 1,
+                },
+              ]}
+              className="z-10 focus:outline-none">
               <Text
                 style={{
+                  color: isSelected ? activeTextColor : inactiveTextColor,
+                  fontSize,
                   fontWeight: '600',
-                  fontSize: fontSize,
-                  color:
-                    selectedValue === option.value
-                      ? isDark
-                        ? '#ffffff'
-                        : '#0f172a'
-                      : isDark
-                        ? '#a1a1aa'
-                        : '#64748b',
-                }}>
-                {option.label}
+                }}
+                numberOfLines={1}
+                className="text-center font-semibold">
+                {opt.label}
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          );
+        })}
       </View>
     </View>
   );

@@ -5,43 +5,43 @@
 :root {
   /* ========= Colors ========= */
 
-  --background: #f3f7ff;
-  --foreground: #0f172a;
+  --background: #f7f7f7;
+  --foreground: #111111;
 
   --surface: #ffffff;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #111111;
 
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #111111;
 
-  --primary: #0f172a;
+  --primary: #111111;
   --primary-foreground: #ffffff;
 
-  --secondary: #e4ecfb;
-  --secondary-foreground: #0f172a;
+  --secondary: #f4f4f4;
+  --secondary-foreground: #111111;
 
-  --muted: #94a3b8;
-  --muted-foreground: #64748b;
-  --placeholder: #94a3b8;
+  --muted: #777777;
+  --muted-foreground: #a0a0a0;
+  --placeholder: #a0a0a0;
 
-  --accent: #2563eb;
+  --accent: #111111;
   --accent-foreground: #ffffff;
 
-  --destructive: #ef4444;
+  --destructive: #f04444;
   --destructive-foreground: #ffffff;
 
-  --success: #22c55e;
-  --danger: #ef4444;
+  --success: #00a86b;
+  --danger: #f04444;
   --warning: #f59e0b;
 
-  --expense: #f87171;
-  --income: #16a34a;
+  --expense: #f04444;
+  --income: #00a86b;
 
-  --border: #e8edf6;
-  --divider: #eef2f9;
-  --input: #f0f4fb;
-  --ring: #2563eb;
+  --border: #eaeaea;
+  --divider: #f0f0f0;
+  --input: #f7f7f7;
+  --ring: #111111;
 
   --wallet-bank: #3b82f6;
   --wallet-card: #8b5cf6;
@@ -146,4 +146,10 @@
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.7);
+}
+
+button,
+[role="button"] {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
 }

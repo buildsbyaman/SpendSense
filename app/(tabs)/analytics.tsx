@@ -114,10 +114,8 @@ export default function AnalyticsScreen() {
           paddingHorizontal: 20,
         }}
         keyboardDismissMode="on-drag">
-        <View className="mb-6 flex-row items-center justify-between gap-3">
-          <View className="flex-1">
-            <TypeFilterToggle value={type} onChange={setType} />
-          </View>
+        <View className="mb-6 flex-row items-center justify-between">
+          <TypeFilterToggle value={type} onChange={setType} />
 
           <MonthNavigator
             year={year}

@@ -10,22 +10,15 @@ interface ChartTypeToggleProps {
 }
 
 export function ChartTypeToggle({ value, onChange }: ChartTypeToggleProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   return (
     <TouchableOpacity
       onPress={() => onChange(value === 'line' ? 'bar' : 'line')}
-      className="mr-1 rounded-[10px] p-2"
-      style={{
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-        borderWidth: 1,
-        borderColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-      }}
+      className="mr-1 h-[30px] w-[30px] items-center justify-center rounded-full border border-border bg-surface shadow-xs active:scale-95 focus:outline-none"
+      style={{ outline: 'none' } as any}
       activeOpacity={0.7}>
       <Icon
         as={value === 'line' ? BarChart3 : LineChart}
-        size={18}
+        size={14}
         className="text-foreground"
       />
     </TouchableOpacity>

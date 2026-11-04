@@ -6,6 +6,8 @@ export interface Budget {
   id: string;
   category: string;
   amount: number;
+  start_date?: string | null;
+  end_date?: string | null;
 }
 
 export async function fetchBudgets(): Promise<Budget[]> {
@@ -16,19 +18,23 @@ export async function fetchBudgets(): Promise<Budget[]> {
 export async function insertBudget(budget: Budget): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'INSERT INTO budgets (id, category, amount) VALUES (?, ?, ?)',
+    'INSERT INTO budgets (id, category, amount, start_date, end_date) VALUES (?, ?, ?, ?, ?)',
     budget.id,
     budget.category,
-    budget.amount
+    budget.amount,
+    budget.start_date ?? null,
+    budget.end_date ?? null
   );
 }
 
 export async function updateBudget(budget: Budget): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'UPDATE budgets SET category = ?, amount = ? WHERE id = ?',
+    'UPDATE budgets SET category = ?, amount = ?, start_date = ?, end_date = ? WHERE id = ?',
     budget.category,
     budget.amount,
+    budget.start_date ?? null,
+    budget.end_date ?? null,
     budget.id
   );
 }

@@ -103,7 +103,9 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
         CREATE TABLE IF NOT EXISTS budgets (
           id TEXT PRIMARY KEY NOT NULL,
           category TEXT NOT NULL,
-          amount REAL NOT NULL
+          amount REAL NOT NULL,
+          start_date TEXT,
+          end_date TEXT
         );
       `);
       currentVersion = 7;
@@ -223,6 +225,17 @@ async function runMigrations(instance: SQLiteDatabase): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_subscriptions_category ON subscriptions(category);
       `);
       currentVersion = 16;
+    }
+
+    if (currentVersion < 17) {
+      const cols = await tableColumns(instance, 'budgets');
+      if (!cols.includes('start_date')) {
+        await instance.execAsync('ALTER TABLE budgets ADD COLUMN start_date TEXT');
+      }
+      if (!cols.includes('end_date')) {
+        await instance.execAsync('ALTER TABLE budgets ADD COLUMN end_date TEXT');
+      }
+      currentVersion = 17;
     }
 
     if (currentVersion > 0) {

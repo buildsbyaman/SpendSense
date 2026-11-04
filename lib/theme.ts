@@ -2,24 +2,24 @@ import { DarkTheme, DefaultTheme, type Theme } from 'expo-router/react-navigatio
 
 export const THEME = {
   light: {
-    background: '#f3f7ff',
-    foreground: '#0f172a',
+    background: '#f7f7f7',
+    foreground: '#111111',
     surface: '#ffffff',
     card: '#ffffff',
-    cardForeground: '#0f172a',
-    primary: '#0f172a',
+    cardForeground: '#111111',
+    primary: '#111111',
     primaryForeground: '#ffffff',
-    secondary: '#e4ecfb',
-    secondaryForeground: '#0f172a',
-    muted: '#94a3b8',
-    mutedForeground: '#64748b',
-    accent: '#2563eb',
+    secondary: '#f4f4f4',
+    secondaryForeground: '#111111',
+    muted: '#777777',
+    mutedForeground: '#a0a0a0',
+    accent: '#111111',
     accentForeground: '#ffffff',
-    destructive: '#ef4444',
+    destructive: '#f04444',
     destructiveForeground: '#ffffff',
-    border: '#e8edf6',
-    input: '#f0f4fb',
-    ring: '#2563eb',
+    border: '#eaeaea',
+    input: '#f7f7f7',
+    ring: '#111111',
   },
   dark: {
     background: '#121214',
@@ -44,7 +44,7 @@ export const THEME = {
 };
 
 export const PLACEHOLDER_COLORS = {
-  light: '#94a3b8',
+  light: '#a0a0a0',
   dark: '#8e8e93',
 } as const;
 

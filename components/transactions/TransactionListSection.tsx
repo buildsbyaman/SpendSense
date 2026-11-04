@@ -45,6 +45,7 @@ export function TransactionDayGroupView({
             isLast={idx === group.transactions.length - 1}
             currencySymbol={currencySymbol}
             customCategories={customCategories}
+            showSubtitle={false}
           />
         ))}
       </View>

@@ -90,8 +90,8 @@ export const validateTransaction = (
   type?: TransactionType,
   toWalletId?: string
 ): { isValid: boolean; errorTitle?: string; errorMessage?: string; parsedAmount?: number } => {
-  const parsedAmount = parseFloat(amountText.replace(/[^0-9.]/g, ''));
-  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+  const parsedAmount = parseFloat(amountText.replace(/[^0-9.-]/g, ''));
+  if (isNaN(parsedAmount) || !isFinite(parsedAmount) || parsedAmount === 0) {
     return {
       isValid: false,
       errorTitle: 'Invalid Amount',

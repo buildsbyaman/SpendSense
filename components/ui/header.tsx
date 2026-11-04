@@ -37,7 +37,7 @@ export function Header({
   const RightIconToUse = rightIcon || (onRightPress ? MoreVertical : null);
 
   return (
-    <View className="mb-4 flex-row items-center justify-between px-2">
+    <View className="mb-4 mt-2 flex-row items-center justify-between px-2">
       {/* Left Action */}
       <View className="w-10 items-start">
         {LeftIconToUse && (
