@@ -156,10 +156,39 @@ function withReleaseProguardRules(config) {
   ]);
 }
 
+const STYLES_V35_CONTENT = `<resources xmlns:tools="http://schemas.android.com/tools">
+  <!-- Android 15 (API 35+) enforces edge-to-edge by default.
+       statusBarColor and navigationBarColor are deprecated on v35+, so they are omitted here. -->
+  <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+    <item name="colorPrimary">@color/colorPrimary</item>
+  </style>
+  <style name="Theme.App.SplashScreen" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenBackground">@color/splashscreen_background</item>
+    <item name="windowSplashScreenAnimatedIcon">@drawable/splashscreen_logo</item>
+    <item name="postSplashScreenTheme">@style/AppTheme</item>
+    <item name="android:windowSplashScreenBehavior">icon_preferred</item>
+  </style>
+</resources>
+`;
+
+function withAndroid15EdgeToEdgeStyles(config) {
+  return withDangerousMod(config, [
+    'android',
+    async (config) => {
+      const dir = path.join(config.modRequest.platformProjectRoot, 'app', 'src', 'main', 'res', 'values-v35');
+      await fs.promises.mkdir(dir, { recursive: true });
+      await fs.promises.writeFile(path.join(dir, 'styles.xml'), STYLES_V35_CONTENT, 'utf8');
+      return config;
+    },
+  ]);
+}
+
 module.exports = function withReleaseOptimizations(config) {
   config = withReleaseGradleProperties(config);
   config = withReleaseOptimizedBuildGradle(config);
   config = withReleaseProguardRules(config);
+  config = withAndroid15EdgeToEdgeStyles(config);
   return config;
 };
 
