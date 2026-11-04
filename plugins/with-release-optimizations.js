@@ -5,14 +5,16 @@
 // tracked source of truth: it is applied on every prebuild and mirrors exactly
 // what is committed by hand in the local (ignored) android/ directory.
 //
-// It does two things:
+// It does three things:
 //   1. Enables R8 minification + resource shrinking for release builds.
-//   2. Maintains a clearly-marked block of ProGuard keep rules in
+//   2. Switches build.gradle from proguard-android.txt to proguard-android-optimize.txt
+//      to enable full R8 code optimizations and satisfy Google Play DEX thresholds.
+//   3. Maintains a clearly-marked block of ProGuard keep rules in
 //      android/app/proguard-rules.pro (appended after any existing content).
 
 const fs = require('fs');
 const path = require('path');
-const { withGradleProperties, withDangerousMod } = require('expo/config-plugins');
+const { withGradleProperties, withDangerousMod, withAppBuildGradle } = require('expo/config-plugins');
 
 const GRADLE_PROPERTIES = {
   'android.enableMinifyInReleaseBuilds': 'true',
@@ -26,6 +28,19 @@ const MARKER_END = '# <<< spendsense release optimization keep rules <<<';
 // runtime (JNI, view-manager registry, fragment recreation) and R8 would
 // otherwise rename or strip it in a minified release build.
 const KEEP_RULES = `${MARKER_START}
+# Native methods and DoNotStrip annotations (JNI safety)
+-keepclasseswithmembers class * {
+    native <methods>;
+}
+-keep @com.facebook.proguard.annotations.DoNotStrip class *
+-keepclassmembers class * {
+    @com.facebook.proguard.annotations.DoNotStrip *;
+}
+-keep @expo.modules.core.interfaces.DoNotStrip class *
+-keepclassmembers class * {
+    @expo.modules.core.interfaces.DoNotStrip *;
+}
+
 # Reanimated native runtime: JNI entry points and classes looked up by name.
 # Also shipped as a consumer rule by the library; repeated here so the project
 # rules stay self-documenting.
@@ -81,6 +96,17 @@ function applyGradleProperties(props) {
 }
 
 /**
+ * Ensures build.gradle uses proguard-android-optimize.txt instead of proguard-android.txt
+ * so that R8 optimization passes (inlining, class merging, argument removal) are fully active.
+ */
+function applyBuildGradleOptimizations(contents) {
+  return contents.replace(
+    /getDefaultProguardFile\(["']proguard-android\.txt["']\)/g,
+    'getDefaultProguardFile("proguard-android-optimize.txt")'
+  );
+}
+
+/**
  * Replaces the marked keep-rules block (or appends it the first time) without
  * touching the file's existing contents. Safe to run repeatedly.
  */
@@ -104,6 +130,15 @@ function withReleaseGradleProperties(config) {
   });
 }
 
+function withReleaseOptimizedBuildGradle(config) {
+  return withAppBuildGradle(config, (config) => {
+    if (config.modResults && config.modResults.contents) {
+      config.modResults.contents = applyBuildGradleOptimizations(config.modResults.contents);
+    }
+    return config;
+  });
+}
+
 function withReleaseProguardRules(config) {
   return withDangerousMod(config, [
     'android',
@@ -123,12 +158,14 @@ function withReleaseProguardRules(config) {
 
 module.exports = function withReleaseOptimizations(config) {
   config = withReleaseGradleProperties(config);
+  config = withReleaseOptimizedBuildGradle(config);
   config = withReleaseProguardRules(config);
   return config;
 };
 
 // Exported for local verification of the pure transforms.
 module.exports.applyGradleProperties = applyGradleProperties;
+module.exports.applyBuildGradleOptimizations = applyBuildGradleOptimizations;
 module.exports.applyProguardRules = applyProguardRules;
 module.exports.KEEP_RULES = KEEP_RULES;
 module.exports.GRADLE_PROPERTIES = GRADLE_PROPERTIES;
